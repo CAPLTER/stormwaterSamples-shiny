@@ -1,3 +1,6 @@
+# database config
+config.R
+
 # History files
 .Rhistory
 .Rapp.history
