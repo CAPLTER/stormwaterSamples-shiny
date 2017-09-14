@@ -448,7 +448,7 @@ server <- function(input, output, session) {
     sampleUploadToWrite <- combinedData() %>% 
       mutate(sample_datetime = as.POSIXct(sample_datetime, format = "%Y-%m-%d %H:%M:%S")) %>% 
       mutate(site_id = sampleReportSiteId()) %>% 
-      mutate(comments = input$fileUploadNotes) %>% 
+      mutate(comments = ifelse(input$fileUploadNotes == '', NA, input$fileUploadNotes)) %>%
       mutate(temp = as.numeric(temp)) %>% 
       mutate(cond = as.numeric(cond)) %>% 
       select(-omit)
@@ -646,7 +646,7 @@ server <- function(input, output, session) {
     manualEntryToWrite <- manualEntry$df %>%
       filter(!is.na(bottle)) %>% 
       mutate(sample_datetime = as.POSIXct(sample_datetime, format = "%Y-%m-%d %H:%M:%S")) %>%
-      mutate(comments = input$manualEntryNotes) %>%
+      mutate(comments = ifelse(input$manualEntryNotes == '', NA, input$manualEntryNotes)) %>%
       mutate(temp = as.numeric(temp)) %>%
       mutate(cond = as.numeric(cond)) %>%
       mutate(site_id = as.integer(site_id))
@@ -1163,7 +1163,7 @@ server <- function(input, output, session) {
     # # modify data object as needed for the DB
     afdmDataToWrite <- afdmSamplesAndData() %>%
       mutate(sample_datetime = as.POSIXct(sample_datetime, format = "%Y-%m-%d %H:%M:%S")) %>%
-      mutate(comments = input$afdmUploadNotes) %>%
+      mutate(comments = ifelse(input$afdmUploadNotes == '', NA, input$afdmUploadNotes)) %>%
       mutate(filter_wt = as.numeric(filter_wt)) %>%
       mutate(filter_dry = as.numeric(filter_dry)) %>%
       mutate(volume = as.numeric(volume)) %>%
