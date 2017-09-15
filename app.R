@@ -33,6 +33,10 @@ library(RPostgreSQL)
 bottleList <- read_csv('allPossibleBottleCombinations.csv',
                        col_names = TRUE)
 
+# source configuration settings
+source('config.R')
+
+
 # ui ----
 ui <- tagList(
   tags$head(
