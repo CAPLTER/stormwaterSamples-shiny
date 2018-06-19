@@ -885,13 +885,12 @@ server <- function(input, output, session) {
     
     read_csv(input$dischargeFile$datapath,
              skip = 7,
-             col_names = c("event_datetime", "level"),
-             col_types = list(
-               event_datetime = col_datetime(format = "%m/%d/%Y %H:%M"),
-               level = col_double()
-             )) %>% 
+             col_names = c("event_datetime", "level")) %>% 
       dplyr::filter(!is.na(event_datetime)) %>% 
-      mutate(event_datetime = format(event_datetime, "%Y-%m-%d %H:%M:%S")) %>% 
+      mutate(
+        event_datetime = parse_date_time(event_datetime, c("mdY HMS p", "mdY HMS")),
+        event_datetime = format(event_datetime, "%Y-%m-%d %H:%M:%S")
+      ) %>% 
       mutate(site_id = levelDataSiteId()) %>% 
       select(site_id, event_datetime, level)
     
