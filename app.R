@@ -1,5 +1,34 @@
 
-# libraries
+# README ------------------------------------------------------------------
+
+# UPDATE 2018-06-20: Added functionality to view discharge data in the database.
+# Changed discharge insert/upload funtionality to do nothing (i.e., skip
+# insert/upload) for duplicate samples - this allows, for example, a Flowlink
+# file with a mix of new and already uploaded data to be uploaded without having
+# to manually remove the data that are already in the database. Added pagination
+# to samples viewer.
+
+# Note regarding Javascript: There are several code chunks that have the comment
+# 'notable stmt' associated with them. These statements are related to the
+# Javascript functionality required for the interactivity of a file upload,
+# i.e., adding temp, cond, etc. to the table following a file uplooad. See
+# https://stackoverflow.com/questions/40020600/r-shiny-selectedinput-inside-renderdatatable-cells
+# and
+# https://groups.google.com/forum/#!msg/shiny-discuss/ZUMBGGl1sss/zfcG9c6MBAAJ
+# for details.
+
+# Note regarding DOC and AFDM identifiers: This app was built initially with the
+# idea that bottle/vial IDs for DOC and AFDM would be entered by the
+# technicians. However, the technician team moved to an approach of simply
+# labelling both DOC and AFDM bottles with the bottle ID corresponding to a
+# sample (e.g., 11_2_2). The functionality for adding DOC and AFDM IDs was left
+# in the code but simply commented out of execution, and it should be possible
+# to simply uncomment those code chunks and change the database statements if
+# there is interest to revert.
+
+
+# libraries ---------------------------------------------------------------
+
 library(shiny)
 library(dplyr)
 library(readr)
@@ -8,25 +37,6 @@ library(stringr)
 library(lubridate)
 library(DBI)
 library(RPostgreSQL)
-
-# Note regarding Javascript
-# There are several code chunks that have the comment 'notable stmt' associated
-# with them. These statements are related to the Javascript functionality
-# required for the interactivity of a file upload, i.e., adding temp, cond, etc.
-# to the table following a file uplooad. See
-# https://stackoverflow.com/questions/40020600/r-shiny-selectedinput-inside-renderdatatable-cells
-# and
-# https://groups.google.com/forum/#!msg/shiny-discuss/ZUMBGGl1sss/zfcG9c6MBAAJ
-# for details.
-
-# Note regarding DOC and AFDM identifiers
-# This app was built initially with the idea that bottle/vial IDs for DOC and
-# AFDM would be entered by the technicians. However, the technician team moved
-# to an approach of simply labelling both DOC and AFDM bottles with the bottle
-# ID corresponding to a sample (e.g., 11_2_2). The functionality for adding DOC
-# and AFDM IDs was left in the code but simply commented out of execution, and
-# it should be possible to simply uncomment those code chunks and change the
-# database statements if there is interest to revert.
 
 # generate list of bottle IDs for manual data entry
 # MOVE THIS TO SERVER IF YOU SPLIT THE APP INTO TWO FILES
@@ -188,7 +198,7 @@ ui <- tagList(
                                            "end:",
                                            format = "yyyy-mm-dd"),
                                  actionButton(inputId = "querySamples",
-                                              label = "get samples",
+                                              label = "view samples",
                                               style = "text-align:center; border-sytle:solid; border-color:#0000ff;"),
                                  br(),
                                  br()
@@ -200,7 +210,7 @@ ui <- tagList(
                       ) # close the page
              ), # close sampels viewer tab panel
              
-             tabPanel("discharge",
+             tabPanel("discharge: file upload",
                       fluidPage(
                         fluidRow( 
                           column(id = 'leftPanel', 2,
@@ -221,7 +231,55 @@ ui <- tagList(
                           ) # close the right col
                         ) # close the row
                       ) # close the page
-             ), # close discharge tab panel
+             ), # close discharge: file upload
+             
+             tabPanel("discharge: viewer",
+                      fluidPage(
+                        fluidRow( 
+                          column(id = 'leftPanel', 2,
+                                 selectizeInput("dischargeViewerSiteID",
+                                                "Site ID",
+                                                choices = c("IBW",
+                                                            "centralNorth",
+                                                            "centralSouth",
+                                                            "price",
+                                                            "kiwanisPark",
+                                                            "camelback",
+                                                            "pierce",
+                                                            "martinResidence",
+                                                            "montessori",
+                                                            "sweetwater",
+                                                            "bellaVista",
+                                                            "lakeMarguerite",
+                                                            "silveradoGolfCourse",
+                                                            "encantada",
+                                                            "ave7th"
+                                                            ),
+                                                selected = NULL,
+                                                multiple = FALSE),
+                                 br(),
+                                 tags$b("date range:",
+                                        style = "text-align:center"),
+                                 br(),
+                                 br(),
+                                 dateInput("dischargeStartDate",
+                                           "start:",
+                                           format = "yyyy-mm-dd"),
+                                 dateInput("dischargeEndDate",
+                                           "end:",
+                                           format = "yyyy-mm-dd"),
+                                 actionButton(inputId = "queryDischarge",
+                                              label = "view discharge",
+                                              style = "text-align:center; border-sytle:solid; border-color:#0000ff;"),
+                                 br(),
+                                 br()
+                          ), # close the left col
+                          column(id = "dischargeViewerRightPanel", 10,
+                                 DT::dataTableOutput("dischargeData")
+                          ) # close the right col
+                        ) # close the row
+                      ) # close the page
+             ), # close discharge: viewer
              
              tabPanel("AFDM",
                       fluidPage(
@@ -230,6 +288,8 @@ ui <- tagList(
                                  selectizeInput("afdmSiteID",
                                                 "Site ID",
                                                 choices = c("IBW",
+                                                            "lakeMarguerite",
+                                                            "silveradoGolfCourse",
                                                             "centralNorth",
                                                             "centralSouth",
                                                             "Price"),
@@ -330,7 +390,7 @@ server <- function(input, output, session) {
     return(maxDate$maxDTTM)
     
   })
-
+  
   
   # sample data from file upload
   sampleReportData <- reactive({
@@ -354,7 +414,7 @@ server <- function(input, output, session) {
       mutate(sample_datetime = format(sample_datetime, "%Y-%m-%d %H:%M:%S"))
     
   })
-
+  
   
   # render the file upload and data input tools
   output$buttonsInTable <- DT::renderDataTable({
@@ -429,8 +489,8 @@ server <- function(input, output, session) {
              #                   nrow(sampleReportData()))
       ) %>% 
       filter(omit == FALSE) # %>% 
-      # mutate(DOC = replace(DOC, DOC == '', NA)) %>% 
-      # mutate(AFDM = replace(AFDM, AFDM == '', NA))
+    # mutate(DOC = replace(DOC, DOC == '', NA)) %>% 
+    # mutate(AFDM = replace(AFDM, AFDM == '', NA))
     
   })
   
@@ -543,9 +603,9 @@ server <- function(input, output, session) {
     dbDisconnect(pg)
     
   })
-
   
-# manual data entry ----
+  
+  # manual data entry ----
   
   # function to translate text site id to numeric site id (as in the DB)
   dbSiteId <- reactive({
@@ -587,7 +647,7 @@ server <- function(input, output, session) {
                                sample_datetime = NA,
                                temp = NA,
                                cond = NA
-                               )
+  )
   
   
   # observe manual data entry via `addSample` button and new data to data frame
@@ -616,7 +676,7 @@ server <- function(input, output, session) {
       filter(!is.na(bottle))
     
   })
- 
+  
   
   # generate a list of possible bottle IDs in the current table to delete
   output$deletableBottles = renderUI({
@@ -630,7 +690,7 @@ server <- function(input, output, session) {
                 choices = bottlesThatCouldBeDeleted)
     
   })
- 
+  
   
   # allow user to delete a row based on bottle id
   observeEvent(input$deleteManualEntryRow, {
@@ -645,7 +705,7 @@ server <- function(input, output, session) {
   
   # write manually entered data to database
   observeEvent(input$submitEnteredData, {
-
+    
     # modify data object as needed for the DB
     manualEntryToWrite <- manualEntry$df %>%
       filter(!is.na(bottle)) %>% 
@@ -654,12 +714,12 @@ server <- function(input, output, session) {
       mutate(temp = as.numeric(temp)) %>%
       mutate(cond = as.numeric(cond)) %>%
       mutate(site_id = as.integer(site_id))
-
+    
     # beging DB sequence
-
+    
     # establish db connection
     pg <- databaseConn()
-
+    
     # insert into samples
     insertSamplesUploadQuery <-
       'INSERT INTO stormwater.samples
@@ -686,64 +746,64 @@ server <- function(input, output, session) {
           FROM
           stormwater.samples_temp
         );'
-
+    
     tryCatch({
-
+      
       dbGetQuery(pg, "BEGIN TRANSACTION")
-
+      
       # # write new samples to samples_temp
       if (dbExistsTable(pg, c('stormwater', 'samples_temp'))) dbRemoveTable(pg, c('stormwater', 'samples_temp'))
       dbWriteTable(pg, c('stormwater', 'samples_temp'), value = manualEntryToWrite, row.names = F)
-
+      
       # remove timezone type generated by dbWriteTable function
       dbExecute(pg,'
             ALTER TABLE stormwater.samples_temp
             ALTER COLUMN sample_datetime TYPE TIMESTAMP WITHOUT TIME ZONE;')
-
+      
       # execute insert query
       dbExecute(pg, insertSamplesUploadQuery)
-
+      
       # clean up
       dbRemoveTable(pg, c('stormwater', 'samples_temp'))
-
+      
       dbCommit(pg)
-
+      
       showNotification(ui = "successfully uploaded",
                        duration = NULL,
                        closeButton = TRUE,
                        type = 'message',
                        action = a(href = "javascript:location.reload();", "reload the page"))
-
+      
     }, warning = function(warn) {
-
+      
       showNotification(ui = paste("there is a warning:  ", warn),
                        duration = NULL,
                        closeButton = TRUE,
                        type = 'warning')
-
+      
       print(paste("WARNING: ", warn))
-
+      
     }, error = function(err) {
-
+      
       showNotification(ui = paste("there was an error:  ", err),
                        duration = NULL,
                        closeButton = TRUE,
                        type = 'error')
-
+      
       print(paste("ERROR: ", err))
       print("ROLLING BACK TRANSACTION")
-
+      
       dbRollback(pg)
-
+      
     }) # close try catch
-
+    
     # close db connection
     dbDisconnect(pg)
-
+    
   })
   
-  
-# samples viewer ----
+
+# samples viewer ----------------------------------------------------------
   
   # function to translate text site id to numeric site id (as in the DB)
   samplesViewerSiteId <- reactive({
@@ -835,7 +895,7 @@ server <- function(input, output, session) {
       stormSamples <- stormSamples %>% 
         mutate(sample_datetime = format(sample_datetime, "%Y-%m-%d %H:%M:%S"))
       
-    # else build an empty frame with just NAs
+      # else build an empty frame with just NAs
     } else {
       
       stormSamples <- data.frame(
@@ -857,12 +917,140 @@ server <- function(input, output, session) {
   },
   selection = 'none',
   escape = FALSE,
-  server = FALSE,
-  options = list(paging = F),
+  server = TRUE,
+  options = list(paging = TRUE,
+                 pageLength = 25,
+                 ordering = TRUE,
+                 searching = TRUE),
+  rownames = FALSE) # close renderDataTable
+  
+
+# discharge viewer --------------------------------------------------------
+  
+  # everything below is starting with merely a copy of the samples viewer
+  
+  # function to translate text site id to numeric site id (as in the DB) this is
+  # a duplicate of the samplesViewerSiteId - here recreated for convenience but
+  # if ever refactoring, coding this once for both purposes would be a better
+  # approach.
+  dischargeViewerSiteId <- reactive({
+    
+    if (input$dischargeViewerSiteID == 'IBW') {
+      numericSiteCode <- 11
+    } else if (input$dischargeViewerSiteID == 'centralNorth') {
+      numericSiteCode <- 14
+    } else if (input$dischargeViewerSiteID == 'centralSouth') {
+      numericSiteCode <- 15
+    } else if (input$dischargeViewerSiteID  == 'price') {
+      numericSiteCode <- 16
+    } else if (input$dischargeViewerSiteID  == 'kiwanisPark') {
+      numericSiteCode <- 1
+    } else if (input$dischargeViewerSiteID  == 'camelback') {
+      numericSiteCode <- 2
+    } else if (input$dischargeViewerSiteID  == 'pierce') {
+      numericSiteCode <- 4
+    } else if (input$dischargeViewerSiteID  == 'martinResidence') {
+      numericSiteCode <- 5
+    } else if (input$dischargeViewerSiteID  == 'montessori') {
+      numericSiteCode <- 6
+    } else if (input$dischargeViewerSiteID  == 'sweetwater') {
+      numericSiteCode <- 7
+    } else if (input$dischargeViewerSiteID  == 'bellaVista') {
+      numericSiteCode <- 8
+    } else if (input$dischargeViewerSiteID  == 'lakeMarguerite') {
+      numericSiteCode <- 9
+    } else if (input$dischargeViewerSiteID  == 'silveradoGolfCourse') {
+      numericSiteCode <- 10
+    } else if (input$dischargeViewerSiteID  == 'encantada') {
+      numericSiteCode <- 12
+    } else if (input$dischargeViewerSiteID  == 'ave7th') {
+      numericSiteCode <- 13
+    } 
+    
+    return(numericSiteCode)
+    
+  })
+  
+  # query discharge data from database for viewing
+  viewerDischargeData <- reactive({
+    
+    req(input$queryDischarge)
+    
+    pg <- databaseConn()
+    
+    baseDischargeDataQuery <- '
+    SELECT
+      s.abbreviation AS site,
+      d.event_datetime,
+      d.water_height,
+      d.discharge,
+      d.discharge_corrected AS discharge_corr
+    FROM
+      stormwater.discharge d
+    JOIN
+      stormwater.sites s ON (s.site_id = d.site_id)
+    WHERE 
+      s.site_id = ?siteId AND
+      d.event_datetime BETWEEN ?start AND ?end
+    ORDER BY
+    	s.abbreviation,
+    	d.event_datetime;    
+    '
+    
+    isolate(
+      dischargeDataQuery <- sqlInterpolate(ANSI(),
+                                           baseDischargeDataQuery,
+                                           siteId = dischargeViewerSiteId(),
+                                           start = as.character(input$dischargeStartDate),
+                                           end = as.character(input$dischargeEndDate))
+    )
+    
+    dischargeSamples <- dbGetQuery(pg,
+                                   dischargeDataQuery)
+    
+    dbDisconnect(pg)
+    
+    
+    # rather than a simple return, we need to address conditions when there are
+    # not any data that match the search criteria
+    
+    # format the date if there are data
+    if (nrow(dischargeSamples) >= 1) {
+      
+      dischargeSamples <- dischargeSamples %>% 
+        mutate(event_datetime = format(event_datetime, "%Y-%m-%d %H:%M:%S"))
+      
+    # else build an empty frame with just NAs
+    } else {
+      
+      dischargeSamples <- data.frame(
+        sample_id = "no samples match those criteria"
+      )
+      
+    }
+    
+    return(dischargeSamples)
+    
+  }) 
+  
+  
+  # render discharge data for viewing
+  output$dischargeData <- DT::renderDataTable({
+    
+    viewerDischargeData()
+    
+  },
+  selection = 'none',
+  escape = FALSE,
+  server = TRUE,
+  options = list(paging = TRUE,
+                 pageLength = 25,
+                 ordering = FALSE,
+                 searching = FALSE),
   rownames = F) # close renderDataTable
-  
-  
-# discharge ----
+
+    
+# discharge upload --------------------------------------------------------
   
   # site id from file upload
   levelDataSiteId <- reactive({
@@ -885,13 +1073,12 @@ server <- function(input, output, session) {
     
     read_csv(input$dischargeFile$datapath,
              skip = 7,
-             col_names = c("event_datetime", "level"),
-             col_types = list(
-               event_datetime = col_datetime(format = "%m/%d/%Y %H:%M"),
-               level = col_double()
-             )) %>% 
+             col_names = c("event_datetime", "level")) %>% 
       dplyr::filter(!is.na(event_datetime)) %>% 
-      mutate(event_datetime = format(event_datetime, "%Y-%m-%d %H:%M:%S")) %>% 
+      mutate(
+        event_datetime = parse_date_time(event_datetime, c("mdY HMS p", "mdY HMS")),
+        event_datetime = format(event_datetime, "%Y-%m-%d %H:%M:%S")
+      ) %>% 
       mutate(site_id = levelDataSiteId()) %>% 
       select(site_id, event_datetime, level)
     
@@ -908,92 +1095,98 @@ server <- function(input, output, session) {
   
   # write discharge data to database
   observeEvent(input$submitDischargeFileUpload, {
-
+    
     # modify data object as needed for the DB
     dischargeToWrite <- levelData() %>%
       mutate(event_datetime = as.POSIXct(event_datetime, format = "%Y-%m-%d %H:%M:%S")) 
-
+    
     # beging DB sequence
-
+    
     # establish db connection
     pg <- databaseConn()
-
-    # insert into samples
-    insertLevelDataQuery <-
-      'INSERT INTO stormwater.discharge
-        (
-          site_id,
-          event_datetime,
-          water_height
-        )
-        (
-          SELECT
-            site_id,
-            event_datetime,
-            level
-          FROM
-          stormwater.discharge_temp
-        );'
-
+    
+    # insert into samples. the 'ON CONFLICT' clause allows for skipping
+    # inserting any data that are already in the database.
+    insertLevelDataQuery <- '
+    INSERT INTO stormwater.discharge
+    (
+      site_id,
+      event_datetime,
+      water_height
+    )
+    (
+      SELECT
+        site_id,
+        event_datetime,
+        level
+      FROM
+      stormwater.discharge_temp
+    )
+    ON CONFLICT ON CONSTRAINT discharge_unique_observations DO NOTHING;'
+    
+    
     tryCatch({
-
+      
       dbGetQuery(pg, "BEGIN TRANSACTION")
-
+      
       # write new samples to samples_temp
       if (dbExistsTable(pg, c('stormwater', 'discharge_temp'))) dbRemoveTable(pg, c('stormwater', 'discharge_temp'))
       dbWriteTable(pg, c('stormwater', 'discharge_temp'), value = dischargeToWrite, row.names = F)
-
+      
       # remove timezone type generated by dbWriteTable function
       dbExecute(pg,'
             ALTER TABLE stormwater.discharge_temp
             ALTER COLUMN event_datetime TYPE TIMESTAMP WITHOUT TIME ZONE;')
-
+      
       # execute insert query
       dbExecute(pg, insertLevelDataQuery)
-
+      
       # clean up
       dbRemoveTable(pg, c('stormwater', 'discharge_temp'))
-
+      
       dbCommit(pg)
-
+      
       showNotification(ui = "successfully uploaded",
                        duration = NULL,
                        closeButton = TRUE,
                        type = 'message',
                        action = a(href = "javascript:location.reload();", "reload the page"))
-
+      
     }, warning = function(warn) {
-
+      
       showNotification(ui = paste("there is a warning:  ", warn),
                        duration = NULL,
                        closeButton = TRUE,
                        type = 'warning')
-
+      
       print(paste("WARNING: ", warn))
-
+      
     }, error = function(err) {
-
+      
       showNotification(ui = paste("there was an error:  ", err),
                        duration = NULL,
                        closeButton = TRUE,
                        type = 'error')
-
+      
       print(paste("ERROR: ", err))
       print("ROLLING BACK TRANSACTION")
-
+      
       dbRollback(pg)
-
+      
     }) # close try catch
-
+    
     # close db connection
     dbDisconnect(pg)
-
+    
   })
   
   
-# afdm ----
+# ash free dry mass -------------------------------------------------------
   
-  # function to translate text site id to numeric site id (as in the DB)
+  # function to translate text site id to numeric site id (as in the DB) this is
+  # a duplicate of the samplesViewerSiteId & dischargeViewerSiteId - here
+  # recreated for convenience but if ever refactoring, coding this once for both
+  # purposes would be a better approach.
   dbAfdmSiteId <- reactive({
     
     if (input$afdmSiteID == 'IBW') {
@@ -1004,8 +1197,12 @@ server <- function(input, output, session) {
       numericSiteCode <- 15
     } else if (input$afdmSiteID == 'Price') {
       numericSiteCode <- 16
+    } else if (input$afdmSiteID == 'lakeMarguerite') {
+      numericSiteCode <- 9
+    } else if (input$afdmSiteID == 'silveradoGolfCourse') {
+      numericSiteCode <- 10
     } 
-    
+     
     return(numericSiteCode)
     
   })
@@ -1062,7 +1259,7 @@ server <- function(input, output, session) {
       afdmStormSamples <- afdmStormSamples %>% 
         mutate(sample_datetime = format(sample_datetime, "%Y-%m-%d %H:%M:%S"))
       
-    # else build an empty frame with just NAs
+      # else build an empty frame with just NAs
     } else {
       
       afdmStormSamples <- data.frame(
@@ -1138,26 +1335,26 @@ server <- function(input, output, session) {
       mutate(omit = shinyValue("omit_afdm_sample_",
                                nrow(afdmSampleData())),
              filter_wt = shinyValue('filter_wt_',
-                               nrow(afdmSampleData())),
+                                    nrow(afdmSampleData())),
              filter_dry = shinyValue('filter_dry_',
-                               nrow(afdmSampleData())),
+                                     nrow(afdmSampleData())),
              volume = shinyValue('volume_',
-                               nrow(afdmSampleData())),
+                                 nrow(afdmSampleData())),
              filter_ashed = shinyValue('filter_ashed_',
-                               nrow(afdmSampleData()))
+                                       nrow(afdmSampleData()))
       ) %>% 
       filter(omit == FALSE)
     
   })
   
-
+  
   # preview data table with upload and provided values
   output$previewAfdmUpload <- renderTable({
-
+    
     afdmSamplesAndData() %>%
       mutate(sample_datetime = as.character(sample_datetime)) %>%
       select(-omit)
-
+    
   })
   
   
@@ -1173,93 +1370,93 @@ server <- function(input, output, session) {
       mutate(volume = as.numeric(volume)) %>%
       mutate(filter_ashed = as.numeric(filter_ashed)) %>%
       select(-omit)
-
+    
     # beging DB sequence
-
+    
     # establish db connection
     pg <- databaseConn()
-
+    
     # insert into samples
     insertAfdmQuery <-
-      'INSERT INTO stormwater.solids
-        (
+    'INSERT INTO stormwater.solids
+      (
+        sample_id,
+        filter_initial,
+        filter_dry,
+        volume_filtered,
+        filter_ashed,
+        replicate,
+        comments
+      )
+      (
+        SELECT
           sample_id,
-          filter_initial,
+          filter_wt,
           filter_dry,
-          volume_filtered,
+          volume,
           filter_ashed,
-          replicate,
+          1,
           comments
-        )
-        (
-          SELECT
-            sample_id,
-            filter_wt,
-            filter_dry,
-            volume,
-            filter_ashed,
-            1,
-            comments
-          FROM
-          stormwater.solids_temp
-        );'
-
+        FROM
+        stormwater.solids_temp
+      );'
+    
     tryCatch({
-
+      
       dbGetQuery(pg, "BEGIN TRANSACTION")
-
+      
       # # write new samples to samples_temp
       if (dbExistsTable(pg, c('stormwater', 'solids_temp'))) dbRemoveTable(pg, c('stormwater', 'solids_temp'))
       dbWriteTable(pg, c('stormwater', 'solids_temp'), value = afdmDataToWrite, row.names = F)
-
+      
       # remove timezone type generated by dbWriteTable function
       dbExecute(pg,'
             ALTER TABLE stormwater.solids_temp
             ALTER COLUMN sample_datetime TYPE TIMESTAMP WITHOUT TIME ZONE;')
-
+      
       # # execute insert query
       dbExecute(pg, insertAfdmQuery)
-
+      
       # clean up
       dbRemoveTable(pg, c('stormwater', 'solids_temp'))
-
+      
       dbCommit(pg)
-
+      
       showNotification(ui = "successfully uploaded",
                        duration = NULL,
                        closeButton = TRUE,
                        type = 'message',
                        action = a(href = "javascript:location.reload();", "reload the page"))
-
+      
     }, warning = function(warn) {
-
+      
       showNotification(ui = paste("there is a warning:  ", warn),
                        duration = NULL,
                        closeButton = TRUE,
                        type = 'warning')
-
+      
       print(paste("WARNING: ", warn))
-
+      
     }, error = function(err) {
-
+      
       showNotification(ui = paste("there was an error:  ", err),
                        duration = NULL,
                        closeButton = TRUE,
                        type = 'error')
-
+      
       print(paste("ERROR: ", err))
       print("ROLLING BACK TRANSACTION")
-
+      
       dbRollback(pg)
-
+      
     }) # close try catch
-
+    
     # close db connection
     dbDisconnect(pg)
     
   })
   
-
+  
 } # close server
 
 
