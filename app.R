@@ -27,6 +27,12 @@
 # there is interest to revert.
 
 
+# shiny options -----------------------------------------------------------
+
+# increase max file upload size
+options(shiny.maxRequestSize=30*1024^2)
+
+
 # libraries ---------------------------------------------------------------
 
 library(shiny)
@@ -372,13 +378,12 @@ server <- function(input, output, session) {
     
     maxDate <- read_csv(input$file1$datapath,
                         skip = 7,
-                        col_names = c("sample_datetime", "eventNumber"),
-                        col_types = list(
-                          sample_datetime = col_datetime(format = "%m/%d/%Y %H:%M"),
-                          eventNumber = col_integer()
-                        )) %>% 
+                        col_names = c("sample_datetime", "eventNumber")) %>% 
       dplyr::select(sample_datetime) %>% 
-      dplyr::filter(!is.na(sample_datetime)) %>% 
+      dplyr::filter(!is.na(sample_datetime)) %>%
+      dplyr::mutate(
+        sample_datetime = parse_date_time(sample_datetime, c("mdY HMS p", "mdY HMS", "mdY HM"))
+      ) %>% 
       dplyr::summarise(maxDTTM = max(sample_datetime))
     
     # because this function is to add a blank, set the time according to
@@ -401,14 +406,11 @@ server <- function(input, output, session) {
     
     read_csv(input$file1$datapath,
              skip = 7,
-             col_names = c("sample_datetime", "eventNumber"),
-             col_types = list(
-               sample_datetime = col_datetime(format = "%m/%d/%Y %H:%M"),
-               eventNumber = col_integer()
-             )) %>% 
+             col_names = c("sample_datetime", "eventNumber")) %>% 
       mutate(bottle = paste0(sampleReportSiteId(), "_", input$storm, "_", eventNumber)) %>%
       dplyr::select(bottle, sample_datetime) %>% 
       dplyr::filter(!is.na(sample_datetime)) %>% 
+      dplyr::mutate(sample_datetime = parse_date_time(sample_datetime, c("mdY HMS p", "mdY HMS", "mdY HM"))) %>% 
       add_row(bottle = paste0(sampleReportSiteId(), "_", input$storm, "_BLK"),
               sample_datetime = sampleReportMaxDate()) %>% 
       mutate(sample_datetime = format(sample_datetime, "%Y-%m-%d %H:%M:%S"))
