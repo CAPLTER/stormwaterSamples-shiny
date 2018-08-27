@@ -1047,7 +1047,7 @@ server <- function(input, output, session) {
   server = TRUE,
   options = list(paging = TRUE,
                  pageLength = 25,
-                 ordering = FALSE,
+                 ordering = TRUE,
                  searching = FALSE),
   rownames = F) # close renderDataTable
 
