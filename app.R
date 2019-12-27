@@ -27,33 +27,13 @@
 # there is interest to revert.
 
 
-# shiny options -----------------------------------------------------------
+# call global R -----------------------------------------------------------
 
-# increase max file upload size
-options(shiny.maxRequestSize=30*1024^2)
-
-
-# libraries ---------------------------------------------------------------
-
-library(shiny)
-library(dplyr)
-library(readr)
-library(DT)
-library(stringr)
-library(lubridate)
-library(DBI)
-library(RPostgreSQL)
-
-# generate list of bottle IDs for manual data entry
-# MOVE THIS TO SERVER IF YOU SPLIT THE APP INTO TWO FILES
-bottleList <- read_csv('allPossibleBottleCombinations.csv',
-                       col_names = TRUE)
-
-# source configuration settings
-source('config.R')
+source('global.R')
 
 
-# ui ----
+# UI ----------------------------------------------------------------------
+
 ui <- tagList(
   tags$head(
     tags$style(
@@ -189,7 +169,7 @@ ui <- tagList(
                                                             "silveradoGolfCourse",
                                                             "encantada",
                                                             "ave7th"
-                                                            ),
+                                                ),
                                                 selected = NULL,
                                                 multiple = FALSE),
                                  br(),
@@ -260,7 +240,7 @@ ui <- tagList(
                                                             "silveradoGolfCourse",
                                                             "encantada",
                                                             "ave7th"
-                                                            ),
+                                                ),
                                                 selected = NULL,
                                                 multiple = FALSE),
                                  br(),
@@ -342,19 +322,20 @@ ui <- tagList(
 ) # close tagList
 
 
-# server ----
+# server ------------------------------------------------------------------
+
 server <- function(input, output, session) {
   
-  # file upload ----
+  # file upload -------------------------------------------------------------
   
   # helper function for reading checkbox
-  shinyInput = function(FUN, len, id, ...) { 
-    inputs = character(len) 
-    for (i in seq_len(len)) { 
-      inputs[i] = as.character(FUN(paste0(id, i), label = NULL, ...)) 
-    } 
-    inputs 
-  } 
+  shinyInput = function(FUN, len, id, ...) {
+    inputs = character(len)
+    for (i in seq_len(len)) {
+      inputs[i] = as.character(FUN(paste0(id, i), label = NULL, ...))
+    }
+    inputs
+  }
   
   
   # site id from file upload
@@ -422,33 +403,12 @@ server <- function(input, output, session) {
   output$buttonsInTable <- DT::renderDataTable({
     
     sampleReportData() %>% 
-      mutate(omit = shinyInput(checkboxInput,
-                               nrow(sampleReportData()),
-                               "omit_",
-                               value = FALSE,
-                               width = "20px"),
-             # DOC = shinyInput(textInput,
-             #                  nrow(sampleReportData()),
-             #                  "doc_",
-             #                  # value = 'NA',
-             #                  width = "90px"),
-             temp = shinyInput(numericInput,
-                               nrow(sampleReportData()),
-                               "temp_",
-                               value = NULL,
-                               min = 0,
-                               width = "90px"),
-             cond = shinyInput(numericInput,
-                               nrow(sampleReportData()),
-                               "cond_",
-                               value = NULL,
-                               min= 0,
-                               width = "90px") #,
-             # AFDM = shinyInput(textInput,
-             #                   nrow(sampleReportData()),
-             #                   "afdm_",
-             #                   # value = NULL,
-             #                   width = "90px")
+      mutate(
+        omit = shinyInput(checkboxInput,
+                          nrow(sampleReportData()),
+                          "omit_",
+                          value = FALSE,
+                          width = "20px")
       )
   },
   selection = 'none',
@@ -465,7 +425,6 @@ server <- function(input, output, session) {
   ),
   rownames = F) # close renderDataTable
   
-  
   # helper function for reading checkbox
   shinyValue = function(id, len) { 
     unlist(lapply(seq_len(len), function(i) { 
@@ -474,28 +433,17 @@ server <- function(input, output, session) {
     })) 
   } 
   
-  
   # capture file upload and provided data
   combinedData <- reactive({
     
     sampleReportData() %>%
-      mutate(omit = shinyValue("omit_",
-                               nrow(sampleReportData())),
-             # DOC = shinyValue("doc_",
-             #                  nrow(sampleReportData())),
-             temp = shinyValue('temp_',
-                               nrow(sampleReportData())),
-             cond = shinyValue('cond_',
-                               nrow(sampleReportData())) # ,
-             # AFDM = shinyValue('afdm_',
-             #                   nrow(sampleReportData()))
+      mutate(
+        omit = shinyValue("omit_",
+                          nrow(sampleReportData()))
       ) %>% 
-      filter(omit == FALSE) # %>% 
-    # mutate(DOC = replace(DOC, DOC == '', NA)) %>% 
-    # mutate(AFDM = replace(AFDM, AFDM == '', NA))
+      filter(omit == FALSE)
     
   })
-  
   
   # preview data table with upload and provided values
   output$checked <- renderTable({
@@ -506,23 +454,24 @@ server <- function(input, output, session) {
     
   })
   
-  
   # write uploaded file and edits to database
   observeEvent(input$submitFileUpload, {
     
     # modify data object as needed for the DB
     sampleUploadToWrite <- combinedData() %>% 
-      mutate(sample_datetime = as.POSIXct(sample_datetime, format = "%Y-%m-%d %H:%M:%S")) %>% 
-      mutate(site_id = sampleReportSiteId()) %>% 
-      mutate(comments = ifelse(input$fileUploadNotes == '', NA, input$fileUploadNotes)) %>%
-      mutate(temp = as.numeric(temp)) %>% 
-      mutate(cond = as.numeric(cond)) %>% 
-      select(-omit)
+      mutate(
+        sample_datetime = as.POSIXct(sample_datetime, format = "%Y-%m-%d %H:%M:%S"),
+        site_id = sampleReportSiteId(),
+        comments = ifelse(input$fileUploadNotes == '', NA, input$fileUploadNotes),
+        temp = as.numeric(temp),
+        cond = as.numeric(cond)
+      )
+    select(-omit)
     
     # beging DB sequence
     
     # establish db connection
-    pg <- databaseConn()
+    # pg <- stormPool()
     
     # insert into samples
     insertSamplesUploadQuery <-
@@ -556,21 +505,21 @@ server <- function(input, output, session) {
       dbGetQuery(pg, "BEGIN TRANSACTION")
       
       # # write new samples to samples_temp
-      if (dbExistsTable(pg, c('stormwater', 'samples_temp'))) dbRemoveTable(pg, c('stormwater', 'samples_temp'))
-      dbWriteTable(pg, c('stormwater', 'samples_temp'), value = sampleUploadToWrite, row.names = F)
+      if (dbExistsTable(stormPool, c('stormwater', 'samples_temp'))) dbRemoveTable(stormPool, c('stormwater', 'samples_temp'))
+      dbWriteTable(stormPool, c('stormwater', 'samples_temp'), value = sampleUploadToWrite, row.names = F)
       
       # remove timezone type generated by dbWriteTable function
-      dbExecute(pg,'
+      dbExecute(stormPool,'
             ALTER TABLE stormwater.samples_temp
             ALTER COLUMN sample_datetime TYPE TIMESTAMP WITHOUT TIME ZONE;')
       
       # execute insert query
-      dbExecute(pg, insertSamplesUploadQuery)
+      dbExecute(stormPool, insertSamplesUploadQuery)
       
       # clean up
-      dbRemoveTable(pg, c('stormwater', 'samples_temp'))
+      dbRemoveTable(stormPool, c('stormwater', 'samples_temp'))
       
-      dbCommit(pg)
+      dbCommit(stormPool)
       
       showNotification(ui = "successfully uploaded",
                        duration = NULL,
@@ -606,8 +555,8 @@ server <- function(input, output, session) {
     
   })
   
-  
-  # manual data entry ----
+
+  # manual data entry -------------------------------------------------------
   
   # function to translate text site id to numeric site id (as in the DB)
   dbSiteId <- reactive({
@@ -720,7 +669,7 @@ server <- function(input, output, session) {
     # beging DB sequence
     
     # establish db connection
-    pg <- databaseConn()
+    pg <- stormPool()
     
     # insert into samples
     insertSamplesUploadQuery <-
@@ -804,8 +753,8 @@ server <- function(input, output, session) {
     
   })
   
-
-# samples viewer ----------------------------------------------------------
+  
+  # samples viewer ----------------------------------------------------------
   
   # function to translate text site id to numeric site id (as in the DB)
   samplesViewerSiteId <- reactive({
@@ -851,7 +800,7 @@ server <- function(input, output, session) {
     
     req(input$querySamples)
     
-    pg <- databaseConn()
+    pg <- stormPool()
     
     baseSamplesDataQuery <- '
     SELECT
@@ -926,8 +875,8 @@ server <- function(input, output, session) {
                  searching = TRUE),
   rownames = FALSE) # close renderDataTable
   
-
-# discharge viewer --------------------------------------------------------
+  
+  # discharge viewer --------------------------------------------------------
   
   # everything below is starting with merely a copy of the samples viewer
   
@@ -978,7 +927,7 @@ server <- function(input, output, session) {
     
     req(input$queryDischarge)
     
-    pg <- databaseConn()
+    pg <- stormPool()
     
     baseDischargeDataQuery <- '
     SELECT
@@ -1022,7 +971,7 @@ server <- function(input, output, session) {
       dischargeSamples <- dischargeSamples %>% 
         mutate(event_datetime = format(event_datetime, "%Y-%m-%d %H:%M:%S"))
       
-    # else build an empty frame with just NAs
+      # else build an empty frame with just NAs
     } else {
       
       dischargeSamples <- data.frame(
@@ -1050,9 +999,9 @@ server <- function(input, output, session) {
                  ordering = TRUE,
                  searching = FALSE),
   rownames = F) # close renderDataTable
-
-    
-# discharge upload --------------------------------------------------------
+  
+  
+  # discharge upload --------------------------------------------------------
   
   # site id from file upload
   levelDataSiteId <- reactive({
@@ -1105,7 +1054,7 @@ server <- function(input, output, session) {
     # beging DB sequence
     
     # establish db connection
-    pg <- databaseConn()
+    pg <- stormPool()
     
     # insert into samples. the 'ON CONFLICT' clause allows for skipping
     # inserting any data that are already in the database.
@@ -1183,7 +1132,7 @@ server <- function(input, output, session) {
   })
   
   
-# ash free dry mass -------------------------------------------------------
+  # ash free dry mass -------------------------------------------------------
   
   # function to translate text site id to numeric site id (as in the DB) this is
   # a duplicate of the samplesViewerSiteId & dischargeViewerSiteId - here
@@ -1204,7 +1153,7 @@ server <- function(input, output, session) {
     } else if (input$afdmSiteID == 'silveradoGolfCourse') {
       numericSiteCode <- 10
     } 
-     
+    
     return(numericSiteCode)
     
   })
@@ -1217,7 +1166,7 @@ server <- function(input, output, session) {
     
     session$sendCustomMessage('unbind-DT', 'afdmDataEntryTable') # notable stmt
     
-    pg <- databaseConn()
+    pg <- stormPool()
     
     baseSamplesDataQuery <- '
     SELECT
@@ -1376,11 +1325,11 @@ server <- function(input, output, session) {
     # beging DB sequence
     
     # establish db connection
-    pg <- databaseConn()
+    pg <- stormPool()
     
     # insert into samples
     insertAfdmQuery <-
-    'INSERT INTO stormwater.solids
+      'INSERT INTO stormwater.solids
       (
         sample_id,
         filter_initial,
@@ -1459,8 +1408,9 @@ server <- function(input, output, session) {
   })
   
   
-} # close server
-
+  # close server ------------------------------------------------------------
+  
+}
 
 # Run the application 
 shinyApp(ui = ui, server = server)
