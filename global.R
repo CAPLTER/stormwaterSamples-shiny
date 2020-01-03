@@ -10,6 +10,7 @@ library(lubridate)
 library(DBI)
 library(RPostgreSQL)
 library(pool)
+library(shinyjs)
 
 
 # options -----------------------------------------------------------------
@@ -27,5 +28,12 @@ source('config.R')
 bottleList <- read_csv('allPossibleBottleCombinations.csv',
                        col_names = TRUE)
 
-# function
+# functions
 source('helper_sql_execution.R')
+source('helper_query_samples.R')
+source('helper_sample_locations.R')
+source('helper_shiny_input.R')
+
+
+# modules
+source('module_modify_samples.R')
