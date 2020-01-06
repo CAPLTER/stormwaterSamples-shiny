@@ -3,14 +3,22 @@
 #' @description Makes available the list of site abbreviations for all current
 #'   and recent sampling sites.
 
-baseQuery <- "
-SELECT
-  site_id,
-  abbreviation
-FROM stormwater.sites
-WHERE abbreviation IN ('IBW', 'LM', 'SGC', 'Ave7th', 'centralNorth', 'centralSouth', 'Price');
-"
- 
-sampleSites <- dbGetQuery(stormPool, baseQuery)
+query_sample_sites <- function() {
+  
+  baseQuery <- "
+  SELECT
+    site_id,
+    abbreviation
+  FROM stormwater.sites
+  WHERE abbreviation IN ('IBW', 'LM', 'SGC', 'Ave7th', 'centralNorth', 'centralSouth', 'Price');"
+  
+  sampleSites <- dbGetQuery(stormPool, baseQuery)
+  
+  return(sampleSites)
+  
+}
 
-siteAbbreviations <- sampleSites %>% pull(abbreviation)
+sampleSites <- query_sample_sites()
+
+siteAbbreviations <- sampleSites %>%
+  pull(abbreviation)

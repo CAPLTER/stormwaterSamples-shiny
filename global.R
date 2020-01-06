@@ -33,7 +33,9 @@ source('helper_sql_execution.R')
 source('helper_query_samples.R')
 source('helper_sample_locations.R')
 source('helper_shiny_input.R')
+source('helper_query_solids.R')
 
 
 # modules
 source('module_modify_samples.R')
+source('module_modify_solids.R')
