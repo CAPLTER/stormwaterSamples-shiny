@@ -27,4 +27,14 @@ shinyInput <- function(reactiveObject, FUN, len, id, ...) {
         inputs[i] <- as.character(FUN(paste0(id, ident), ...))
     }
     inputs
+}
+
+
+shinyInputFlex <- function(reactiveObject, FUN, len, id, ...) {
+    inputs <- character(len)
+    for (i in seq_len(len)) {
+        ident = as.character(reactiveObject %>% select(id) %>% slice(i:i))
+        inputs[i] <- as.character(FUN(paste0(ident), ...))
+    }
+    inputs
 }    

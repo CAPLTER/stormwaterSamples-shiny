@@ -10,8 +10,8 @@ query_solids_default <- function() {
   
   baseQuery <- '
   SELECT
-    -- solids.solid_id,
-    samples.sample_id AS id,
+    solids.solid_id,
+    samples.sample_id,
     sites.abbreviation AS site,
     samples.sample_datetime::TEXT,
     samples.bottle,
@@ -40,7 +40,7 @@ query_solids_site_date <- function(start, end, site) {
   
   baseQuery <- '
   SELECT
-    -- solids.solid_id,
+    solids.solid_id,
     samples.sample_id AS id,
     sites.abbreviation AS site,
     samples.sample_datetime::TEXT,
