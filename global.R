@@ -10,7 +10,7 @@ library(lubridate)
 library(DBI)
 library(RPostgreSQL)
 library(pool)
-library(shinyjs)
+# library(shinyjs)
 
 
 # options -----------------------------------------------------------------
@@ -34,8 +34,9 @@ source('helper_query_samples.R')
 source('helper_sample_locations.R')
 source('helper_shiny_input.R')
 source('helper_query_solids.R')
+source('helper_query_discharge.R')
 
 
 # modules
 source('module_modify_samples.R')
-# source('module_modify_solids.R')
+source('module_view_discharge.R')

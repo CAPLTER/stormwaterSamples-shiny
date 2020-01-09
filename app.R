@@ -1,6 +1,18 @@
 
 # README ------------------------------------------------------------------
 
+# UPDATE 2020-01-08 (version 2): This marks a substantial rewrite of the
+# application. Code for samples, solids, and viewing discharge was moved to
+# modules, UI/UX vastly improved, and the DB connection was moved to a pool.
+# Uploading discharge data was the only component that was not updated. Note
+# that while working with solids was not moved to module, the code was updated
+# considerably. Solids was not moved to a module as it was not possible to pass
+# a messenger to the main app (home of the main solids data view) indicating
+# updates - of course, it is possible by returning a value from the module and
+# then assigning the call to the module to an object, but this could only be
+# done in the observeEvent call where the module was instantiated thus
+# nullifying the ability of the messenger to update the reactive in the app.
+
 # UPDATE 2018-06-20: Added functionality to view discharge data in the database.
 # Changed discharge insert/upload funtionality to do nothing (i.e., skip
 # insert/upload) for duplicate samples - this allows, for example, a Flowlink
@@ -16,15 +28,6 @@
 # and
 # https://groups.google.com/forum/#!msg/shiny-discuss/ZUMBGGl1sss/zfcG9c6MBAAJ
 # for details.
-
-# Note regarding DOC and AFDM identifiers: This app was built initially with the
-# idea that bottle/vial IDs for DOC and AFDM would be entered by the
-# technicians. However, the technician team moved to an approach of simply
-# labelling both DOC and AFDM bottles with the bottle ID corresponding to a
-# sample (e.g., 11_2_2). The functionality for adding DOC and AFDM IDs was left
-# in the code but simply commented out of execution, and it should be possible
-# to simply uncomment those code chunks and change the database statements if
-# there is interest to revert.
 
 
 # call global R -----------------------------------------------------------
@@ -99,9 +102,11 @@ ui <- tagList(
              
              tabPanel("samples",
                       modifySamplesUI("modifySamples") 
-             ), # close maintenance log tab 
+             ), # close samples tab 
              
-             tabPanel("discharge: file upload",
+             # discharge upload tab ----------------------------------------------------
+             
+             tabPanel("discharge: upload",
                       fluidPage(
                         fluidRow( 
                           column(id = 'leftPanel', 2,
@@ -124,55 +129,11 @@ ui <- tagList(
                       ) # close the page
              ), # close discharge: file upload
              
-             # discharge tab -----------------------------------------------------------
+             # discharge viewing tab ---------------------------------------------------
              
-             tabPanel("discharge: viewer",
-                      fluidPage(
-                        fluidRow( 
-                          column(id = 'leftPanel', 2,
-                                 selectizeInput("dischargeViewerSiteID",
-                                                "Site ID",
-                                                choices = c("IBW",
-                                                            "centralNorth",
-                                                            "centralSouth",
-                                                            "price",
-                                                            "kiwanisPark",
-                                                            "camelback",
-                                                            "pierce",
-                                                            "martinResidence",
-                                                            "montessori",
-                                                            "sweetwater",
-                                                            "bellaVista",
-                                                            "lakeMarguerite",
-                                                            "silveradoGolfCourse",
-                                                            "encantada",
-                                                            "ave7th"
-                                                ),
-                                                selected = NULL,
-                                                multiple = FALSE),
-                                 br(),
-                                 tags$b("date range:",
-                                        style = "text-align:center"),
-                                 br(),
-                                 br(),
-                                 dateInput("dischargeStartDate",
-                                           "start:",
-                                           format = "yyyy-mm-dd"),
-                                 dateInput("dischargeEndDate",
-                                           "end:",
-                                           format = "yyyy-mm-dd"),
-                                 actionButton(inputId = "queryDischarge",
-                                              label = "view discharge",
-                                              style = "text-align:center; border-sytle:solid; border-color:#0000ff;"),
-                                 br(),
-                                 br()
-                          ), # close the left col
-                          column(id = "dischargeViewerRightPanel", 10,
-                                 DT::dataTableOutput("dischargeData")
-                          ) # close the right col
-                        ) # close the row
-                      ) # close the page
-             ), # close discharge: viewer
+             tabPanel("discharge",
+                      viewDischargeUI("viewDischarge") 
+             ), # close discharge tab 
              
              # solids tab --------------------------------------------------------------
              
@@ -450,6 +411,25 @@ server <- function(input, output, session) {
       
     }
     
+    if (nrow(samplesSolidsData) == 0) {
+      
+      samplesSolidsData <- data.frame(
+        solid_id = NA,
+        sample_id = NA,
+        site = NA,
+        sample_datetime= NA,
+        bottle= NA,
+        afdm_bottle_id = NA,
+        filter_initial = NA,
+        filter_dry = NA,
+        volume_filtered = NA,
+        filter_ashed = NA,
+        replicate = NA,
+        comments = as.character("match not found")
+      )
+     
+    } else {
+    
     # add and delete buttons to samplesSolidsData data
     samplesSolidsData <- samplesSolidsData %>%
       mutate(
@@ -466,6 +446,8 @@ server <- function(input, output, session) {
                                 label = "delete",
                                 onclick = sprintf('Shiny.setInputValue("%s",  this.id)', "button_delete_solids_sample"))
       )
+    
+    }
     
     return(samplesSolidsData)
     
@@ -692,129 +674,10 @@ server <- function(input, output, session) {
   })
   
   
-  # discharge viewer --------------------------------------------------------
+  # call to viewDischarge module --------------------------------------------
   
-  # everything below is starting with merely a copy of the samples viewer
-  
-  # function to translate text site id to numeric site id (as in the DB) this is
-  # a duplicate of the samplesViewerSiteId - here recreated for convenience but
-  # if ever refactoring, coding this once for both purposes would be a better
-  # approach.
-  dischargeViewerSiteId <- reactive({
-    
-    if (input$dischargeViewerSiteID == 'IBW') {
-      numericSiteCode <- 11
-    } else if (input$dischargeViewerSiteID == 'centralNorth') {
-      numericSiteCode <- 14
-    } else if (input$dischargeViewerSiteID == 'centralSouth') {
-      numericSiteCode <- 15
-    } else if (input$dischargeViewerSiteID  == 'price') {
-      numericSiteCode <- 16
-    } else if (input$dischargeViewerSiteID  == 'kiwanisPark') {
-      numericSiteCode <- 1
-    } else if (input$dischargeViewerSiteID  == 'camelback') {
-      numericSiteCode <- 2
-    } else if (input$dischargeViewerSiteID  == 'pierce') {
-      numericSiteCode <- 4
-    } else if (input$dischargeViewerSiteID  == 'martinResidence') {
-      numericSiteCode <- 5
-    } else if (input$dischargeViewerSiteID  == 'montessori') {
-      numericSiteCode <- 6
-    } else if (input$dischargeViewerSiteID  == 'sweetwater') {
-      numericSiteCode <- 7
-    } else if (input$dischargeViewerSiteID  == 'bellaVista') {
-      numericSiteCode <- 8
-    } else if (input$dischargeViewerSiteID  == 'lakeMarguerite') {
-      numericSiteCode <- 9
-    } else if (input$dischargeViewerSiteID  == 'silveradoGolfCourse') {
-      numericSiteCode <- 10
-    } else if (input$dischargeViewerSiteID  == 'encantada') {
-      numericSiteCode <- 12
-    } else if (input$dischargeViewerSiteID  == 'ave7th') {
-      numericSiteCode <- 13
-    } 
-    
-    return(numericSiteCode)
-    
-  })
-  
-  # query discharge data from database for viewing
-  viewerDischargeData <- reactive({
-    
-    req(input$queryDischarge)
-    
-    pg <- stormPool()
-    
-    baseDischargeDataQuery <- '
-    SELECT
-      s.abbreviation AS site,
-      d.event_datetime,
-      d.water_height,
-      d.discharge,
-      d.discharge_corrected AS discharge_corr
-    FROM
-      stormwater.discharge d
-    JOIN
-      stormwater.sites s ON (s.site_id = d.site_id)
-    WHERE 
-      s.site_id = ?siteId AND
-      d.event_datetime BETWEEN ?start AND ?end
-    ORDER BY
-    	s.abbreviation,
-    	d.event_datetime;    
-    '
-    
-    isolate(
-      dischargeDataQuery <- sqlInterpolate(ANSI(),
-                                           baseDischargeDataQuery,
-                                           siteId = dischargeViewerSiteId(),
-                                           start = as.character(input$dischargeStartDate),
-                                           end = as.character(input$dischargeEndDate))
-    )
-    
-    dischargeSamples <- dbGetQuery(pg,
-                                   dischargeDataQuery)
-    
-    dbDisconnect(pg)
-    
-    
-    # rather than a simple return, we need to address conditions when there are
-    # not any data that match the search criteria
-    
-    # format the date if there are data
-    if (nrow(dischargeSamples) >= 1) {
-      
-      dischargeSamples <- dischargeSamples %>% 
-        mutate(event_datetime = format(event_datetime, "%Y-%m-%d %H:%M:%S"))
-      
-      # else build an empty frame with just NAs
-    } else {
-      
-      dischargeSamples <- data.frame(
-        sample_id = "no samples match those criteria"
-      )
-      
-    }
-    
-    return(dischargeSamples)
-    
-  }) 
-  
-  
-  # render discharge data for viewing
-  output$dischargeData <- DT::renderDataTable({
-    
-    viewerDischargeData()
-    
-  },
-  selection = 'none',
-  escape = FALSE,
-  server = TRUE,
-  options = list(paging = TRUE,
-                 pageLength = 25,
-                 ordering = TRUE,
-                 searching = FALSE),
-  rownames = F) # close renderDataTable
+  callModule(module = viewDischarge,
+             id = "viewDischarge")
   
   
   # discharge upload --------------------------------------------------------
@@ -869,9 +732,6 @@ server <- function(input, output, session) {
     
     # beging DB sequence
     
-    # establish db connection
-    pg <- stormPool()
-    
     # insert into samples. the 'ON CONFLICT' clause allows for skipping
     # inserting any data that are already in the database.
     insertLevelDataQuery <- '
@@ -894,24 +754,24 @@ server <- function(input, output, session) {
     
     tryCatch({
       
-      dbGetQuery(pg, "BEGIN TRANSACTION")
+      dbGetQuery(stormPool, "BEGIN TRANSACTION")
       
       # write new samples to samples_temp
-      if (dbExistsTable(pg, c('stormwater', 'discharge_temp'))) dbRemoveTable(pg, c('stormwater', 'discharge_temp'))
-      dbWriteTable(pg, c('stormwater', 'discharge_temp'), value = dischargeToWrite, row.names = F)
+      if (dbExistsTable(stormPool, c('stormwater', 'discharge_temp'))) dbRemoveTable(stormPool, c('stormwater', 'discharge_temp'))
+      dbWriteTable(stormPool, c('stormwater', 'discharge_temp'), value = dischargeToWrite, row.names = F)
       
       # remove timezone type generated by dbWriteTable function
-      dbExecute(pg,'
+      dbExecute(stormPool,'
             ALTER TABLE stormwater.discharge_temp
             ALTER COLUMN event_datetime TYPE TIMESTAMP WITHOUT TIME ZONE;')
       
       # execute insert query
-      dbExecute(pg, insertLevelDataQuery)
+      dbExecute(stormPool, insertLevelDataQuery)
       
       # clean up
-      dbRemoveTable(pg, c('stormwater', 'discharge_temp'))
+      dbRemoveTable(stormPool, c('stormwater', 'discharge_temp'))
       
-      dbCommit(pg)
+      dbCommit(stormPool)
       
       showNotification(ui = "successfully uploaded",
                        duration = NULL,
@@ -938,12 +798,9 @@ server <- function(input, output, session) {
       print(paste("ERROR: ", err))
       print("ROLLING BACK TRANSACTION")
       
-      dbRollback(pg)
+      dbRollback(stormPool)
       
     }) # close try catch
-    
-    # close db connection
-    dbDisconnect(pg)
     
   })
   

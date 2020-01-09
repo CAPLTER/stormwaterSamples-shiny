@@ -2,6 +2,8 @@
 #'
 #' @description The shinyInput function allows the user to create a custom input
 #'   feature, typically applied to each row of a data frame or similar object.
+#'   shinyInputFlex is a modified version of shinyInput that allows for passing
+#'   any data column name to id instead of literal 'id' required for shinyInput.
 #'
 #' @param reactiveObject a reactive (tabular) object to which custom inputs will
 #'   be attached
@@ -18,8 +20,7 @@
 #'   (to ...) typically include a label and onclick where the id of the button
 #'   is identified in the onclick, and an empty string is passed to the id
 #'   argument of the function.
-#'   
-#'   
+
 shinyInput <- function(reactiveObject, FUN, len, id, ...) {
     inputs <- character(len)
     for (i in seq_len(len)) {

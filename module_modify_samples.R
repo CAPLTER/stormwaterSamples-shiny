@@ -56,7 +56,8 @@ modifySamplesUI <- function(id) {
                          placeholder = "HH:MM:SS"),
                br(),
                actionButton(inputId = ns("newSampleGo"),
-                            "add sample"),
+                            label = "add sample",
+                            style = "text-align:center; border-sytle:solid; border-color:#0000ff;"),
         ), # close the left col
         column(id = "samplesRightPanel", 10,
                DT::DTOutput(ns("samplesDataView"))
@@ -112,16 +113,34 @@ modifySamples <- function(input, output, session, samplesID) {
       
     }
     
-    # add delete button to samples data
-    # remember that session$ns is required for modules!!!
-    samplesData <- samplesData %>%
-      mutate(delete = shinyInput(reactiveObject = samplesData,
-                                 FUN = actionButton,
-                                 len = nrow(samplesData),
-                                 id = '',
-                                 label = "delete",
-                                 onclick = sprintf('Shiny.setInputValue("%s",  this.id)', session$ns("button_delete_sample")))
-      )
+    if (nrow(samplesData) == 0) {
+      
+      samplesData <- data.frame(
+        id = NA,
+        site = NA,
+        sample_datetime = NA,
+        comments = as.character("match not found"),
+        temp = NA,
+        pH = NA,
+        cond = NA,
+        bottle = NA,
+        doc_vial_id = NA,
+        afdm_bottle_id = NA)
+      
+    } else {
+      
+      # add delete button to samples data
+      # remember that session$ns is required for modules!!!
+      samplesData <- samplesData %>%
+        mutate(delete = shinyInput(reactiveObject = samplesData,
+                                   FUN = actionButton,
+                                   len = nrow(samplesData),
+                                   id = '',
+                                   label = "delete",
+                                   onclick = sprintf('Shiny.setInputValue("%s",  this.id)', session$ns("button_delete_sample")))
+        )
+      
+    }
     
     return(samplesData)
     
