@@ -1,6 +1,18 @@
 
 # README ------------------------------------------------------------------
 
+# UPDATE 2020-01-08 (version 2): This marks a substantial rewrite of the
+# application. Code for samples, solids, and viewing discharge was moved to
+# modules, UI/UX vastly improved, and the DB connection was moved to a pool.
+# Uploading discharge data was the only component that was not updated. Note
+# that while working with solids was not moved to module, the code was updated
+# considerably. Solids was not moved to a module as it was not possible to pass
+# a messenger to the main app (home of the main solids data view) indicating
+# updates - of course, it is possible by returning a value from the module and
+# then assigning the call to the module to an object, but this could only be
+# done in the observeEvent call where the module was instantiated thus
+# nullifying the ability of the messenger to update the reactive in the app.
+
 # UPDATE 2018-06-20: Added functionality to view discharge data in the database.
 # Changed discharge insert/upload funtionality to do nothing (i.e., skip
 # insert/upload) for duplicate samples - this allows, for example, a Flowlink
@@ -17,63 +29,37 @@
 # https://groups.google.com/forum/#!msg/shiny-discuss/ZUMBGGl1sss/zfcG9c6MBAAJ
 # for details.
 
-# Note regarding DOC and AFDM identifiers: This app was built initially with the
-# idea that bottle/vial IDs for DOC and AFDM would be entered by the
-# technicians. However, the technician team moved to an approach of simply
-# labelling both DOC and AFDM bottles with the bottle ID corresponding to a
-# sample (e.g., 11_2_2). The functionality for adding DOC and AFDM IDs was left
-# in the code but simply commented out of execution, and it should be possible
-# to simply uncomment those code chunks and change the database statements if
-# there is interest to revert.
+
+# call global R -----------------------------------------------------------
+
+source('global.R')
 
 
-# shiny options -----------------------------------------------------------
+# UI ----------------------------------------------------------------------
 
-# increase max file upload size
-options(shiny.maxRequestSize=30*1024^2)
-
-
-# libraries ---------------------------------------------------------------
-
-library(shiny)
-library(dplyr)
-library(readr)
-library(DT)
-library(stringr)
-library(lubridate)
-library(DBI)
-library(RPostgreSQL)
-
-# generate list of bottle IDs for manual data entry
-# MOVE THIS TO SERVER IF YOU SPLIT THE APP INTO TWO FILES
-bottleList <- read_csv('allPossibleBottleCombinations.csv',
-                       col_names = TRUE)
-
-# source configuration settings
-source('config.R')
-
-
-# ui ----
 ui <- tagList(
   tags$head(
     tags$style(
       HTML("#leftPanel { background: #D3D3D3; }"),
       HTML("#submitFileUpload { background-color: #800000;
                           color: white; }"),
-      HTML("#addSample {  border-style: solid;
-                          border-color: #0000ff; }"),
+      HTML("#addSample { border-style: solid;
+                         border-color: #0000ff; }"),
       HTML("#deleteManualEntryRow { border-style: solid;
                                     border-color: #ff0000 }"),
-      HTML("#submitEnteredData {  background-color: #800000;
-                                  color: white; }"),
-      HTML("#submitDischargeFileUpload {  background-color: #800000;
-                                          color: white; }"),
+      HTML("#submitEnteredData { background-color: #800000;
+                                 color: white; }"),
+      HTML("#submitDischargeFileUpload { background-color: #800000;
+                                         color: white; }"),
       HTML("#submitAFDM { background-color: #800000;
                           color: white; }")
     ) # close tags$head
   ), # close tagss$style
   navbarPage("stormwater",
-             tabPanel("samples: file upload",
+             
+             # isco tab ----------------------------------------------------------------
+             
+             tabPanel("isco",
                       fluidPage(
                         fluidRow( 
                           column(id = 'leftPanel', 2,
@@ -88,7 +74,7 @@ ui <- tagList(
                                              max = 5,
                                              value = 1),
                                  textAreaInput("fileUploadNotes",
-                                               "notes",
+                                               "notes (applied to all samples)",
                                                resize = 'vertical',
                                                value = NULL),
                                  actionButton("submitFileUpload",
@@ -96,127 +82,31 @@ ui <- tagList(
                                  br(),
                                  br()
                           ), # close the left col
-                          column(id = "fileUploadRightPanel", 10,
+                          
+                          column(id = "fileUploadMiddlePanel", 5,
                                  DT::dataTableOutput("buttonsInTable"),
                                  tags$script(HTML("Shiny.addCustomMessageHandler('unbind-DT', function(id) {
           Shiny.unbindAll($('#'+id).find('table').DataTable().table().node());
-                            })")), # notable stmt
-                                 hr(),
-                                 strong('data preview'),
-                                 tableOutput("checked")
-                          ) # close the right col
+                            })")) # notable stmt
+                          ), # close the middle col
+                          
+                          column(id = "fileUploadRightPanel", 5,
+                                 DT::dataTableOutput("checked")
+                          ), # close the right col
+                          
                         ) # close the row
                       ) # close the page
-             ), # clase Salt River tab panel
+             ), # clase file upload tab panel
              
-             tabPanel("samples: manual entry",
-                      fluidPage(
-                        fluidRow( 
-                          column(id = 'leftPanel', 3,
-                                 selectizeInput("siteID",
-                                                "Site ID",
-                                                choices = c("IBW",
-                                                            "centralNorth",
-                                                            "centralSouth",
-                                                            "Price"),
-                                                selected = NULL,
-                                                multiple = FALSE),
-                                 uiOutput("bottleID"),
-                                 dateInput("sampleDate",
-                                           "sample date",
-                                           format = "yyyy-mm-dd"),
-                                 textInput(inputId = "time",
-                                           label = "time",
-                                           value = "00:00:00",
-                                           placeholder = "HH:MM:SS"),
-                                 # textInput("DOC",
-                                 #           "DOC"),
-                                 numericInput("temp",
-                                              "temp",
-                                              value = NULL,
-                                              min = 0),
-                                 numericInput("cond",
-                                              "cond",
-                                              value = NULL,
-                                              min = 0),
-                                 # textInput("AFDM",
-                                 #           "AFDM"),
-                                 br(),
-                                 actionButton("addSample",
-                                              "add sample"),
-                                 br(),
-                                 hr(),
-                                 strong("delete a sample?"),
-                                 br(),
-                                 uiOutput("deletableBottles"),
-                                 actionButton(inputId = "deleteManualEntryRow",
-                                              label = "delete selected sample"),
-                                 hr(),
-                                 textAreaInput("manualEntryNotes",
-                                               "notes",
-                                               resize = 'vertical',
-                                               value = NULL),
-                                 actionButton("submitEnteredData",
-                                              "submit data"),
-                                 br(),
-                                 br()
-                          ), # close the left col
-                          column(id = "manualEntryRightPanel", 9,
-                                 tableOutput('manualEntryTable')                                    
-                          ) # close the right col
-                        ) # close the row
-                      ) # close the page        
-             ), # close manual entry tab panel
+             # samples tab -------------------------------------------------------------
              
-             tabPanel("samples: viewer",
-                      fluidPage(
-                        fluidRow( 
-                          column(id = 'leftPanel', 2,
-                                 selectizeInput("samplesViewerSiteID",
-                                                "Site ID",
-                                                choices = c("IBW",
-                                                            "centralNorth",
-                                                            "centralSouth",
-                                                            "price",
-                                                            "kiwanisPark",
-                                                            "camelback",
-                                                            "pierce",
-                                                            "martinResidence",
-                                                            "montessori",
-                                                            "sweetwater",
-                                                            "bellaVista",
-                                                            "lakeMarguerite",
-                                                            "silveradoGolfCourse",
-                                                            "encantada",
-                                                            "ave7th"
-                                                            ),
-                                                selected = NULL,
-                                                multiple = FALSE),
-                                 br(),
-                                 tags$b("date range:",
-                                        style = "text-align:center"),
-                                 br(),
-                                 br(),
-                                 dateInput("samplesStartDate",
-                                           "start:",
-                                           format = "yyyy-mm-dd"),
-                                 dateInput("samplesEndDate",
-                                           "end:",
-                                           format = "yyyy-mm-dd"),
-                                 actionButton(inputId = "querySamples",
-                                              label = "view samples",
-                                              style = "text-align:center; border-sytle:solid; border-color:#0000ff;"),
-                                 br(),
-                                 br()
-                          ), # close the left col
-                          column(id = "samplesViewerRightPanel", 10,
-                                 DT::dataTableOutput("samplesData")
-                          ) # close the right col
-                        ) # close the row
-                      ) # close the page
-             ), # close sampels viewer tab panel
+             tabPanel("samples",
+                      modifySamplesUI("modifySamples") 
+             ), # close samples tab 
              
-             tabPanel("discharge: file upload",
+             # discharge upload tab ----------------------------------------------------
+             
+             tabPanel("discharge: upload",
                       fluidPage(
                         fluidRow( 
                           column(id = 'leftPanel', 2,
@@ -239,122 +129,66 @@ ui <- tagList(
                       ) # close the page
              ), # close discharge: file upload
              
-             tabPanel("discharge: viewer",
-                      fluidPage(
-                        fluidRow( 
-                          column(id = 'leftPanel', 2,
-                                 selectizeInput("dischargeViewerSiteID",
-                                                "Site ID",
-                                                choices = c("IBW",
-                                                            "centralNorth",
-                                                            "centralSouth",
-                                                            "price",
-                                                            "kiwanisPark",
-                                                            "camelback",
-                                                            "pierce",
-                                                            "martinResidence",
-                                                            "montessori",
-                                                            "sweetwater",
-                                                            "bellaVista",
-                                                            "lakeMarguerite",
-                                                            "silveradoGolfCourse",
-                                                            "encantada",
-                                                            "ave7th"
-                                                            ),
-                                                selected = NULL,
-                                                multiple = FALSE),
-                                 br(),
-                                 tags$b("date range:",
-                                        style = "text-align:center"),
-                                 br(),
-                                 br(),
-                                 dateInput("dischargeStartDate",
-                                           "start:",
-                                           format = "yyyy-mm-dd"),
-                                 dateInput("dischargeEndDate",
-                                           "end:",
-                                           format = "yyyy-mm-dd"),
-                                 actionButton(inputId = "queryDischarge",
-                                              label = "view discharge",
-                                              style = "text-align:center; border-sytle:solid; border-color:#0000ff;"),
-                                 br(),
-                                 br()
-                          ), # close the left col
-                          column(id = "dischargeViewerRightPanel", 10,
-                                 DT::dataTableOutput("dischargeData")
-                          ) # close the right col
-                        ) # close the row
-                      ) # close the page
-             ), # close discharge: viewer
+             # discharge viewing tab ---------------------------------------------------
              
-             tabPanel("AFDM",
+             tabPanel("discharge",
+                      viewDischargeUI("viewDischarge") 
+             ), # close discharge tab 
+             
+             # solids tab --------------------------------------------------------------
+             
+             tabPanel("solids",
                       fluidPage(
                         fluidRow( 
                           column(id = 'leftPanel', 2,
-                                 selectizeInput("afdmSiteID",
-                                                "Site ID",
-                                                choices = c("IBW",
-                                                            "lakeMarguerite",
-                                                            "silveradoGolfCourse",
-                                                            "centralNorth",
-                                                            "centralSouth",
-                                                            "Price"),
+                                 # filter existing
+                                 strong("filter samples",
+                                        style = "text-align: center; color: black"),
+                                 selectizeInput(inputId = "viewSamplesSolidsSite",
+                                                "site",
+                                                choices = siteAbbreviations,
                                                 selected = NULL,
                                                 multiple = FALSE),
-                                 br(),
-                                 tags$b("date range:",
-                                        style = "text-align:center"),
-                                 br(),
-                                 br(),
-                                 dateInput("afdmStartDate",
+                                 dateInput(inputId = "viewSamplesSolidsStartDate",
                                            "start:",
                                            format = "yyyy-mm-dd"),
-                                 dateInput("afdmEndDate",
+                                 dateInput(inputId = "viewSamplesSolidsEndDate",
                                            "end:",
                                            format = "yyyy-mm-dd"),
-                                 actionButton(inputId = "querySamplesAFDM",
-                                              label = "get samples",
-                                              style = "text-align:center; border-sytle:solid; border-color:#0000ff;"),
-                                 br(),
-                                 br(),
-                                 textAreaInput("afdmUploadNotes",
-                                               "notes",
-                                               resize = 'vertical'),
-                                 actionButton("submitAFDM",
-                                              "submit data"),
-                                 br(),
-                                 br()
+                                 actionButton(inputId = "filterSamplesSolids",
+                                              label = "view samples",
+                                              style = "text-align:center; border-sytle:solid; border-color:#0000ff;")
                           ), # close the left col
-                          column(id = "afdmRightPanel", 10,
-                                 DT::dataTableOutput("afdmDataEntryTable"),
-                                 tags$script(HTML("Shiny.addCustomMessageHandler('unbind-DT', function(id) {
-          Shiny.unbindAll($('#'+id).find('table').DataTable().table().node());
-                            })")), # notable stmt
-                                 strong('data preview'),
-                                 hr(),
-                                 tableOutput("previewAfdmUpload")
+                          column(id = "rightPanel", 10,
+                                 DT::DTOutput("samplesSolidsDataView"),
+                                 DT::DTOutput("solidsData"),
+                                 uiOutput("addNewSolidUI"),
+                                 div(id = "modifySolidsDiv")
                           ) # close the right col
                         ) # close the row
                       ) # close the page
              ) # close AFDM tab panel
              
+             # closing UI --------------------------------------------------------------
+             
   ) # close navbar/page
 ) # close tagList
 
 
-# server ----
+# server ------------------------------------------------------------------
+
 server <- function(input, output, session) {
   
-  # file upload ----
+  # file upload -------------------------------------------------------------
   
   # helper function for reading checkbox
-  shinyInput = function(FUN, len, id, ...) { 
-    inputs = character(len) 
-    for (i in seq_len(len)) { 
-      inputs[i] = as.character(FUN(paste0(id, i), label = NULL, ...)) 
-    } 
-    inputs 
-  } 
+  shinyInputForCheckbox = function(FUN, len, id, ...) {
+    inputs = character(len)
+    for (i in seq_len(len)) {
+      inputs[i] = as.character(FUN(paste0(id, i), label = NULL, ...))
+    }
+    inputs
+  }
   
   
   # site id from file upload
@@ -422,33 +256,12 @@ server <- function(input, output, session) {
   output$buttonsInTable <- DT::renderDataTable({
     
     sampleReportData() %>% 
-      mutate(omit = shinyInput(checkboxInput,
-                               nrow(sampleReportData()),
-                               "omit_",
-                               value = FALSE,
-                               width = "20px"),
-             # DOC = shinyInput(textInput,
-             #                  nrow(sampleReportData()),
-             #                  "doc_",
-             #                  # value = 'NA',
-             #                  width = "90px"),
-             temp = shinyInput(numericInput,
-                               nrow(sampleReportData()),
-                               "temp_",
-                               value = NULL,
-                               min = 0,
-                               width = "90px"),
-             cond = shinyInput(numericInput,
-                               nrow(sampleReportData()),
-                               "cond_",
-                               value = NULL,
-                               min= 0,
-                               width = "90px") #,
-             # AFDM = shinyInput(textInput,
-             #                   nrow(sampleReportData()),
-             #                   "afdm_",
-             #                   # value = NULL,
-             #                   width = "90px")
+      mutate(
+        omit = shinyInputForCheckbox(checkboxInput,
+                                     nrow(sampleReportData()),
+                                     "omit_",
+                                     value = FALSE,
+                                     width = "20px")
       )
   },
   selection = 'none',
@@ -465,7 +278,6 @@ server <- function(input, output, session) {
   ),
   rownames = F) # close renderDataTable
   
-  
   # helper function for reading checkbox
   shinyValue = function(id, len) { 
     unlist(lapply(seq_len(len), function(i) { 
@@ -474,585 +286,401 @@ server <- function(input, output, session) {
     })) 
   } 
   
-  
   # capture file upload and provided data
   combinedData <- reactive({
     
     sampleReportData() %>%
-      mutate(omit = shinyValue("omit_",
-                               nrow(sampleReportData())),
-             # DOC = shinyValue("doc_",
-             #                  nrow(sampleReportData())),
-             temp = shinyValue('temp_',
-                               nrow(sampleReportData())),
-             cond = shinyValue('cond_',
-                               nrow(sampleReportData())) # ,
-             # AFDM = shinyValue('afdm_',
-             #                   nrow(sampleReportData()))
+      mutate(
+        omit = shinyValue("omit_",
+                          nrow(sampleReportData())),
+        notes = input$fileUploadNotes
       ) %>% 
-      filter(omit == FALSE) # %>% 
-    # mutate(DOC = replace(DOC, DOC == '', NA)) %>% 
-    # mutate(AFDM = replace(AFDM, AFDM == '', NA))
+      filter(omit == FALSE)
     
   })
   
-  
   # preview data table with upload and provided values
-  output$checked <- renderTable({
+  output$checked <- DT::renderDataTable({
     
     combinedData() %>% 
       mutate(sample_datetime = as.character(sample_datetime)) %>% 
       select(-omit)
-    
-  })
-  
+  },
+  selection = 'none',
+  escape = FALSE,
+  server = FALSE,
+  options = list(bFilter = 0,
+                 bLengthChange = F,
+                 bPaginate = F,
+                 bSort = F
+  ),
+  rownames = F) # close output$checked
   
   # write uploaded file and edits to database
   observeEvent(input$submitFileUpload, {
     
     # modify data object as needed for the DB
     sampleUploadToWrite <- combinedData() %>% 
-      mutate(sample_datetime = as.POSIXct(sample_datetime, format = "%Y-%m-%d %H:%M:%S")) %>% 
-      mutate(site_id = sampleReportSiteId()) %>% 
-      mutate(comments = ifelse(input$fileUploadNotes == '', NA, input$fileUploadNotes)) %>%
-      mutate(temp = as.numeric(temp)) %>% 
-      mutate(cond = as.numeric(cond)) %>% 
+      mutate(
+        sample_datetime = as.POSIXct(sample_datetime, format = "%Y-%m-%d %H:%M:%S"),
+        site_id = sampleReportSiteId()
+      ) %>% 
       select(-omit)
     
-    # beging DB sequence
+    # write new samples to samples_temp
+    if (dbExistsTable(stormPool, c('stormwater', 'samples_temp'))) dbRemoveTable(stormPool, c('stormwater', 'samples_temp'))
+    dbWriteTable(stormPool, c('stormwater', 'samples_temp'), value = sampleUploadToWrite, row.names = F)
     
-    # establish db connection
-    pg <- databaseConn()
+    # remove timezone type generated by dbWriteTable function
+    alterTableQuery <- '
+    ALTER TABLE stormwater.samples_temp
+    ALTER COLUMN sample_datetime TYPE TIMESTAMP WITHOUT TIME ZONE;'
     
-    # insert into samples
-    insertSamplesUploadQuery <-
-      'INSERT INTO stormwater.samples
-        (
-          site_id,
-          sample_datetime,
-          comments,
-          lab_temperature,
-          lab_conductance,
-          bottle,
-          doc_vial_id,
-          afdm_bottle_id
-        )
-        (
-          SELECT
-            site_id,
-            sample_datetime,
-            comments,
-            temp,
-            cond,
-            bottle,
-            bottle,
-            bottle
-          FROM
-          stormwater.samples_temp
-        );'
+    run_interpolated_execution(alterTableQuery)
     
-    tryCatch({
-      
-      dbGetQuery(pg, "BEGIN TRANSACTION")
-      
-      # # write new samples to samples_temp
-      if (dbExistsTable(pg, c('stormwater', 'samples_temp'))) dbRemoveTable(pg, c('stormwater', 'samples_temp'))
-      dbWriteTable(pg, c('stormwater', 'samples_temp'), value = sampleUploadToWrite, row.names = F)
-      
-      # remove timezone type generated by dbWriteTable function
-      dbExecute(pg,'
-            ALTER TABLE stormwater.samples_temp
-            ALTER COLUMN sample_datetime TYPE TIMESTAMP WITHOUT TIME ZONE;')
-      
-      # execute insert query
-      dbExecute(pg, insertSamplesUploadQuery)
-      
-      # clean up
-      dbRemoveTable(pg, c('stormwater', 'samples_temp'))
-      
-      dbCommit(pg)
-      
-      showNotification(ui = "successfully uploaded",
-                       duration = NULL,
-                       closeButton = TRUE,
-                       type = 'message',
-                       action = a(href = "javascript:location.reload();", "reload the page"))
-      
-    }, warning = function(warn) {
-      
-      showNotification(ui = paste("there is a warning:  ", warn),
-                       duration = NULL,
-                       closeButton = TRUE,
-                       type = 'warning')
-      
-      print(paste("WARNING: ", warn))
-      
-    }, error = function(err) {
-      
-      showNotification(ui = paste("there was an error:  ", err),
-                       duration = NULL,
-                       closeButton = TRUE,
-                       type = 'error')
-      
-      print(paste("ERROR: ", err))
-      print("ROLLING BACK TRANSACTION")
-      
-      dbRollback(pg)
-      
-    }) # close try catch  
+    # insert from temp into samples
+    baseInsert <- "
+    INSERT INTO stormwater.samples
+    (
+      site_id,
+      sample_datetime,
+      comments,
+      bottle,
+      doc_vial_id,
+      afdm_bottle_id
+    )
+    (
+      SELECT
+        site_id,
+        sample_datetime,
+        NULLIF(notes, '')::text,
+        bottle,
+        bottle,
+        bottle
+      FROM
+      stormwater.samples_temp
+    );"
     
-    # close db connection
-    dbDisconnect(pg)
+    run_interpolated_query(baseInsert)
     
   })
   
   
-  # manual data entry ----
+  # call to modifySamples module --------------------------------------------
   
-  # function to translate text site id to numeric site id (as in the DB)
-  dbSiteId <- reactive({
-    
-    if (input$siteID == 'IBW') {
-      numericSiteCode <- 11
-    } else if (input$siteID == 'centralNorth') {
-      numericSiteCode <- 14
-    } else if (input$siteID == 'centralSouth') {
-      numericSiteCode <- 15
-    } else if (input$siteID == 'Price') {
-      numericSiteCode <- 16
-    } 
-    
-    return(numericSiteCode)
-    
-  })
+  callModule(module = modifySamples,
+             id = "modifySamples")
   
   
-  # generate list of possible bottle IDs based on site selected
-  output$bottleID = renderUI({
+  # solids ------------------------------------------------------------------
+  
+  # create listener for adding, deleting, and updating solids data
+  listenModifySamplesSolids <- reactiveValues(dbVersion = 0)
+  
+  # queryType: default vs parameterized query for transects
+  queryTypeSamplesSolids <- reactiveValues(default = "default")
+  
+  # actionButton filterSamples = parameterized query type
+  observeEvent(input$filterSamplesSolids, {
     
-    bottleOptions <- bottleList %>% 
-      filter(str_extract(bottles, '^[0-9]+') == dbSiteId()) %>% 
-      filter(!bottles %in% c(manualEntry$df$bottle))
-    
-    selectizeInput('bottleIdentity', 
-                   'bottle', 
-                   choices = bottleOptions)
+    queryTypeSamplesSolids$default <- "param"
     
   })
   
+  # query samples-solids data
+  samplesSolidsDataReactive <- reactive({
+    
+    # add listener for adding, deleting, and editing records
+    listenModifySamplesSolids$dbVersion
+    
+    if (queryTypeSamplesSolids$default == "default") {
+      
+      samplesSolidsData <- query_solids_default()
+      
+    } else {
+      
+      # parameters cannot be passed to function directly
+      filterSamplesSolidsStart <- as.character(input$viewSamplesSolidsStartDate)
+      filterSamplesSolidsEnd <- as.character(input$viewSamplesSolidsEndDate)
+      filterSamplesSolidsSite <- input$viewSamplesSolidsSite
+      
+      # run query with params
+      samplesSolidsData <- query_solids_site_date(start = filterSamplesSolidsStart,
+                                                  end = filterSamplesSolidsEnd,
+                                                  site = filterSamplesSolidsSite)
+      
+    }
+    
+    if (nrow(samplesSolidsData) == 0) {
+      
+      samplesSolidsData <- data.frame(
+        solid_id = NA,
+        sample_id = NA,
+        site = NA,
+        sample_datetime= NA,
+        bottle= NA,
+        afdm_bottle_id = NA,
+        filter_initial = NA,
+        filter_dry = NA,
+        volume_filtered = NA,
+        filter_ashed = NA,
+        replicate = NA,
+        comments = as.character("match not found")
+      )
+     
+    } else {
+    
+    # add and delete buttons to samplesSolidsData data
+    samplesSolidsData <- samplesSolidsData %>%
+      mutate(
+        add = shinyInputFlex(reactiveObject = samplesSolidsData,
+                             FUN = actionButton,
+                             len = nrow(samplesSolidsData),
+                             id = 'sample_id',
+                             label = "add",
+                             onclick = sprintf('Shiny.setInputValue("%s",  this.id)', "button_add_solids_sample")),
+        delete = shinyInputFlex(reactiveObject = samplesSolidsData,
+                                FUN = actionButton,
+                                len = nrow(samplesSolidsData),
+                                id = 'solid_id',
+                                label = "delete",
+                                onclick = sprintf('Shiny.setInputValue("%s",  this.id)', "button_delete_solids_sample"))
+      )
+    
+    }
+    
+    return(samplesSolidsData)
+    
+  })
   
-  # create an empty data frame to hold entered data
-  manualEntry <- reactiveValues()
-  
-  manualEntry$df <- data.frame(site_id = NA,
-                               bottle = NA,
-                               sample_datetime = NA,
-                               temp = NA,
-                               cond = NA
+  # render table of samples-solids data
+  output$samplesSolidsDataView <- DT::renderDT({
+    
+    samplesSolidsDataReactive()
+    
+  },
+  escape = FALSE,
+  selection = "none",
+  rownames = FALSE,
+  editable = list(target = 'cell',
+                  disable = list(columns = c(0,1,2,3,4,5,12,13))),
+  options = list(bFilter = FALSE,
+                 bLengthChange = TRUE,
+                 bPaginate = TRUE,
+                 bSort = FALSE,
+                 autoWidth = TRUE,
+                 columnDefs = list(list(width = '100px', targets = c(1)))
   )
+  ) # close output$samplesSolidsDataView
+  
+  output$sampleUnderEdit <- renderText({ input$button_add_solids_sample })
   
   
-  # observe manual data entry via `addSample` button and new data to data frame
-  newManualEntry <- observe({
+  # solids: add new ---------------------------------------------------------
+  
+  # generate UI for adding a new solid
+  observeEvent(input$button_add_solids_sample, {
     
-    if (input$addSample > 0) {
+    output$addNewSolidUI <- renderUI({
       
-      newLine <- isolate(c(dbSiteId(),
-                           input$bottleIdentity,
-                           paste(input$sampleDate, input$time),
-                           input$temp,
-                           input$cond
-      ))
+      tagList(
+        hr(),
+        p("new solids data",
+          style = "text-align: left; background-color: LightGray; color: black;"),
+        tags$head(
+          tags$style(
+            HTML(paste0("#", "sampleUnderEdit", "{ color: DarkGray; }"))
+          ) # close tags$style
+        ), # close tagss$head
+        fluidRow(id = "newSolidTopRow",
+                 column(1,
+                        tags$b("sample_id"),
+                        p(""),
+                        textOutput("sampleUnderEdit")
+                 ),
+                 column(2,
+                        numericInput("newFilterInitial",
+                                     label = "initial",
+                                     value = NULL)
+                 ),
+                 column(2,
+                        numericInput("newFilterDry",
+                                     label = "dry",
+                                     value = NULL)
+                 ),
+                 column(2,
+                        numericInput("newVolumeFiltered",
+                                     label = "volume",
+                                     value = NULL)
+                 ),
+                 column(2,
+                        numericInput("newFilterAshed",
+                                     label = "ashed",
+                                     value = NULL)
+                 ),
+                 column(1,
+                        numericInput("newReplicate",
+                                     label = "replicate",
+                                     value = 1)
+                 )
+        ), # close fluidRow top
+        fluidRow(id = "newSolidBottomRow",
+                 column(5,
+                        textInput("newComments",
+                                  label = "comments")
+                 ),
+                 column(1,
+                        style = "margin-top: 25px",
+                        actionButton("addNewSolid",
+                                     label = "add new",
+                                     style = "text-align:center; border-sytle:solid; border-color:#0000ff;")
+                 ) # close last column
+        ) # close fluidRow bottom
+      ) # close tag list
       
-      isolate(manualEntry$df <- rbind(manualEntry$df,
-                                      newLine))
-    }
+    }) # close output$addNewSolidUI 
     
-  })
+  }) # close observeEvent(input$button_add_solids_sample...
   
-  
-  # generate a preview table of entered data
-  output$manualEntryTable <- renderTable({
+  # function: addSolid - write new solid to the database
+  addSolid <- function(sampleID, initial, dry, volume, ashed, replicate, comments) {
     
-    manualEntry$df %>% 
-      filter(!is.na(bottle))
+    baseQuery <- "
+    INSERT INTO stormwater.solids
+    (
+      sample_id,
+      filter_initial,
+      filter_dry,
+      volume_filtered,
+      filter_ashed,
+      replicate,
+      comments
+    )
+    VALUES
+    (
+      ?sampleIdent,
+      ?filterInitial,
+      ?filterDry,
+      ?filterVolume,
+      ?filterAshed,
+      ?solidReplicate,
+      NULLIF(?solidComment, '')::text
+    );"
     
-  })
-  
-  
-  # generate a list of possible bottle IDs in the current table to delete
-  output$deletableBottles = renderUI({
-    
-    bottlesThatCouldBeDeleted <- manualEntry$df %>% 
-      filter(!is.na(bottle)) %>% 
-      select(bottle)
-    
-    selectInput(inputId = 'bottlesToDelete', 
-                label = NULL, 
-                choices = bottlesThatCouldBeDeleted)
-    
-  })
-  
-  
-  # allow user to delete a row based on bottle id
-  observeEvent(input$deleteManualEntryRow, {
-    
-    isolate(
-      manualEntry$df <- manualEntry$df %>%
-        filter(bottle != input$bottlesToDelete)
+    parameterizedQuery <- sqlInterpolate(ANSI(),
+                                         baseQuery,
+                                         sampleIdent = as.numeric(sampleID),
+                                         filterInitial = initial,
+                                         filterDry = dry,
+                                         filterVolume = volume,
+                                         filterAshed = ashed,
+                                         solidReplicate = replicate,
+                                         solidComment = comments
     )
     
+    run_interpolated_execution(parameterizedQuery)
+    
+    # change listener state when adding a record
+    listenModifySamplesSolids$dbVersion <- isolate(listenModifySamplesSolids$dbVersion + 1)
+    
+  }
+  
+  # add a new reach extent measure
+  observeEvent(input$addNewSolid, {
+    
+    addSolid(sampleID = input$button_add_solids_sample,
+             initial = input$newFilterInitial,
+             dry = input$newFilterDry,
+             volume = input$newVolumeFiltered,
+             ashed = input$newFilterAshed,
+             replicate = input$newReplicate,
+             comments = input$newComments)
+    
   })
   
   
-  # write manually entered data to database
-  observeEvent(input$submitEnteredData, {
+  # solids: delete existing -------------------------------------------------
+  
+  # function: deleteSolid - delete selected solid from database
+  deleteSolid <- function(row_to_delete) {
     
-    # modify data object as needed for the DB
-    manualEntryToWrite <- manualEntry$df %>%
-      filter(!is.na(bottle)) %>% 
-      mutate(sample_datetime = as.POSIXct(sample_datetime, format = "%Y-%m-%d %H:%M:%S")) %>%
-      mutate(comments = ifelse(input$manualEntryNotes == '', NA, input$manualEntryNotes)) %>%
-      mutate(temp = as.numeric(temp)) %>%
-      mutate(cond = as.numeric(cond)) %>%
-      mutate(site_id = as.integer(site_id))
+    baseQuery <- '
+    DELETE FROM stormwater.solids
+    WHERE solids.solid_id = ?RWE_ID;'
     
-    # beging DB sequence
+    parameterizedQuery <- sqlInterpolate(ANSI(),
+                                         baseQuery,
+                                         RWE_ID = as.numeric(row_to_delete))
     
-    # establish db connection
-    pg <- databaseConn()
+    run_interpolated_execution(parameterizedQuery)
     
-    # insert into samples
-    insertSamplesUploadQuery <-
-      'INSERT INTO stormwater.samples
-        (
-          site_id,
-          sample_datetime,
-          comments,
-          lab_temperature,
-          lab_conductance,
-          bottle,
-          doc_vial_id,
-          afdm_bottle_id
-        )
-        (
-          SELECT
-            site_id,
-            sample_datetime,
-            comments,
-            temp,
-            cond,
-            bottle,
-            bottle,
-            bottle
-          FROM
-          stormwater.samples_temp
-        );'
+    # change listener state when deleting a record
+    listenModifySamplesSolids$dbVersion <- isolate(listenModifySamplesSolids$dbVersion + 1)
     
-    tryCatch({
-      
-      dbGetQuery(pg, "BEGIN TRANSACTION")
-      
-      # # write new samples to samples_temp
-      if (dbExistsTable(pg, c('stormwater', 'samples_temp'))) dbRemoveTable(pg, c('stormwater', 'samples_temp'))
-      dbWriteTable(pg, c('stormwater', 'samples_temp'), value = manualEntryToWrite, row.names = F)
-      
-      # remove timezone type generated by dbWriteTable function
-      dbExecute(pg,'
-            ALTER TABLE stormwater.samples_temp
-            ALTER COLUMN sample_datetime TYPE TIMESTAMP WITHOUT TIME ZONE;')
-      
-      # execute insert query
-      dbExecute(pg, insertSamplesUploadQuery)
-      
-      # clean up
-      dbRemoveTable(pg, c('stormwater', 'samples_temp'))
-      
-      dbCommit(pg)
-      
-      showNotification(ui = "successfully uploaded",
-                       duration = NULL,
-                       closeButton = TRUE,
-                       type = 'message',
-                       action = a(href = "javascript:location.reload();", "reload the page"))
-      
-    }, warning = function(warn) {
-      
-      showNotification(ui = paste("there is a warning:  ", warn),
-                       duration = NULL,
-                       closeButton = TRUE,
-                       type = 'warning')
-      
-      print(paste("WARNING: ", warn))
-      
-    }, error = function(err) {
-      
-      showNotification(ui = paste("there was an error:  ", err),
-                       duration = NULL,
-                       closeButton = TRUE,
-                       type = 'error')
-      
-      print(paste("ERROR: ", err))
-      print("ROLLING BACK TRANSACTION")
-      
-      dbRollback(pg)
-      
-    }) # close try catch
+  }
+  
+  # call function deleteSolid - delete prescribed solid from the database
+  observeEvent(input$button_delete_solids_sample, {
     
-    # close db connection
-    dbDisconnect(pg)
+    deleteSolid(row_to_delete = input$button_delete_solids_sample)
     
   })
   
-
-# samples viewer ----------------------------------------------------------
   
-  # function to translate text site id to numeric site id (as in the DB)
-  samplesViewerSiteId <- reactive({
-    
-    if (input$samplesViewerSiteID == 'IBW') {
-      numericSiteCode <- 11
-    } else if (input$samplesViewerSiteID == 'centralNorth') {
-      numericSiteCode <- 14
-    } else if (input$samplesViewerSiteID == 'centralSouth') {
-      numericSiteCode <- 15
-    } else if (input$samplesViewerSiteID  == 'price') {
-      numericSiteCode <- 16
-    } else if (input$samplesViewerSiteID  == 'kiwanisPark') {
-      numericSiteCode <- 1
-    } else if (input$samplesViewerSiteID  == 'camelback') {
-      numericSiteCode <- 2
-    } else if (input$samplesViewerSiteID  == 'pierce') {
-      numericSiteCode <- 4
-    } else if (input$samplesViewerSiteID  == 'martinResidence') {
-      numericSiteCode <- 5
-    } else if (input$samplesViewerSiteID  == 'montessori') {
-      numericSiteCode <- 6
-    } else if (input$samplesViewerSiteID  == 'sweetwater') {
-      numericSiteCode <- 7
-    } else if (input$samplesViewerSiteID  == 'bellaVista') {
-      numericSiteCode <- 8
-    } else if (input$samplesViewerSiteID  == 'lakeMarguerite') {
-      numericSiteCode <- 9
-    } else if (input$samplesViewerSiteID  == 'silveradoGolfCourse') {
-      numericSiteCode <- 10
-    } else if (input$samplesViewerSiteID  == 'encantada') {
-      numericSiteCode <- 12
-    } else if (input$samplesViewerSiteID  == 'ave7th') {
-      numericSiteCode <- 13
-    } 
-    
-    return(numericSiteCode)
-    
-  })
+  # solids: update existing -------------------------------------------------
   
-  # query sample data from database for viewing
-  viewerSamplesData <- reactive({
+  # function: updateSolid - write edited cell change to the database
+  updateSolid <- function(reactiveData, cellEdited) {
     
-    req(input$querySamples)
+    reactiveDataColNames <- as.list(colnames(reactiveData))
+    editedColumn <- reactiveDataColNames[cellEdited$col + 1]
+    editedRow <- reactiveData[cellEdited$row, ][['solid_id']]
+    newValue <- cellEdited[['value']]
     
-    pg <- databaseConn()
-    
-    baseSamplesDataQuery <- '
-    SELECT
-      samples.sample_id,
-      samples.site_id,
-      samples.sample_datetime,
-      samples.bottle,
-      samples.lab_temperature as temp,
-      samples.lab_conductance as cond,
-      samples.comments,
-      samples.afdm_bottle_id as afdm_bottle,
-      solids.filter_initial,
-      solids.filter_dry,
-      solids.volume_filtered,
-      solids.filter_ashed
-    FROM stormwater.samples
-    LEFT JOIN stormwater.solids ON (solids.sample_id = samples.sample_id)
-    WHERE
-      samples.site_id = ?siteId AND
-    	samples.sample_datetime BETWEEN ?start AND ?end
-    ORDER BY samples.sample_datetime ASC;'
-    
-    isolate(
-      samplesDataQuery <- sqlInterpolate(ANSI(),
-                                         baseSamplesDataQuery,
-                                         siteId = samplesViewerSiteId(),
-                                         start = as.character(input$samplesStartDate),
-                                         end = as.character(input$samplesEndDate))
-    )
-    
-    stormSamples <- dbGetQuery(pg,
-                               samplesDataQuery)
-    
-    dbDisconnect(pg)
-    
-    
-    # rather than a simple return, we need to address conditions when there
-    # are not any data that match the search criteria
-    
-    # format the date if there are data
-    if (nrow(stormSamples) >= 1) {
-      
-      stormSamples <- stormSamples %>% 
-        mutate(sample_datetime = format(sample_datetime, "%Y-%m-%d %H:%M:%S"))
-      
-      # else build an empty frame with just NAs
-    } else {
-      
-      stormSamples <- data.frame(
-        sample_id = "no samples match those criteria"
-      )
-      
+    # change numerics to appropriate data type
+    if (grepl("filter|replicate", editedColumn, ignore.case = TRUE)) {
+      newValue <- as.numeric(newValue)
     }
     
-    return(stormSamples)
+    # inexplicable behaviour in this case where the edited column is quoted,
+    # which is not permissible in postgres; use SQL quoting to obtain proper
+    # formatting
+    editedColumn <- SQL(editedColumn)
     
-  }) 
-  
-  
-  # render the afdm samples and data entry fields
-  output$samplesData <- DT::renderDataTable({
+    baseQuery <- '
+    UPDATE stormwater.solids
+    SET ?editedCol = ?updatedValue
+    WHERE solid_id = ?tuple;'
     
-    viewerSamplesData()
+    parameterizedQuery <- sqlInterpolate(ANSI(),
+                                         baseQuery,
+                                         editedCol = editedColumn,
+                                         updatedValue = newValue,
+                                         tuple = editedRow)
     
-  },
-  selection = 'none',
-  escape = FALSE,
-  server = TRUE,
-  options = list(paging = TRUE,
-                 pageLength = 25,
-                 ordering = TRUE,
-                 searching = TRUE),
-  rownames = FALSE) # close renderDataTable
-  
-
-# discharge viewer --------------------------------------------------------
-  
-  # everything below is starting with merely a copy of the samples viewer
-  
-  # function to translate text site id to numeric site id (as in the DB) this is
-  # a duplicate of the samplesViewerSiteId - here recreated for convenience but
-  # if ever refactoring, coding this once for both purposes would be a better
-  # approach.
-  dischargeViewerSiteId <- reactive({
+    run_interpolated_execution(parameterizedQuery)
     
-    if (input$dischargeViewerSiteID == 'IBW') {
-      numericSiteCode <- 11
-    } else if (input$dischargeViewerSiteID == 'centralNorth') {
-      numericSiteCode <- 14
-    } else if (input$dischargeViewerSiteID == 'centralSouth') {
-      numericSiteCode <- 15
-    } else if (input$dischargeViewerSiteID  == 'price') {
-      numericSiteCode <- 16
-    } else if (input$dischargeViewerSiteID  == 'kiwanisPark') {
-      numericSiteCode <- 1
-    } else if (input$dischargeViewerSiteID  == 'camelback') {
-      numericSiteCode <- 2
-    } else if (input$dischargeViewerSiteID  == 'pierce') {
-      numericSiteCode <- 4
-    } else if (input$dischargeViewerSiteID  == 'martinResidence') {
-      numericSiteCode <- 5
-    } else if (input$dischargeViewerSiteID  == 'montessori') {
-      numericSiteCode <- 6
-    } else if (input$dischargeViewerSiteID  == 'sweetwater') {
-      numericSiteCode <- 7
-    } else if (input$dischargeViewerSiteID  == 'bellaVista') {
-      numericSiteCode <- 8
-    } else if (input$dischargeViewerSiteID  == 'lakeMarguerite') {
-      numericSiteCode <- 9
-    } else if (input$dischargeViewerSiteID  == 'silveradoGolfCourse') {
-      numericSiteCode <- 10
-    } else if (input$dischargeViewerSiteID  == 'encantada') {
-      numericSiteCode <- 12
-    } else if (input$dischargeViewerSiteID  == 'ave7th') {
-      numericSiteCode <- 13
-    } 
+    # change listener state when deleting a record
+    listenModifySamplesSolids$dbVersion <- isolate(listenModifySamplesSolids$dbVersion + 1)
     
-    return(numericSiteCode)
+  }
+  
+  # call function updateSample - write edited cell change to the database
+  observeEvent(input$samplesSolidsDataView_cell_edit, {
+    
+    updateSolid(reactiveData = samplesSolidsDataReactive(),
+                cellEdited = input$samplesSolidsDataView_cell_edit)
     
   })
   
-  # query discharge data from database for viewing
-  viewerDischargeData <- reactive({
-    
-    req(input$queryDischarge)
-    
-    pg <- databaseConn()
-    
-    baseDischargeDataQuery <- '
-    SELECT
-      s.abbreviation AS site,
-      d.event_datetime,
-      d.water_height,
-      d.discharge,
-      d.discharge_corrected AS discharge_corr
-    FROM
-      stormwater.discharge d
-    JOIN
-      stormwater.sites s ON (s.site_id = d.site_id)
-    WHERE 
-      s.site_id = ?siteId AND
-      d.event_datetime BETWEEN ?start AND ?end
-    ORDER BY
-    	s.abbreviation,
-    	d.event_datetime;    
-    '
-    
-    isolate(
-      dischargeDataQuery <- sqlInterpolate(ANSI(),
-                                           baseDischargeDataQuery,
-                                           siteId = dischargeViewerSiteId(),
-                                           start = as.character(input$dischargeStartDate),
-                                           end = as.character(input$dischargeEndDate))
-    )
-    
-    dischargeSamples <- dbGetQuery(pg,
-                                   dischargeDataQuery)
-    
-    dbDisconnect(pg)
-    
-    
-    # rather than a simple return, we need to address conditions when there are
-    # not any data that match the search criteria
-    
-    # format the date if there are data
-    if (nrow(dischargeSamples) >= 1) {
-      
-      dischargeSamples <- dischargeSamples %>% 
-        mutate(event_datetime = format(event_datetime, "%Y-%m-%d %H:%M:%S"))
-      
-    # else build an empty frame with just NAs
-    } else {
-      
-      dischargeSamples <- data.frame(
-        sample_id = "no samples match those criteria"
-      )
-      
-    }
-    
-    return(dischargeSamples)
-    
-  }) 
+  
+  # call to viewDischarge module --------------------------------------------
+  
+  callModule(module = viewDischarge,
+             id = "viewDischarge")
   
   
-  # render discharge data for viewing
-  output$dischargeData <- DT::renderDataTable({
-    
-    viewerDischargeData()
-    
-  },
-  selection = 'none',
-  escape = FALSE,
-  server = TRUE,
-  options = list(paging = TRUE,
-                 pageLength = 25,
-                 ordering = TRUE,
-                 searching = FALSE),
-  rownames = F) # close renderDataTable
-
-    
-# discharge upload --------------------------------------------------------
+  # discharge upload --------------------------------------------------------
   
   # site id from file upload
   levelDataSiteId <- reactive({
@@ -1104,9 +732,6 @@ server <- function(input, output, session) {
     
     # beging DB sequence
     
-    # establish db connection
-    pg <- databaseConn()
-    
     # insert into samples. the 'ON CONFLICT' clause allows for skipping
     # inserting any data that are already in the database.
     insertLevelDataQuery <- '
@@ -1129,24 +754,24 @@ server <- function(input, output, session) {
     
     tryCatch({
       
-      dbGetQuery(pg, "BEGIN TRANSACTION")
+      dbGetQuery(stormPool, "BEGIN TRANSACTION")
       
       # write new samples to samples_temp
-      if (dbExistsTable(pg, c('stormwater', 'discharge_temp'))) dbRemoveTable(pg, c('stormwater', 'discharge_temp'))
-      dbWriteTable(pg, c('stormwater', 'discharge_temp'), value = dischargeToWrite, row.names = F)
+      if (dbExistsTable(stormPool, c('stormwater', 'discharge_temp'))) dbRemoveTable(stormPool, c('stormwater', 'discharge_temp'))
+      dbWriteTable(stormPool, c('stormwater', 'discharge_temp'), value = dischargeToWrite, row.names = F)
       
       # remove timezone type generated by dbWriteTable function
-      dbExecute(pg,'
+      dbExecute(stormPool,'
             ALTER TABLE stormwater.discharge_temp
             ALTER COLUMN event_datetime TYPE TIMESTAMP WITHOUT TIME ZONE;')
       
       # execute insert query
-      dbExecute(pg, insertLevelDataQuery)
+      dbExecute(stormPool, insertLevelDataQuery)
       
       # clean up
-      dbRemoveTable(pg, c('stormwater', 'discharge_temp'))
+      dbRemoveTable(stormPool, c('stormwater', 'discharge_temp'))
       
-      dbCommit(pg)
+      dbCommit(stormPool)
       
       showNotification(ui = "successfully uploaded",
                        duration = NULL,
@@ -1173,294 +798,26 @@ server <- function(input, output, session) {
       print(paste("ERROR: ", err))
       print("ROLLING BACK TRANSACTION")
       
-      dbRollback(pg)
+      dbRollback(stormPool)
       
     }) # close try catch
     
-    # close db connection
-    dbDisconnect(pg)
-    
   })
   
   
-# ash free dry mass -------------------------------------------------------
+  # debugging ---------------------------------------------------------------
   
-  # function to translate text site id to numeric site id (as in the DB) this is
-  # a duplicate of the samplesViewerSiteId & dischargeViewerSiteId - here
-  # recreated for convenience but if ever refactoring, coding this once for both
-  # purposes would be a better approach.
-  dbAfdmSiteId <- reactive({
-    
-    if (input$afdmSiteID == 'IBW') {
-      numericSiteCode <- 11
-    } else if (input$afdmSiteID == 'centralNorth') {
-      numericSiteCode <- 14
-    } else if (input$afdmSiteID == 'centralSouth') {
-      numericSiteCode <- 15
-    } else if (input$afdmSiteID == 'Price') {
-      numericSiteCode <- 16
-    } else if (input$afdmSiteID == 'lakeMarguerite') {
-      numericSiteCode <- 9
-    } else if (input$afdmSiteID == 'silveradoGolfCourse') {
-      numericSiteCode <- 10
-    } 
-     
-    return(numericSiteCode)
-    
-  })
+  ############# START debugging
+  # observe(print({ solidsDataReactive() }))
+  # observe(print({ listenModifySolids$dbVersion }))
+  # observe(print({ queryType$default }))
+  # observe(print({ input$solidsData_cell_edit }))
+  ############# END debugging
   
   
-  # query sample-afdm data from database
-  afdmSampleData <- reactive({
-    
-    req(input$querySamplesAFDM)
-    
-    session$sendCustomMessage('unbind-DT', 'afdmDataEntryTable') # notable stmt
-    
-    pg <- databaseConn()
-    
-    baseSamplesDataQuery <- '
-    SELECT
-      samples.sample_id,
-      samples.site_id,
-      samples.sample_datetime,
-      samples.bottle, 
-      samples.afdm_bottle_id
-    FROM stormwater.samples
-    LEFT JOIN stormwater.solids ON (solids.sample_id = samples.sample_id)
-    WHERE
-      samples.site_id = ?siteId AND
-    	samples.sample_datetime BETWEEN ?start AND ?end AND
-      (
-        solids.filter_initial IS NULL AND
-        solids.filter_dry IS NULL AND
-        solids.volume_filtered IS NULL AND
-        solids.filter_ashed IS NULL
-      )
-    ORDER BY samples.sample_datetime ASC;'
-    
-    isolate(
-      samplesDataQuery <- sqlInterpolate(ANSI(),
-                                         baseSamplesDataQuery,
-                                         siteId = dbAfdmSiteId(),
-                                         start = as.character(input$afdmStartDate),
-                                         end = as.character(input$afdmEndDate))
-    )
-    
-    afdmStormSamples <- dbGetQuery(pg,
-                                   samplesDataQuery)
-    
-    dbDisconnect(pg)
-    
-    # rather than a simple return, we need to address conditions when there
-    # are not any data that match the search criteria
-    
-    # format the date if there are data
-    if (nrow(afdmStormSamples) >= 1) {
-      
-      afdmStormSamples <- afdmStormSamples %>% 
-        mutate(sample_datetime = format(sample_datetime, "%Y-%m-%d %H:%M:%S"))
-      
-      # else build an empty frame with just NAs
-    } else {
-      
-      afdmStormSamples <- data.frame(
-        sample_id = NA,
-        site_id = NA,
-        sample_datetime = NA,
-        bottle = NA, 
-        afdm_bottle_id = NA
-      )
-      
-    }
-    
-    # return data or empty data frame
-    return(afdmStormSamples)
-    
-  }) 
+  # close server ------------------------------------------------------------
   
-  
-  # render the afdm samples and data entry fields
-  output$afdmDataEntryTable <- DT::renderDataTable({
-    
-    afdmSampleData() %>% 
-      mutate(omit_sample = shinyInput(checkboxInput,
-                                      nrow(afdmSampleData()),
-                                      "omit_afdm_sample_",
-                                      value = FALSE,
-                                      width = "20px"),
-             filter_wt = shinyInput(numericInput,
-                                    nrow(afdmSampleData()),
-                                    "filter_wt_",
-                                    value = NULL,
-                                    min = 0,
-                                    width = "90px"),
-             filter_dry = shinyInput(numericInput,
-                                     nrow(afdmSampleData()),
-                                     "filter_dry_",
-                                     value = NULL,
-                                     min = 0,
-                                     width = "90px"),
-             volume = shinyInput(numericInput,
-                                 nrow(afdmSampleData()),
-                                 "volume_",
-                                 value = NULL,
-                                 min = 0,
-                                 width = "90px"),
-             filter_ashed = shinyInput(numericInput,
-                                       nrow(afdmSampleData()),
-                                       "filter_ashed_",
-                                       value = NULL,
-                                       min= 0,
-                                       width = "90px")
-      )
-  },
-  selection = 'none',
-  escape = FALSE,
-  server = FALSE,
-  options = list(bFilter = 0,
-                 bLengthChange = F,
-                 bPaginate = F,
-                 bSort = F,
-                 preDrawCallback = JS('function() { 
-                           Shiny.unbindAll(this.api().table().node()); }'), 
-                 drawCallback = JS('function() { 
-                        Shiny.bindAll(this.api().table().node()); } ') 
-  ),
-  rownames = F) # close renderDataTable
-  
-  
-  # capture file upload and provided data
-  afdmSamplesAndData <- reactive({
-    
-    afdmSampleData() %>%
-      mutate(omit = shinyValue("omit_afdm_sample_",
-                               nrow(afdmSampleData())),
-             filter_wt = shinyValue('filter_wt_',
-                                    nrow(afdmSampleData())),
-             filter_dry = shinyValue('filter_dry_',
-                                     nrow(afdmSampleData())),
-             volume = shinyValue('volume_',
-                                 nrow(afdmSampleData())),
-             filter_ashed = shinyValue('filter_ashed_',
-                                       nrow(afdmSampleData()))
-      ) %>% 
-      filter(omit == FALSE)
-    
-  })
-  
-  
-  # preview data table with upload and provided values
-  output$previewAfdmUpload <- renderTable({
-    
-    afdmSamplesAndData() %>%
-      mutate(sample_datetime = as.character(sample_datetime)) %>%
-      select(-omit)
-    
-  })
-  
-  
-  # write afdm data to database
-  observeEvent(input$submitAFDM, {
-    
-    # # modify data object as needed for the DB
-    afdmDataToWrite <- afdmSamplesAndData() %>%
-      mutate(sample_datetime = as.POSIXct(sample_datetime, format = "%Y-%m-%d %H:%M:%S")) %>%
-      mutate(comments = ifelse(input$afdmUploadNotes == '', NA, input$afdmUploadNotes)) %>%
-      mutate(filter_wt = as.numeric(filter_wt)) %>%
-      mutate(filter_dry = as.numeric(filter_dry)) %>%
-      mutate(volume = as.numeric(volume)) %>%
-      mutate(filter_ashed = as.numeric(filter_ashed)) %>%
-      select(-omit)
-    
-    # beging DB sequence
-    
-    # establish db connection
-    pg <- databaseConn()
-    
-    # insert into samples
-    insertAfdmQuery <-
-    'INSERT INTO stormwater.solids
-      (
-        sample_id,
-        filter_initial,
-        filter_dry,
-        volume_filtered,
-        filter_ashed,
-        replicate,
-        comments
-      )
-      (
-        SELECT
-          sample_id,
-          filter_wt,
-          filter_dry,
-          volume,
-          filter_ashed,
-          1,
-          comments
-        FROM
-        stormwater.solids_temp
-      );'
-    
-    tryCatch({
-      
-      dbGetQuery(pg, "BEGIN TRANSACTION")
-      
-      # # write new samples to samples_temp
-      if (dbExistsTable(pg, c('stormwater', 'solids_temp'))) dbRemoveTable(pg, c('stormwater', 'solids_temp'))
-      dbWriteTable(pg, c('stormwater', 'solids_temp'), value = afdmDataToWrite, row.names = F)
-      
-      # remove timezone type generated by dbWriteTable function
-      dbExecute(pg,'
-            ALTER TABLE stormwater.solids_temp
-            ALTER COLUMN sample_datetime TYPE TIMESTAMP WITHOUT TIME ZONE;')
-      
-      # # execute insert query
-      dbExecute(pg, insertAfdmQuery)
-      
-      # clean up
-      dbRemoveTable(pg, c('stormwater', 'solids_temp'))
-      
-      dbCommit(pg)
-      
-      showNotification(ui = "successfully uploaded",
-                       duration = NULL,
-                       closeButton = TRUE,
-                       type = 'message',
-                       action = a(href = "javascript:location.reload();", "reload the page"))
-      
-    }, warning = function(warn) {
-      
-      showNotification(ui = paste("there is a warning:  ", warn),
-                       duration = NULL,
-                       closeButton = TRUE,
-                       type = 'warning')
-      
-      print(paste("WARNING: ", warn))
-      
-    }, error = function(err) {
-      
-      showNotification(ui = paste("there was an error:  ", err),
-                       duration = NULL,
-                       closeButton = TRUE,
-                       type = 'error')
-      
-      print(paste("ERROR: ", err))
-      print("ROLLING BACK TRANSACTION")
-      
-      dbRollback(pg)
-      
-    }) # close try catch
-    
-    # close db connection
-    dbDisconnect(pg)
-    
-  })
-  
-  
-} # close server
-
+}
 
 # Run the application 
 shinyApp(ui = ui, server = server)
