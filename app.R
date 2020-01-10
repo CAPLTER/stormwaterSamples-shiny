@@ -92,7 +92,7 @@ ui <- tagList(
                           
                           column(id = "fileUploadRightPanel", 5,
                                  DT::dataTableOutput("checked")
-                          ), # close the right col
+                          ) # close the right col
                           
                         ) # close the row
                       ) # close the page
