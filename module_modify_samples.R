@@ -57,7 +57,7 @@ modifySamplesUI <- function(id) {
                br(),
                actionButton(inputId = ns("newSampleGo"),
                             label = "add sample",
-                            style = "text-align:center; border-sytle:solid; border-color:#0000ff;"),
+                            style = "text-align:center; border-sytle:solid; border-color:#0000ff;")
         ), # close the left col
         column(id = "samplesRightPanel", 10,
                DT::DTOutput(ns("samplesDataView"))
