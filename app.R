@@ -167,7 +167,13 @@ ui <- tagList(
                           ) # close the right col
                         ) # close the row
                       ) # close the page
-             ) # close AFDM tab panel
+             ), # close AFDM tab panel
+             
+             # cations tab -------------------------------------------------------------
+
+             tabPanel("cations",
+                      cationsUI("icpCations") 
+             ) # close cations tab 
              
              # closing UI --------------------------------------------------------------
              
@@ -803,6 +809,12 @@ server <- function(input, output, session) {
     }) # close try catch
     
   })
+  
+  
+  # call to cations module --------------------------------------------------
+  
+  callModule(module = cations,
+             id = "icpCations")
   
   
   # debugging ---------------------------------------------------------------

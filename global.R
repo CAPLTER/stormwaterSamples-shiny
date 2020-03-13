@@ -10,6 +10,7 @@ library(lubridate)
 library(DBI)
 library(RPostgreSQL)
 library(pool)
+library(readxl)
 # library(shinyjs)
 
 
@@ -40,3 +41,4 @@ source('helper_query_discharge.R')
 # modules
 source('module_modify_samples.R')
 source('module_view_discharge.R')
+source('module_cations.R')
