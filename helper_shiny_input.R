@@ -1,9 +1,20 @@
 #' @title Add a custom shiny input
 #'
-#' @description The shinyInput function allows the user to create a custom input
-#'   feature, typically applied to each row of a data frame or similar object.
-#'   shinyInputFlex is a modified version of shinyInput that allows for passing
-#'   any data column name to id instead of literal 'id' required for shinyInput.
+#' @description The \code{shinyInput} family of functions allows the user to
+#'   create a custom input feature, typically applied to each row of a data
+#'   frame or similar object.
+#'   \code{shinyInputFlex} is a modified version of shinyInput that
+#'   allows for passing any data column name to id instead of literal 'id'
+#'   required for shinyInput; this can be useful when the primary key of a
+#'   database table is not named id; see app.R#solids for an example of this use.
+#'   \code{shinyInputOther} is a modified version of shinyInput that allows for
+#'   adding checkboxes, dropdowns, or other intput widgets besides action
+#'   buttons. A notable difference from the functionality of \code{shinyInput}
+#'   and \code{shinyInputFlex} is that the primary purpose is to add a column to
+#'   provide additional input options rather than as a button targeting a
+#'   particular table row for a database operation.
+#'   \code{shinyValue} Is a helpful function to extract values generated from
+#'   \code{shinyInputOther}.
 #'
 #' @param reactiveObject a reactive (tabular) object to which custom inputs will
 #'   be attached
@@ -50,7 +61,7 @@ shinyInputOther <- function(FUN, len, id, ...) {
 }
 
 
-shinyValue = function(id, len) { 
+shinyValue <- function(id, len) { 
     unlist(lapply(seq_len(len), function(i) { 
         value = input[[paste0(id, i)]] 
         if (is.null(value)) NA else value 
