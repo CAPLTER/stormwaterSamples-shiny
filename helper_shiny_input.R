@@ -14,7 +14,10 @@
 #'   provide additional input options rather than as a button targeting a
 #'   particular table row for a database operation.
 #'   \code{shinyValue} Is a helpful function to extract values generated from
-#'   \code{shinyInputOther}.
+#'   \code{shinyInputOther}; however, for reasons that are completely unclear,
+#'   this function only works if included in app.R (i.e., it is loaded but does
+#'   not seem to work if loaded from helper_shiny_input.R) - included here only
+#'   for documentation.
 #'
 #' @param reactiveObject a reactive (tabular) object to which custom inputs will
 #'   be attached
@@ -61,9 +64,9 @@ shinyInputOther <- function(FUN, len, id, ...) {
 }
 
 
-shinyValue <- function(id, len) { 
-    unlist(lapply(seq_len(len), function(i) { 
-        value = input[[paste0(id, i)]] 
-        if (is.null(value)) NA else value 
-    })) 
-} 
+# shinyValue <- function(id, len) { 
+#     unlist(lapply(seq_len(len), function(i) { 
+#         value = input[[paste0(id, i)]] 
+#         if (is.null(value)) NA else value 
+#     })) 
+# }

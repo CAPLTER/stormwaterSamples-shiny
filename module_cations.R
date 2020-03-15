@@ -9,6 +9,11 @@
 
 # cations UI --------------------------------------------------------------
 
+# vector of last five year for filtering sample ids
+lastFiveYears <- rev(seq(from = as.numeric(format(Sys.Date(),'%Y'))-5,
+                         to = as.numeric(format(Sys.Date(),'%Y')),
+                         by = 1))
+
 cationsUI <- function(id) {
   
   ns <- NS(id)
@@ -25,9 +30,26 @@ cationsUI <- function(id) {
                fileInput(inputId = ns("cationFile"),
                          label = "select file",
                          multiple = FALSE),
+               br(),
+               strong("narrow sample choices",
+                      style = "text-align: center; color: black"),
+               selectizeInput(inputId = ns("narrowSamplesSite"),
+                              "site",
+                              choices = siteAbbreviations,
+                              selected = NULL,
+                              multiple = TRUE),
+               selectizeInput(inputId = ns("narrowSampleMonth"),
+                              "month",
+                              choices = month.abb,
+                              selected = NULL,
+                              multiple = TRUE),
+               selectizeInput(inputId = ns("narrowSampleYear"),
+                              "year",
+                              choices = lastFiveYears,
+                              selected = NULL,
+                              multiple = FALSE),
                actionButton("importCationFile",
                             "submit data"),
-               br(),
                br()
         ), # close the left col
         column(id = "dischargeRightPanel", 10,
@@ -52,6 +74,50 @@ cations <- function(input, output, session) {
   # create listener for adding and deleting records
   listener <- reactiveValues(dbVersion = 0)
   
+  # build (reactive) list of bottle IDs for given site, year, and month
+  samplesSelection <- reactive({
+    
+    req(
+      input$narrowSamplesSite,
+      input$narrowSampleMonth,
+      input$narrowSampleYear
+    )
+    
+    # integerMonth <- grep(input$narrowSampleMonth, month.abb, ignore.case = TRUE)
+    monthTibble <- tibble(number = seq(1:12), abbr = month.abb)
+    integerMonths <- glue::glue_sql(
+      "{monthTibble[monthTibble$abbr %in% c(input$narrowSampleMonth),]$number*}"
+    )
+    
+    # integerSite <- sampleSites[sampleSites$abbreviation == input$narrowSamplesSite,]$site_id
+    integerSites <- glue::glue_sql(
+      "{sampleSites[sampleSites$abbreviation %in% input$narrowSamplesSite,]$site_id*}"
+    )
+    
+    baseQuery <- "
+    SELECT CONCAT(samples.bottle, '_', samples.sample_datetime)
+    FROM stormwater.samples
+    WHERE
+      samples.site_id IN (?theseSites) AND
+      (EXTRACT (MONTH FROM sample_datetime) IN (?theseMonth) AND EXTRACT (YEAR FROM sample_datetime) = ?thisYear)
+    ORDER BY
+  		EXTRACT (MONTH FROM sample_datetime),
+  		samples.bottle;"
+    
+    parameterizedQuery <- sqlInterpolate(ANSI(),
+                                         baseQuery,
+                                         theseSites = integerSites,
+                                         theseMonth = integerMonths,
+                                         thisYear = input$narrowSampleYear
+    )
+    
+    bottleOptions <- run_interpolated_query(parameterizedQuery)
+    
+    return(bottleOptions)
+    # return(parameterizedQuery)
+    
+  })
+  
   
   rawReactive <- reactive({
     
@@ -69,7 +135,24 @@ cations <- function(input, output, session) {
     colnames(cationsUpload)[4] <- "icp_id"
     
     cationsUpload <- cationsUpload %>%
-      mutate(selection = shinyInputOther(selectInput, nrow(cationsUpload), 'cb_', choices=c("Independent","Dependent","None")))
+      mutate(
+        sampleID = shinyInputOther(FUN = selectInput,
+                                   len = nrow(cationsUpload),
+                                   id = 'sampID_',
+                                   choices=samplesSelection(),
+                                   width = "220px"),
+        omit = shinyInputOther(checkboxInput,
+                               nrow(cationsUpload),
+                               "omit_",
+                               value = FALSE,
+                               width = "20px"),
+        replicate = shinyInputOther(FUN = selectInput,
+                                    len = nrow(cationsUpload),
+                                    id = 'rep_',
+                                    choices=c(1,2,3),
+                                    width = "40px")
+      ) %>% 
+      select(sampleID, omit, replicate, everything())
     
     return(cationsUpload) 
     
@@ -93,7 +176,7 @@ cations <- function(input, output, session) {
                         Shiny.bindAll(this.api().table().node()); } ') 
   ),
   rownames = F) # close output$rawView
-      
+  
   # # queryType: default vs parameterized query for transects
   # queryType <- reactiveValues(default = "default")
   # 
@@ -400,7 +483,7 @@ cations <- function(input, output, session) {
   # debugging: module level -------------------------------------------------
   
   ############# START debugging
-  # observe(print({ queryType }))
+  observe(print({ samplesSelection() }))
   # observe(print({ queryType$default }))
   # observe(print({ input$ReachPatchs_cell_edit }))
   ############# END debugging
