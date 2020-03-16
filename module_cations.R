@@ -9,11 +9,6 @@
 
 # cations UI --------------------------------------------------------------
 
-# vector of last five year for filtering sample ids
-lastFiveYears <- rev(seq(from = as.numeric(format(Sys.Date(),'%Y'))-5,
-                         to = as.numeric(format(Sys.Date(),'%Y')),
-                         by = 1))
-
 cationsUI <- function(id) {
   
   ns <- NS(id)
@@ -53,9 +48,9 @@ cationsUI <- function(id) {
                br()
         ), # close the left col
         column(id = "dischargeRightPanel", 10,
-               strong('cation data'),
+               strong('data'),
                hr(),
-               DT::dataTableOutput(ns("rawView"))
+               DT::dataTableOutput(ns("resultView"))
         ) # close the right col
       ) # close the row
     ) # close the page
@@ -66,6 +61,12 @@ cationsUI <- function(id) {
 
 # cations main ------------------------------------------------------------
 
+# vector of last five year for filtering sample ids
+lastFiveYears <- rev(seq(from = as.numeric(format(Sys.Date(),'%Y'))-5,
+                         to = as.numeric(format(Sys.Date(),'%Y')),
+                         by = 1))
+
+
 cations <- function(input, output, session) {
   
   # added to facilitate renderUIs
@@ -74,26 +75,30 @@ cations <- function(input, output, session) {
   # create listener for adding and deleting records
   listener <- reactiveValues(dbVersion = 0)
   
+  
+  # build list of sample IDs ------------------------------------------------
+  
   # build (reactive) list of bottle IDs for given site, year, and month
   samplesSelection <- reactive({
     
-    req(
-      input$narrowSamplesSite,
-      input$narrowSampleMonth,
-      input$narrowSampleYear
-    )
+    # req(
+    #   input$narrowSamplesSite,
+    #   input$narrowSampleMonth,
+    #   input$narrowSampleYear
+    # )
     
-    # integerMonth <- grep(input$narrowSampleMonth, month.abb, ignore.case = TRUE)
+    # convert month abbreviations to integers for query
     monthTibble <- tibble(number = seq(1:12), abbr = month.abb)
     integerMonths <- glue::glue_sql(
       "{monthTibble[monthTibble$abbr %in% c(input$narrowSampleMonth),]$number*}"
     )
     
-    # integerSite <- sampleSites[sampleSites$abbreviation == input$narrowSamplesSite,]$site_id
+    # convert site abbreviations to site_id for query
     integerSites <- glue::glue_sql(
       "{sampleSites[sampleSites$abbreviation %in% input$narrowSamplesSite,]$site_id*}"
     )
     
+    # base query
     baseQuery <- "
     SELECT CONCAT(samples.bottle, '_', samples.sample_datetime)
     FROM stormwater.samples
@@ -104,6 +109,7 @@ cations <- function(input, output, session) {
   		EXTRACT (MONTH FROM sample_datetime),
   		samples.bottle;"
     
+    # parameterized query
     parameterizedQuery <- sqlInterpolate(ANSI(),
                                          baseQuery,
                                          theseSites = integerSites,
@@ -111,61 +117,113 @@ cations <- function(input, output, session) {
                                          thisYear = input$narrowSampleYear
     )
     
+    # sample IDs subset from query
     bottleOptions <- run_interpolated_query(parameterizedQuery)
     
+    # return list of sample IDs to populate dropdown
     return(bottleOptions)
-    # return(parameterizedQuery)
     
   })
   
   
+  # import icp data file ----------------------------------------------------
+  
+  # raw cation data imported from icp output (file)
   rawReactive <- reactive({
     
+    # require file input
     req(input$cationFile)
     
+    # import file with params
     cationsUpload <- read_excel(path = input$cationFile$datapath,
                                 skip = 4)
     
+    # confirm appropriate file structure
+    expectedColumnNames <- tolower(c("Ca3158","Ca3179","Ca3933","Na5889","Na5895","Zn2025","Zn2138"))
+    
+    if (ncol(cationsUpload) != 11 | !all(expectedColumnNames %in% tolower(colnames(cationsUpload)))) {
+      
+      showNotification(ui = "unexpected data structure: check number and names of columns",
+                       duration = NULL,
+                       closeButton = TRUE,
+                       type = 'error')
+      
+    }
+    
+    # add filename as a variable
+    cationsUpload$filename <- input$cationFile$name
+    
+    # format column names
     colnames(cationsUpload) <- tolower(colnames(cationsUpload)) # colnames to lowercase
     colnames(cationsUpload) <- gsub("\\.", "\\_", colnames(cationsUpload)) # replace dots with underscores
     
+    # add missing column names
     colnames(cationsUpload)[1] <- "date_analyzed"
     colnames(cationsUpload)[2] <- "temp_out_id"
     colnames(cationsUpload)[3] <- "operator"
     colnames(cationsUpload)[4] <- "icp_id"
     
-    cationsUpload <- cationsUpload %>%
-      mutate(
-        sampleID = shinyInputOther(FUN = selectInput,
-                                   len = nrow(cationsUpload),
-                                   id = 'sampID_',
-                                   choices=samplesSelection(),
-                                   width = "220px"),
-        omit = shinyInputOther(checkboxInput,
-                               nrow(cationsUpload),
-                               "omit_",
-                               value = FALSE,
-                               width = "20px"),
-        replicate = shinyInputOther(FUN = selectInput,
-                                    len = nrow(cationsUpload),
-                                    id = 'rep_',
-                                    choices=c(1,2,3),
-                                    width = "40px")
-      ) %>% 
-      select(sampleID, omit, replicate, everything())
+    # add run identifier as maxrun
+    maxrun <- as.numeric(run_interpolated_query(interpolatedQuery = "SELECT MAX(run_id) FROM stormwater.results;"))
+    cationsUpload$run_id <- maxrun + 1
     
+    # return modified object
     return(cationsUpload) 
     
   })
   
-  output$rawView <- DT::renderDataTable({
+  
+  # results reactive --------------------------------------------------------
+  
+  resultReactive <- reactive({
     
-    rawReactive()
+    cationsResults <- rawReactive() %>% 
+      filter(!grepl('Blank|CalibStd|QC|Tank', temp_out_id, ignore.case=F))
+    
+    # break up objects to accomodate appropriate number of rows to pass to
+    # shinyInputOther
+    
+    cationsResults <- cationsResults %>% 
+      select(-c(ca3158, ca3179, na5895, zn2025, filename)) %>%
+      mutate(
+        sampleID = shinyInputOther(FUN = selectInput,
+                                   len = nrow(cationsResults),
+                                   id = 'sampID_',
+                                   choices=samplesSelection(),
+                                   width = "220px"),
+        omit = shinyInputOther(checkboxInput,
+                               nrow(cationsResults),
+                               "omit_",
+                               value = FALSE,
+                               width = "20px"),
+        replicate = shinyInputOther(FUN = selectInput,
+                                    len = nrow(cationsResults),
+                                    id = 'rep_',
+                                    choices=c(1,2,3),
+                                    width = "40px"),
+        comments = case_when(
+          grepl('blk', temp_out_id, ignore.case = T) ~ 'blank',
+          TRUE ~ NA_character_)
+      ) %>% 
+      select(sampleID, omit, replicate, comments, everything())
+    
+    return(cationsResults)
+    
+  })
+  
+  
+  # render results ----------------------------------------------------------
+  
+  output$resultView <- DT::renderDataTable({
+    
+    resultReactive()
     
   },
   selection = 'none',
   escape = FALSE,
   server = FALSE,
+  editable = list(target = 'cell',
+                  disable = list(columns = c(0,1,2,4:ncol(resultReactive())))),
   options = list(bFilter = 0,
                  bLengthChange = F,
                  bPaginate = F,
@@ -176,6 +234,9 @@ cations <- function(input, output, session) {
                         Shiny.bindAll(this.api().table().node()); } ') 
   ),
   rownames = F) # close output$rawView
+  
+  
+  
   
   # # queryType: default vs parameterized query for transects
   # queryType <- reactiveValues(default = "default")
@@ -483,7 +544,7 @@ cations <- function(input, output, session) {
   # debugging: module level -------------------------------------------------
   
   ############# START debugging
-  observe(print({ samplesSelection() }))
+  # observe(print({ rawReactive() }))
   # observe(print({ queryType$default }))
   # observe(print({ input$ReachPatchs_cell_edit }))
   ############# END debugging
