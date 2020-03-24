@@ -45,19 +45,24 @@ cationsUI <- function(id) {
                               multiple = FALSE),
                actionButton("importCationFile",
                             "submit data"),
-               br()
+               br(),
+               downloadButton(ns("downloadData"), "download")
         ), # close the left col
         column(id = "dischargeRightPanel", 10,
                strong('data'),
                hr(),
-               DT::dataTableOutput(ns("resultView"))
+               DT::dataTableOutput(ns("resultView")),
+               hr(),
+               DT::dataTableOutput(ns("resultsMetadataView")),
+               tags$script(HTML("Shiny.addCustomMessageHandler('unbind-DT', function(id) {
+          Shiny.unbindAll($('#'+id).find('table').DataTable().table().node());
+                            })")) # notable stmt
         ) # close the right col
       ) # close the row
     ) # close the page
   ) # close tagList
   
 } # close cationsUI 
-
 
 # cations main ------------------------------------------------------------
 
@@ -68,6 +73,16 @@ lastFiveYears <- rev(seq(from = as.numeric(format(Sys.Date(),'%Y'))-5,
 
 
 cations <- function(input, output, session) {
+  
+  # helper function for reading input functions; for reasons that are completely
+  # unclear, this function only works if included in app.R (i.e., it is loaded
+  # but does not seem to work if loaded from helper_shiny_input.R)
+  shinyValue <- function(id, len) {
+    unlist(lapply(seq_len(len), function(i) {
+      value = input[[paste0(id, i)]]
+      if (is.null(value)) NA else value
+    }))
+  }
   
   # added to facilitate renderUIs
   ns <- session$ns
@@ -177,13 +192,16 @@ cations <- function(input, output, session) {
   
   resultReactive <- reactive({
     
+    # NEW
+    # session$sendCustomMessage('unbind-DT', 'resultView') # notable stmt
+    
     cationsResults <- rawReactive() %>% 
       filter(!grepl('Blank|CalibStd|QC|Tank', temp_out_id, ignore.case=F))
     
     # break up objects to accomodate appropriate number of rows to pass to
     # shinyInputOther
     
-    cationsResults <- cationsResults %>% 
+    cationsResults <- cationsResults %>%
       select(-c(ca3158, ca3179, na5895, zn2025, filename)) %>%
       mutate(
         sampleID = shinyInputOther(FUN = selectInput,
@@ -204,9 +222,9 @@ cations <- function(input, output, session) {
         comments = case_when(
           grepl('blk', temp_out_id, ignore.case = T) ~ 'blank',
           TRUE ~ NA_character_)
-      ) %>% 
+      ) %>%
       select(sampleID, omit, replicate, comments, everything())
-    
+
     return(cationsResults)
     
   })
@@ -218,10 +236,34 @@ cations <- function(input, output, session) {
     
     resultReactive()
     
+    # resultReactive() %>%
+    #   select(-c(ca3158, ca3179, na5895, zn2025, filename)) %>%
+    #   mutate(
+    #     sampleID = shinyInputOther(FUN = selectInput,
+    #                                len = nrow(resultReactive()),
+    #                                id = ns('sampID_'),
+    #                                choices=samplesSelection(),
+    #                                width = "220px"),
+    #     omit = shinyInputOther(checkboxInput,
+    #                            nrow(resultReactive()),
+    #                            id = ns("omit_"),
+    #                            value = FALSE,
+    #                            width = "20px"),
+    #     replicate = shinyInputOther(FUN = selectInput,
+    #                                 len = nrow(resultReactive()),
+    #                                 id = ns('rep_'),
+    #                                 choices=c(1,2,3),
+    #                                 width = "40px"),
+    #     comments = case_when(
+    #       grepl('blk', temp_out_id, ignore.case = T) ~ 'blank',
+    #       TRUE ~ NA_character_)
+    #   ) %>%
+    #   select(sampleID, omit, replicate, comments, everything())
+    
   },
   selection = 'none',
   escape = FALSE,
-  server = FALSE,
+  server = TRUE, # use server-side to accomodate large tables
   editable = list(target = 'cell',
                   disable = list(columns = c(0,1,2,4:ncol(resultReactive())))),
   options = list(bFilter = 0,
@@ -236,6 +278,55 @@ cations <- function(input, output, session) {
   rownames = F) # close output$rawView
   
   
+  #### dev
+  
+  # capture file upload and provided data
+  resultsMetadata <- reactive({
+    
+    # resultReactive()
+    
+    resultReactive() %>%
+      mutate(
+        sampleID = shinyValue("sampID_",
+                              nrow(resultReactive())),
+        omit = shinyValue("omit_",
+                          nrow(resultReactive())),
+        replicate = shinyValue(ns("replicate_"),
+                               nrow(resultReactive()))
+      ) # %>%
+      # filter(omit == FALSE)
+    
+  })
+  
+  # preview data table with upload and provided values
+  output$resultsMetadataView <- DT::renderDataTable({
+    
+    resultsMetadata()
+    
+    # resultsMetadata() %>% 
+    #   mutate(sample_datetime = as.character(sample_datetime)) %>% 
+    #   select(-omit)
+  },
+  selection = 'none',
+  escape = FALSE,
+  server = FALSE,
+  options = list(bFilter = 0,
+                 bLengthChange = F,
+                 bPaginate = F,
+                 bSort = F
+  ),
+  rownames = F) # close output$checked
+  
+  
+  output$downloadData <- downloadHandler(
+    filename = function() {
+      # paste(input$dataset, ".csv", sep = "")
+      paste("arable_", Sys.time(), ".csv", sep = "")
+    },
+    content = function(file) {
+      write_csv(resultsMetadata(), file)
+    }
+  ) 
   
   
   # # queryType: default vs parameterized query for transects

@@ -64,9 +64,9 @@ shinyInputOther <- function(FUN, len, id, ...) {
 }
 
 
-# shinyValue <- function(id, len) { 
-#     unlist(lapply(seq_len(len), function(i) { 
-#         value = input[[paste0(id, i)]] 
-#         if (is.null(value)) NA else value 
-#     })) 
-# }
+shinyValue <- function(id, len) {
+    unlist(lapply(seq_len(len), function(i) {
+        value = input[[paste0(id, i)]]
+        if (is.null(value)) NA else value
+    }))
+}
