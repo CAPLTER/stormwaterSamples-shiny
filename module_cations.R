@@ -23,7 +23,8 @@ cationsUI <- function(id) {
     # ), # notable stmt
     tags$head(
       tags$style(
-        HTML("#leftPanel { background: #D3D3D3; color: #484848; }")
+        HTML("#leftPanel { background: #D3D3D3; color: #484848; }"),
+        HTML(paste0("#", ns("samplesList"), "{ color:#484848; overflow-y:scroll; max-height: 250px; background: ghostwhite;}"))
       ) # close tags$style
     ), # close tagss$head
     fluidPage(
@@ -32,9 +33,8 @@ cationsUI <- function(id) {
                fileInput(inputId = ns("cationFile"),
                          label = "select file",
                          multiple = FALSE),
-               br(),
-               strong("narrow sample choices",
-                      style = "text-align: center; color: black"),
+               helpText("identify sample set",
+                        style = "text-align: left; color: black"),
                selectizeInput(inputId = ns("narrowSamplesSite"),
                               "site",
                               choices = siteAbbreviations,
@@ -50,16 +50,19 @@ cationsUI <- function(id) {
                               choices = lastFiveYears,
                               selected = NULL,
                               multiple = FALSE),
-               actionButton("importCationFile",
-                            "submit data"),
+               actionButton(inputId = ns("submitData"),
+                            label = "submit data"),
                br(),
-               downloadButton(ns("downloadData"), "download")
+               downloadButton(ns("downloadData"), "download"),
+               br(),
+               verbatimTextOutput(ns("samplesList"))
         ), # close the left col
-        column(id = "dischargeRightPanel", 10,
-               strong('data'),
+        column(id = "rightPanel", 10,
+               strong("data"),
                hr(),
                DT::dataTableOutput(ns("resultView")),
                hr(),
+               strong("preview data to upload"),
                DT::dataTableOutput(ns("resultsMetadataView"))
         ) # close the right col
       ) # close the row
@@ -73,8 +76,7 @@ cationsUI <- function(id) {
 # vector of last five year for filtering sample ids
 lastFiveYears <- rev(seq(from = as.numeric(format(Sys.Date(),'%Y'))-5,
                          to = as.numeric(format(Sys.Date(),'%Y')),
-                         by = 1)
-)
+                         by = 1))
 
 
 # main function
@@ -103,11 +105,13 @@ cations <- function(input, output, session) {
   # build (reactive) list of bottle IDs for given site, year, and month
   samplesSelection <- reactive({
     
-    # req(
-    #   input$narrowSamplesSite,
-    #   input$narrowSampleMonth,
-    #   input$narrowSampleYear
-    # )
+    # session$sendCustomMessage('unbind-DT', 'resultView') # notable stmt
+    
+    req(
+      input$narrowSamplesSite,
+      input$narrowSampleMonth,
+      input$narrowSampleYear
+    )
     
     # convert month abbreviations to integers for query
     monthTibble <- tibble(number = seq(1:12), abbr = month.abb)
@@ -122,14 +126,14 @@ cations <- function(input, output, session) {
     
     # base query
     baseQuery <- "
-    SELECT CONCAT(samples.bottle, '_', samples.sample_datetime)
+    SELECT CONCAT(samples.bottle, '_', samples.sample_datetime) AS samples
     FROM stormwater.samples
     WHERE
       samples.site_id IN (?theseSites) AND
       (EXTRACT (MONTH FROM sample_datetime) IN (?theseMonth) AND EXTRACT (YEAR FROM sample_datetime) = ?thisYear)
     ORDER BY
-  		EXTRACT (MONTH FROM sample_datetime),
-  		samples.bottle;"
+      samples.site_id, 
+      samples.sample_datetime;"
     
     # parameterized query
     parameterizedQuery <- sqlInterpolate(ANSI(),
@@ -146,6 +150,18 @@ cations <- function(input, output, session) {
     return(bottleOptions)
     
   })
+  
+  
+  # generate a preview of samples available to associate with cation data
+  output$samplesList <- renderPrint(
+    
+    if (nrow(samplesSelection()) == 0) {
+      return(NULL)
+    } else {
+      print(samplesSelection(), row.names = FALSE, right = FALSE)
+    }
+    
+  )
   
   
   # import icp data file ----------------------------------------------------
@@ -231,18 +247,17 @@ cations <- function(input, output, session) {
                                     id = paste0(session$ns('rep_')),
                                     choices=c(1,2,3),
                                     width = "40px"),
-        comments = case_when(
-          grepl('blk', temp_out_id, ignore.case = T) ~ 'blank',
-          TRUE ~ NA_character_)
+        comment = shinyInputOther(FUN = textInput,
+                                  len = nrow(resultReactive()),
+                                  id = paste0(session$ns('comment_')),
+                                  width = "120px")
       ) %>%
-      select(sampleID, omit, replicate, comments, everything())
+      select(sampleID, omit, replicate, comment, everything())
     
   },
   selection = 'none',
   escape = FALSE,
   server = TRUE, # use server-side to accomodate large tables
-  editable = list(target = 'cell',
-                  disable = list(columns = c(0,1,2,4:ncol(resultReactive())))),
   options = list(bFilter = 0,
                  bLengthChange = F,
                  bPaginate = F,
@@ -268,7 +283,9 @@ cations <- function(input, output, session) {
         omit = shinyValue(id = "omit_",
                           len = nrow(resultReactive())),
         replicate = shinyValue(id = "rep_",
-                               len = nrow(resultReactive()))
+                               len = nrow(resultReactive())),
+        comment = shinyValue(id = "comment_",
+                             len = nrow(resultReactive()))
       ) %>%
       filter(omit == FALSE)
     
@@ -277,7 +294,15 @@ cations <- function(input, output, session) {
   # preview data table with provided metadata
   output$resultsMetadataView <- DT::renderDataTable({
     
-    resultsMetadata()
+    resultsMetadata() %>% 
+      mutate(
+        comment = case_when(
+          grepl('blk', temp_out_id, ignore.case = T) & comment == "" ~ 'blank',
+          grepl('blk', temp_out_id, ignore.case = T) & comment != "" ~ paste(comment, 'blank', sep = "; "),
+          TRUE ~ as.character(comment))
+      ) %>% 
+      select(-omit) %>% 
+      select(sampleID, replicate, comment, everything())
     
   },
   selection = 'none',
@@ -288,8 +313,43 @@ cations <- function(input, output, session) {
                  bPaginate = F,
                  bSort = F
   ),
-  rownames = F) # close output$checked
+  rownames = F) # close output$resultsMetadataView 
   
+  
+  # write data to database --------------------------------------------------
+  
+  observeEvent(input$submitData, {
+    
+    # raw data 
+    
+    raw_data <- rawReactive()
+    
+    if (dbExistsTable(conn = stormPool,
+                      name = c('stormwater', 'raw_data'))) {
+      
+      dbRemoveTable(conn = stormPool,
+                    name = c('stormwater', 'raw_data'))
+    }
+    
+    # write new
+    dbWriteTable(conn = stormPool,
+                 name = c('stormwater', 'raw_data'),
+                 value = raw_data,
+                 row.names = F)
+    
+    insert_raw_icp(cationData = raw_data,
+                   pool = stormPool)
+    
+    
+    # results data
+    
+   results_data <- resultsMetadata() 
+    
+    
+  }) # close submitData 
+  
+  
+  # temp: download data -----------------------------------------------------
   
   output$downloadData <- downloadHandler(
     filename = function() {
@@ -311,6 +371,6 @@ cations <- function(input, output, session) {
   ############# END debugging
   
   
-  # close module modifySamples ----------------------------------------------
+  # close module cations ----------------------------------------------------
   
-} # close module::modifySamples
+} # close module::cations

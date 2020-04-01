@@ -37,6 +37,7 @@ source('helper_sample_locations.R')
 source('helper_shiny_input.R')
 source('helper_query_solids.R')
 source('helper_query_discharge.R')
+source('helper_insert_cation.R')
 
 
 # modules
