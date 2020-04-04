@@ -24,7 +24,12 @@ cationsUI <- function(id) {
     tags$head(
       tags$style(
         HTML("#leftPanel { background: #D3D3D3; color: #484848; }"),
-        HTML(paste0("#", ns("samplesList"), "{ color:#484848; overflow-y:scroll; max-height: 250px; background: ghostwhite;}"))
+        HTML(paste0("#", ns("samplesList"), "{
+                    color:#484848;
+                    overflow-y: scroll;
+                    max-height: 250px;
+                    background: ghostwhite;
+                    text-align: left}"))
       ) # close tags$style
     ), # close tagss$head
     fluidPage(
@@ -50,12 +55,15 @@ cationsUI <- function(id) {
                               choices = lastFiveYears,
                               selected = NULL,
                               multiple = FALSE),
-               actionButton(inputId = ns("submitData"),
-                            label = "submit data"),
                br(),
                downloadButton(ns("downloadData"), "download"),
                br(),
-               verbatimTextOutput(ns("samplesList"))
+               # verbatimTextOutput(ns("samplesList")),
+               textOutput(ns("samplesList")),
+               br(),
+               actionButton(inputId = ns("submitData"),
+                            label = "submit data"),
+               br()
         ), # close the left col
         column(id = "rightPanel", 10,
                strong("data"),
@@ -74,7 +82,7 @@ cationsUI <- function(id) {
 # cations main ------------------------------------------------------------
 
 # vector of last five year for filtering sample ids
-lastFiveYears <- rev(seq(from = as.numeric(format(Sys.Date(),'%Y'))-5,
+lastFiveYears <- rev(seq(from = as.numeric(format(Sys.Date(),'%Y')) - 5,
                          to = as.numeric(format(Sys.Date(),'%Y')),
                          by = 1))
 
@@ -126,7 +134,9 @@ cations <- function(input, output, session) {
     
     # base query
     baseQuery <- "
-    SELECT CONCAT(samples.bottle, '_', samples.sample_datetime) AS samples
+    SELECT 
+      sample_id,
+      CONCAT(samples.bottle, '_', samples.sample_datetime) AS samples
     FROM stormwater.samples
     WHERE
       samples.site_id IN (?theseSites) AND
@@ -153,12 +163,15 @@ cations <- function(input, output, session) {
   
   
   # generate a preview of samples available to associate with cation data
-  output$samplesList <- renderPrint(
+  # output$samplesList <- renderPrint(
+  output$samplesList <- renderText(
     
     if (nrow(samplesSelection()) == 0) {
       return(NULL)
     } else {
-      print(samplesSelection(), row.names = FALSE, right = FALSE)
+      # print(samplesSelection() %>% select(samples), row.names = FALSE, right = FALSE)
+      # print(samplesSelection()$samples, row.names = FALSE, right = FALSE)
+      samplesSelection()$samples
     }
     
   )
@@ -218,7 +231,7 @@ cations <- function(input, output, session) {
     # session$sendCustomMessage('unbind-DT', 'resultView') # notable stmt
     
     cationsResults <- rawReactive() %>% 
-      filter(!grepl('Blank|CalibStd|QC|Tank', temp_out_id, ignore.case=F)) %>% 
+      filter(!grepl('Blank|CalibStd|QC|Tank', temp_out_id, ignore.case = F)) %>% 
       select(-c(ca3158, ca3179, na5895, zn2025, filename))
     
     return(cationsResults)
@@ -235,7 +248,7 @@ cations <- function(input, output, session) {
         sampleID = shinyInputOther(FUN = selectInput,
                                    len = nrow(resultReactive()),
                                    id = paste0(session$ns('sampID_')),
-                                   choices = samplesSelection(),
+                                   choices = samplesSelection()$samples,
                                    width = "220px"),
         omit = shinyInputOther(checkboxInput,
                                nrow(resultReactive()),
@@ -245,14 +258,14 @@ cations <- function(input, output, session) {
         replicate = shinyInputOther(FUN = selectInput,
                                     len = nrow(resultReactive()),
                                     id = paste0(session$ns('rep_')),
-                                    choices=c(1,2,3),
+                                    choices = c(1,2,3),
                                     width = "40px"),
-        comment = shinyInputOther(FUN = textInput,
-                                  len = nrow(resultReactive()),
-                                  id = paste0(session$ns('comment_')),
-                                  width = "120px")
+        comments = shinyInputOther(FUN = textInput,
+                                   len = nrow(resultReactive()),
+                                   id = paste0(session$ns('comments_')),
+                                   width = "120px")
       ) %>%
-      select(sampleID, omit, replicate, comment, everything())
+      select(sampleID, omit, replicate, comments, everything())
     
   },
   selection = 'none',
@@ -284,8 +297,8 @@ cations <- function(input, output, session) {
                           len = nrow(resultReactive())),
         replicate = shinyValue(id = "rep_",
                                len = nrow(resultReactive())),
-        comment = shinyValue(id = "comment_",
-                             len = nrow(resultReactive()))
+        comments = shinyValue(id = "comments_",
+                              len = nrow(resultReactive()))
       ) %>%
       filter(omit == FALSE)
     
@@ -296,13 +309,13 @@ cations <- function(input, output, session) {
     
     resultsMetadata() %>% 
       mutate(
-        comment = case_when(
-          grepl('blk', temp_out_id, ignore.case = T) & comment == "" ~ 'blank',
-          grepl('blk', temp_out_id, ignore.case = T) & comment != "" ~ paste(comment, 'blank', sep = "; "),
-          TRUE ~ as.character(comment))
+        comments = case_when(
+          grepl('blk', temp_out_id, ignore.case = T) & comments == "" ~ 'blank',
+          grepl('blk', temp_out_id, ignore.case = T) & comments != "" ~ paste(comments, 'blank', sep = "; "),
+          TRUE ~ as.character(comments))
       ) %>% 
       select(-omit) %>% 
-      select(sampleID, replicate, comment, everything())
+      select(sampleID, replicate, comments, everything())
     
   },
   selection = 'none',
@@ -320,30 +333,100 @@ cations <- function(input, output, session) {
   
   observeEvent(input$submitData, {
     
-    # raw data 
+    # workflow: RAW
     
-    raw_data <- rawReactive()
+    # rename raw and results data for easier reference
+    temp_raw <- rawReactive()
     
-    if (dbExistsTable(conn = stormPool,
-                      name = c('stormwater', 'raw_data'))) {
+    # write temporary table: raw data
+    
+    if (dbExistsTable(stormPool, c('stormwater', 'temp_raw'))) {
       
-      dbRemoveTable(conn = stormPool,
-                    name = c('stormwater', 'raw_data'))
+      dbRemoveTable(stormPool, c('stormwater', 'temp_raw'))
+      
     }
     
-    # write new
     dbWriteTable(conn = stormPool,
-                 name = c('stormwater', 'raw_data'),
-                 value = raw_data,
+                 name = c('stormwater', 'temp_raw'),
+                 value = temp_raw,
                  row.names = F)
     
-    insert_raw_icp(cationData = raw_data,
-                   pool = stormPool)
+    # build raw insert query
+    insert_raw_cation_query <- build_insert_raw_cation_query('temp_raw')
+    
+    # workflow: RESULTS
+    
+    # format resultsMetadata() for insert
+    temp_results <- icp_to_rslt(cationDataFormatted = resultsMetadata(),
+                                sampleMetadata = samplesSelection())
+    
+    # print(temp_results)
+    
+    # write temporary table: results data
+    
+    if (dbExistsTable(stormPool, c('stormwater', 'temp_results'))) {
+      
+      dbRemoveTable(stormPool, c('stormwater', 'temp_results'))
+      
+    }
+    
+    dbWriteTable(conn = stormPool,
+                 name = c('stormwater', 'temp_results'),
+                 value = temp_results,
+                 row.names = F)
+    
+    # build results insert query
+    insert_results_cation_query <- build_insert_results_cation_query('temp_results')
     
     
-    # results data
+    # begin tryCatch - transaction
+    tryCatch({
+      
+      poolWithTransaction(stormPool, function(conn) {
+        
+        dbExecute(conn,
+                  insert_raw_cation_query)
+        
+        dbExecute(conn,
+                  insert_results_cation_query)
+        
+      })
+      
+    }, warning = function(warn) {
+      
+      showNotification(ui = paste("there is a warning:  ", warn),
+                       duration = NULL,
+                       closeButton = TRUE,
+                       type = 'warning')
+      
+      print(paste("WARNING: ", warn))
+      
+    }, error = function(err) {
+      
+      showNotification(ui = paste("there was an error:  ", err),
+                       duration = NULL,
+                       closeButton = TRUE,
+                       type = 'error')
+      
+      print(paste("ERROR: ", err))
+      print("ROLLING BACK TRANSACTION")
+      
+    }) # close try catch
     
-   results_data <- resultsMetadata() 
+    
+    # clean up temporary tables
+    
+    if (dbExistsTable(stormPool, c('stormwater', 'temp_raw'))) {
+      
+      dbRemoveTable(stormPool, c('stormwater', 'temp_raw'))
+      
+    }
+    
+    if (dbExistsTable(stormPool, c('stormwater', 'temp_results'))) {
+      
+      dbRemoveTable(stormPool, c('stormwater', 'temp_results'))
+      
+    }
     
     
   }) # close submitData 
@@ -364,8 +447,8 @@ cations <- function(input, output, session) {
   # debugging: module level -------------------------------------------------
   
   ############# START debugging
-  observe(print({ head(resultReactive()) }))
-  observe(print({ head(resultsMetadata()) }))
+  # observe(print({ head(resultReactive()) }))
+  # observe(print({ head(resultsMetadata()) }))
   # observe(print({ queryType$default }))
   # observe(print({ input$ReachPatchs_cell_edit }))
   ############# END debugging

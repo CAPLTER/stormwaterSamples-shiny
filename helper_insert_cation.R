@@ -4,11 +4,10 @@
 #'   data (from \code{icp_to_raw}) into the stormwater.icp table.
 #'
 #'
-insert_raw_icp <- function(cationData, pool) {
+# insert_raw_cation <- function(cationData, pool) {
+build_insert_raw_cation_query <- function(cationData) {
   
   cationDataName <- deparse(substitute(cationData))
-  
-  # insert icp_raw into icp
   
   # base query
   baseQuery <- '
@@ -53,21 +52,7 @@ insert_raw_icp <- function(cationData, pool) {
                                                 temporaryTable = cationDataName))
   
   
-  # execute parameterized query
-  paramQueryReturn <- run_interpolated_execution(interpolatedQuery = parameterizedQuery)
-  
-  # check if number of rows added matches input
-  if (paramQueryReturn == nrow(cationData)) {
-    
-    # remove temp table
-    dbRemoveTable(conn = pool,
-                  name = c('stormwater', cationDataName))
-    
-  } else {
-    
-    return("insert error, check log")
-    
-  }
+  return(parameterizedQuery)
   
 }
 
@@ -75,13 +60,13 @@ insert_raw_icp <- function(cationData, pool) {
 #' @export
 #'
 
-icp_to_rslt <- function(icpDataFormatted){
+icp_to_rslt <- function(cationDataFormatted, sampleMetadata){
   
   # pare non-sample data and results from alternate wavelengths, stack, assign
   # analysis_ids, add comment re: blanks, assign data qualifiers
-  icpResults <- icpDataFormatted %>%
-    filter(!grepl('Blank|CalibStd|QC|Tank', temp_out_id, ignore.case=F)) %>%
-    select(-c(ca3158, ca3179, na5895, zn2025, filename)) %>%
+  
+  cationResults <- cationDataFormatted %>%
+    inner_join(sampleMetadata, by = c("sampleID" = "samples")) %>%
     pivot_longer(
       cols = starts_with(c("ca", "na", "zn")),
       names_to = "analysis",
@@ -94,9 +79,13 @@ icp_to_rslt <- function(icpDataFormatted){
         TRUE ~ NA_integer_
       ),
       comments = case_when(
-        grepl('blk', temp_out_id, ignore.case = T) ~ 'blank',
-        TRUE ~ NA_character_
-      ),
+        grepl('blk', temp_out_id, ignore.case = T) & comments == "" ~ 'blank',
+        grepl('blk', temp_out_id, ignore.case = T) & comments != "" ~ paste(comments, 'blank', sep = "; "),
+        TRUE ~ as.character(comments)),
+      # comments = case_when(
+      #   grepl('blk', temp_out_id, ignore.case = T) ~ 'blank',
+      #   TRUE ~ NA_character_
+      # ),
       data_qualifier = case_when(
         analysis_id == 8 ~ c(17, 10, NA, 1) [findInterval(concentration, c(-Inf, 0.027, 1.0, 100, Inf))],
         analysis_id == 31 ~ c(17, 10, NA, 1) [findInterval(concentration, c(-Inf, 0.024, 1.0, 100, Inf))],
@@ -107,11 +96,50 @@ icp_to_rslt <- function(icpDataFormatted){
       results = as.double(concentration),
       data_qualifier = as.integer(data_qualifier),
       temp_out_id = str_replace_all(temp_out_id, "\\.", "\\_"),
-      temp_out_id =toupper(temp_out_id)
+      temp_out_id = toupper(temp_out_id)
     ) %>%
-    select(temp_out_id, run_id, analysis_id, date_analyzed, results, data_qualifier, comments) # %>%
-  # as.data.frame()
+    select(sampleID, run_id, analysis_id, date_analyzed, results, data_qualifier, comments) %>%
+    as.data.frame()
   
-  return(icpResults)
+  return(cationResults)
+  
+}
+
+build_insert_results_cation_query <- function(cationData) {
+  
+  cationDataName <- deparse(substitute(cationData))
+  
+  # base query
+  baseQuery <- "
+  INSERT INTO stormwater.results
+  (
+    sample_id,
+    run_id,
+    analysis_id,
+    date_analyzed,
+    concentration,
+    data_qualifier,
+    comments
+  )
+  (
+    SELECT
+      sample_id,
+      run_id,
+      analysis_id,
+      date_analyzed,
+      results,
+      data_qualifier,
+      NULLIF(comments, '')::text
+    FROM stormwater.?temporaryTable
+  );"
+  
+  # parameterized query
+  parameterizedQuery <- gsub(pattern = "'",
+                             replacement = "",
+                             x = sqlInterpolate(ANSI(),
+                                                baseQuery,
+                                                temporaryTable = cationDataName))
+  
+  return(parameterizedQuery)
   
 }

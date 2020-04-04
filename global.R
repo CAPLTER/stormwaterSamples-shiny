@@ -3,6 +3,7 @@
 
 library(shiny)
 library(dplyr)
+library(tidyr)
 library(readr)
 library(DT)
 library(stringr)
@@ -18,7 +19,7 @@ library(glue)
 # options -----------------------------------------------------------------
 
 # increase max file upload size
-options(shiny.maxRequestSize=30*1024^2)
+options(shiny.maxRequestSize = 30*1024^2)
 
 
 # supporting modules, functions, and configurations -----------------------
