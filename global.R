@@ -3,6 +3,7 @@
 
 library(shiny)
 library(dplyr)
+library(tidyr)
 library(readr)
 library(DT)
 library(stringr)
@@ -10,13 +11,15 @@ library(lubridate)
 library(DBI)
 library(RPostgreSQL)
 library(pool)
+library(readxl)
+library(glue)
 # library(shinyjs)
 
 
 # options -----------------------------------------------------------------
 
-# increase max file upload size
-options(shiny.maxRequestSize=30*1024^2)
+options(shiny.maxRequestSize = 30*1024^2) # increase max file upload size
+options(shiny.reactlog = FALSE)
 
 
 # supporting modules, functions, and configurations -----------------------
@@ -35,8 +38,10 @@ source('helper_sample_locations.R')
 source('helper_shiny_input.R')
 source('helper_query_solids.R')
 source('helper_query_discharge.R')
+source('helper_insert_cation.R')
 
 
 # modules
 source('module_modify_samples.R')
 source('module_view_discharge.R')
+source('module_cations.R')
