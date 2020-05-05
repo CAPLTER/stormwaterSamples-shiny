@@ -452,7 +452,7 @@ cations <- function(input, output, session) {
   
   # debugging: module level -------------------------------------------------
   
-  observe(print({ head(resultReactive()) }))
+  # observe(print({ head(resultReactive()) }))
   # observe(print({ resultsMetadata() }))
   # observe(print({ samplesSelection() }))
   # observe(print({ queryType$default }))
