@@ -4,10 +4,8 @@
 #'   data (from \code{icp_to_raw}) into the stormwater.icp table.
 #'
 #'
-# insert_raw_cation <- function(cationData, pool) {
-build_insert_raw_cation_query <- function(cationData) {
-  
-  cationDataName <- deparse(substitute(cationData))
+#'
+build_insert_raw_cation_query <- function() {
   
   # base query
   baseQuery <- '
@@ -41,24 +39,18 @@ build_insert_raw_cation_query <- function(cationData) {
       zn2025,
       zn2138,
       filename
-    FROM stormwater.?temporaryTable
+    --FROM stormwater.?temporaryTable
+    FROM stormwater.temp_raw
   );'
   
-  # parameterized query
-  parameterizedQuery <- gsub(pattern = "'",
-                             replacement = "",
-                             x = sqlInterpolate(ANSI(),
-                                                baseQuery,
-                                                temporaryTable = cationDataName))
+  parameterizedQuery <- sqlInterpolate(ANSI(),
+                                       baseQuery)
   
   
   return(parameterizedQuery)
   
 }
 
-#'
-#' @export
-#'
 
 icp_to_rslt <- function(cationDataFormatted, sampleMetadata){
   
@@ -96,18 +88,17 @@ icp_to_rslt <- function(cationDataFormatted, sampleMetadata){
       results = as.double(concentration),
       data_qualifier = as.integer(data_qualifier),
       temp_out_id = str_replace_all(temp_out_id, "\\.", "\\_"),
-      temp_out_id = toupper(temp_out_id)
+      temp_out_id = toupper(temp_out_id),
+      replicate = as.integer(replicate)
     ) %>%
-    select(sampleID, run_id, analysis_id, date_analyzed, results, data_qualifier, comments) %>%
     as.data.frame()
   
   return(cationResults)
   
 }
 
-build_insert_results_cation_query <- function(cationData) {
+build_insert_results_cation_query <- function() {
   
-  cationDataName <- deparse(substitute(cationData))
   
   # base query
   baseQuery <- "
@@ -115,6 +106,7 @@ build_insert_results_cation_query <- function(cationData) {
   (
     sample_id,
     run_id,
+    replicate,
     analysis_id,
     date_analyzed,
     concentration,
@@ -125,20 +117,18 @@ build_insert_results_cation_query <- function(cationData) {
     SELECT
       sample_id,
       run_id,
+      replicate,
       analysis_id,
       date_analyzed,
       results,
       data_qualifier,
       NULLIF(comments, '')::text
-    FROM stormwater.?temporaryTable
+    FROM stormwater.temp_results
   );"
   
   # parameterized query
-  parameterizedQuery <- gsub(pattern = "'",
-                             replacement = "",
-                             x = sqlInterpolate(ANSI(),
-                                                baseQuery,
-                                                temporaryTable = cationDataName))
+  parameterizedQuery <- sqlInterpolate(ANSI(),
+                                       baseQuery)
   
   return(parameterizedQuery)
   

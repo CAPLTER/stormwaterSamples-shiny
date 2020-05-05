@@ -23,23 +23,23 @@ cationsUI <- function(id) {
     # ), # notable stmt
     tags$head(
       tags$style(
-        HTML("#leftPanel { background: #D3D3D3; color: #484848; }"),
+        HTML(paste0("#", ns("leftPanel"), "{
+                    background: #D3D3D3;
+                    color: #484848; }")),
         HTML(paste0("#", ns("samplesList"), "{
-                    color:#484848;
+                    color: #484848;
                     overflow-y: scroll;
                     max-height: 250px;
                     background: ghostwhite;
-                    text-align: left}"))
+                    text-align: left;
+                    white-space: pre-wrap; }"))
       ) # close tags$style
     ), # close tagss$head
     fluidPage(
       fluidRow( 
         column(id = 'leftPanel', 2,
-               fileInput(inputId = ns("cationFile"),
-                         label = "select file",
-                         multiple = FALSE),
-               helpText("identify sample set",
-                        style = "text-align: left; color: black"),
+               helpText("1. identify sample set",
+                        style = "text-align: left; color: DarkBlue; font-weight: bold"),
                selectizeInput(inputId = ns("narrowSamplesSite"),
                               "site",
                               choices = siteAbbreviations,
@@ -56,21 +56,23 @@ cationsUI <- function(id) {
                               selected = NULL,
                               multiple = FALSE),
                br(),
-               downloadButton(ns("downloadData"), "download"),
+               verbatimTextOutput(ns("samplesList")),
+               # textOutput(ns("samplesList")),
                br(),
-               # verbatimTextOutput(ns("samplesList")),
-               textOutput(ns("samplesList")),
-               br(),
+               helpText("2. select file",
+                        style = "text-align: left; color: DarkBlue; font-weight: bold"),
+               fileInput(inputId = ns("cationFile"),
+                         label = NULL,
+                         multiple = FALSE),
+               helpText("3. submit data for upload",
+                        style = "text-align: left; color: DarkBlue; font-weight: bold"),
                actionButton(inputId = ns("submitData"),
-                            label = "submit data"),
+                            label = "upload"),
                br()
         ), # close the left col
         column(id = "rightPanel", 10,
-               strong("data"),
-               hr(),
                DT::dataTableOutput(ns("resultView")),
-               hr(),
-               strong("preview data to upload"),
+               uiOutput(ns("mergedPreviewDivider")),
                DT::dataTableOutput(ns("resultsMetadataView"))
         ) # close the right col
       ) # close the row
@@ -163,15 +165,14 @@ cations <- function(input, output, session) {
   
   
   # generate a preview of samples available to associate with cation data
-  # output$samplesList <- renderPrint(
-  output$samplesList <- renderText(
+  # output$samplesList <- renderText(
+  output$samplesList <- renderPrint(
     
     if (nrow(samplesSelection()) == 0) {
       return(NULL)
     } else {
-      # print(samplesSelection() %>% select(samples), row.names = FALSE, right = FALSE)
-      # print(samplesSelection()$samples, row.names = FALSE, right = FALSE)
-      samplesSelection()$samples
+      # samplesSelection()$samples
+      writeLines(samplesSelection()$samples)
     }
     
   )
@@ -237,6 +238,19 @@ cations <- function(input, output, session) {
     return(cationsResults)
     
   })
+  
+  # add visual separator between dynamic data and preview of data to upload
+  output$mergedPreviewDivider <- renderUI({
+    
+    req(input$cationFile)
+    
+    tagList(
+      br(),
+      p("preview data to upload",
+        style = "text-align: left; background-color: LightGray; color: black;")
+    )
+    
+  }) 
   
   
   # render results ----------------------------------------------------------
@@ -352,7 +366,7 @@ cations <- function(input, output, session) {
                  row.names = F)
     
     # build raw insert query
-    insert_raw_cation_query <- build_insert_raw_cation_query('temp_raw')
+    insert_raw_cation_query <- build_insert_raw_cation_query()
     
     # workflow: RESULTS
     
@@ -360,7 +374,6 @@ cations <- function(input, output, session) {
     temp_results <- icp_to_rslt(cationDataFormatted = resultsMetadata(),
                                 sampleMetadata = samplesSelection())
     
-    # print(temp_results)
     
     # write temporary table: results data
     
@@ -376,7 +389,7 @@ cations <- function(input, output, session) {
                  row.names = F)
     
     # build results insert query
-    insert_results_cation_query <- build_insert_results_cation_query('temp_results')
+    insert_results_cation_query <- build_insert_results_cation_query()
     
     
     # begin tryCatch - transaction
@@ -391,6 +404,12 @@ cations <- function(input, output, session) {
                   insert_results_cation_query)
         
       })
+      
+      showNotification(ui = "successfully uploaded",
+                       duration = NULL,
+                       closeButton = TRUE,
+                       type = 'message',
+                       action = a(href = "javascript:location.reload();", "reload the page"))
       
     }, warning = function(warn) {
       
@@ -414,7 +433,7 @@ cations <- function(input, output, session) {
     }) # close try catch
     
     
-    # clean up temporary tables
+    # remove temporary tables
     
     if (dbExistsTable(stormPool, c('stormwater', 'temp_raw'))) {
       
@@ -428,30 +447,16 @@ cations <- function(input, output, session) {
       
     }
     
-    
   }) # close submitData 
-  
-  
-  # temp: download data -----------------------------------------------------
-  
-  output$downloadData <- downloadHandler(
-    filename = function() {
-      paste("cation-module_", Sys.time(), ".csv", sep = "")
-    },
-    content = function(file) {
-      write_csv(resultsMetadata(), file)
-    }
-  ) 
   
   
   # debugging: module level -------------------------------------------------
   
-  ############# START debugging
-  # observe(print({ head(resultReactive()) }))
-  # observe(print({ head(resultsMetadata()) }))
+  observe(print({ head(resultReactive()) }))
+  # observe(print({ resultsMetadata() }))
+  # observe(print({ samplesSelection() }))
   # observe(print({ queryType$default }))
   # observe(print({ input$ReachPatchs_cell_edit }))
-  ############# END debugging
   
   
   # close module cations ----------------------------------------------------

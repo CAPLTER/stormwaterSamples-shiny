@@ -1,29 +1,5 @@
 
-# reactlog ----------------------------------------------------------------
-
-options(shiny.reactlog = TRUE)
-
-
 # README ------------------------------------------------------------------
-
-# UPDATE 2020-01-08 (version 2): This marks a substantial rewrite of the
-# application. Code for samples, solids, and viewing discharge was moved to
-# modules, UI/UX vastly improved, and the DB connection was moved to a pool.
-# Uploading discharge data was the only component that was not updated. Note
-# that while working with solids was not moved to module, the code was updated
-# considerably. Solids was not moved to a module as it was not possible to pass
-# a messenger to the main app (home of the main solids data view) indicating
-# updates - of course, it is possible by returning a value from the module and
-# then assigning the call to the module to an object, but this could only be
-# done in the observeEvent call where the module was instantiated thus
-# nullifying the ability of the messenger to update the reactive in the app.
-
-# UPDATE 2018-06-20: Added functionality to view discharge data in the database.
-# Changed discharge insert/upload funtionality to do nothing (i.e., skip
-# insert/upload) for duplicate samples - this allows, for example, a Flowlink
-# file with a mix of new and already uploaded data to be uploaded without having
-# to manually remove the data that are already in the database. Added pagination
-# to samples viewer.
 
 # Note regarding Javascript: There are several code chunks that have the comment
 # 'notable stmt' associated with them. These statements are related to the
@@ -175,7 +151,7 @@ ui <- tagList(
              ), # close AFDM tab panel
              
              # cations tab -------------------------------------------------------------
-
+             
              tabPanel("cations",
                       cationsUI("icpCations") 
              ) # close cations tab 
@@ -212,7 +188,7 @@ server <- function(input, output, session) {
              n_max = 1,
              col_names = c("reportText", "siteID")) %>%
       dplyr::select(siteID) %>%
-      unlist(., use.names=FALSE)
+      unlist(., use.names = FALSE)
     
   })
   
@@ -460,26 +436,26 @@ server <- function(input, output, session) {
         replicate = NA,
         comments = as.character("match not found")
       )
-     
+      
     } else {
-    
-    # add and delete buttons to samplesSolidsData data
-    samplesSolidsData <- samplesSolidsData %>%
-      mutate(
-        add = shinyInputFlex(reactiveObject = samplesSolidsData,
-                             FUN = actionButton,
-                             len = nrow(samplesSolidsData),
-                             id = 'sample_id',
-                             label = "add",
-                             onclick = sprintf('Shiny.setInputValue("%s",  this.id)', "button_add_solids_sample")),
-        delete = shinyInputFlex(reactiveObject = samplesSolidsData,
-                                FUN = actionButton,
-                                len = nrow(samplesSolidsData),
-                                id = 'solid_id',
-                                label = "delete",
-                                onclick = sprintf('Shiny.setInputValue("%s",  this.id)', "button_delete_solids_sample"))
-      )
-    
+      
+      # add and delete buttons to samplesSolidsData data
+      samplesSolidsData <- samplesSolidsData %>%
+        mutate(
+          add = shinyInputFlex(reactiveObject = samplesSolidsData,
+                               FUN = actionButton,
+                               len = nrow(samplesSolidsData),
+                               id = 'sample_id',
+                               label = "add",
+                               onclick = sprintf('Shiny.setInputValue("%s",  this.id)', "button_add_solids_sample")),
+          delete = shinyInputFlex(reactiveObject = samplesSolidsData,
+                                  FUN = actionButton,
+                                  len = nrow(samplesSolidsData),
+                                  id = 'solid_id',
+                                  label = "delete",
+                                  onclick = sprintf('Shiny.setInputValue("%s",  this.id)', "button_delete_solids_sample"))
+        )
+      
     }
     
     return(samplesSolidsData)
@@ -724,7 +700,7 @@ server <- function(input, output, session) {
              n_max = 1,
              col_names = c("reportText", "siteID")) %>% 
       dplyr::select(siteID) %>% 
-      unlist(., use.names=FALSE)
+      unlist(., use.names = FALSE)
     
   })
   
@@ -846,12 +822,10 @@ server <- function(input, output, session) {
   
   # debugging ---------------------------------------------------------------
   
-  ############# START debugging
   # observe(print({ solidsDataReactive() }))
   # observe(print({ listenModifySolids$dbVersion }))
   # observe(print({ queryType$default }))
   # observe(print({ input$solidsData_cell_edit }))
-  ############# END debugging
   
   
   # close server ------------------------------------------------------------

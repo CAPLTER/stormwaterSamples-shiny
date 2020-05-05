@@ -18,8 +18,8 @@ library(glue)
 
 # options -----------------------------------------------------------------
 
-# increase max file upload size
-options(shiny.maxRequestSize = 30*1024^2)
+options(shiny.maxRequestSize = 30*1024^2) # increase max file upload size
+options(shiny.reactlog = FALSE)
 
 
 # supporting modules, functions, and configurations -----------------------
