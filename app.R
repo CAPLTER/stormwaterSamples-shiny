@@ -154,7 +154,13 @@ ui <- tagList(
              
              tabPanel("cations",
                       cationsUI("icpCations") 
-             ) # close cations tab 
+             ), # close cations tab 
+             
+             # lachat tab --------------------------------------------------------------
+             
+             tabPanel("lachat",
+                      lachatUI("lachat") 
+             ) # close lachat tab 
              
              # closing UI --------------------------------------------------------------
              
@@ -818,6 +824,12 @@ server <- function(input, output, session) {
   
   callModule(module = cations,
              id = "icpCations")
+  
+  
+  # call to cations module --------------------------------------------------
+  
+  # callModule(module = lahcat,
+  #            id = "lachat")
   
   
   # debugging ---------------------------------------------------------------
