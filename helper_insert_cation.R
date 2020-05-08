@@ -58,7 +58,14 @@ icp_to_rslt <- function(cationDataFormatted, sampleMetadata){
   # analysis_ids, add comment re: blanks, assign data qualifiers
   
   cationResults <- cationDataFormatted %>%
-    inner_join(sampleMetadata, by = c("sampleID" = "samples")) %>%
+    mutate(
+      newSample = replace(newSample, newSample == "NULL", NA),
+      samples = case_when(
+        !is.na(newSample) ~ newSample,
+        TRUE ~ samples 
+      )
+    ) %>% 
+    inner_join(sampleMetadata, by = c("samples" = "samples")) %>%
     pivot_longer(
       cols = starts_with(c("ca", "na", "zn")),
       names_to = "analysis",
