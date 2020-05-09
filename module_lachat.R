@@ -1,19 +1,18 @@
-#' @title Module: cations
+#' @title Module: lachat
 #' 
-#' @description The module cations facilitates uploading cation data. The user
+#' @description The module lachat facilitates uploading lachat data. The user
 #'   attaches the appropriate sample details to uploaded data. Upon execution,
 #'   the munged data with sample and analysis details is written to
 #'   stormwater.results upon which, if successful, the imported data are written
-#'   to stormwater.icp.
+#'   to stormwater.lachat.
 #'   
 #' @note Cannot discern any difference in functionality when Shiny bind/unbind
 #'   statements are included, except that inclusion in resultsMetadata prevents
 #'   results from being displayed.
 
+# lachat UI --------------------------------------------------------------
 
-# upload UI ---------------------------------------------------------------
-
-cationsUI <- function(id) {
+lachatUI <- function(id) {
   
   ns <- NS(id)
   
@@ -80,10 +79,9 @@ cationsUI <- function(id) {
     ) # close the page
   ) # close tagList
   
-} # close cationsUI 
+} # close lachatUI 
 
-
-# upload main -------------------------------------------------------------
+# lachat main ------------------------------------------------------------
 
 # vector of last five year for filtering sample ids
 lastFiveYears <- rev(seq(from = as.numeric(format(Sys.Date(),'%Y')) - 5,
@@ -92,7 +90,7 @@ lastFiveYears <- rev(seq(from = as.numeric(format(Sys.Date(),'%Y')) - 5,
 
 
 # main function
-cations <- function(input, output, session) {
+lachat <- function(input, output, session) {
   
   # helper function for reading input functions; for reasons that are completely
   # unclear, this function only works if included in app.R or function section
@@ -140,7 +138,6 @@ cations <- function(input, output, session) {
     baseQuery <- "
     SELECT 
       sample_id,
-      samples.bottle,
       CONCAT(samples.bottle, '_', samples.sample_datetime) AS samples
     FROM stormwater.samples
     WHERE
@@ -181,22 +178,22 @@ cations <- function(input, output, session) {
   )
   
   
-  # import icp data file ----------------------------------------------------
+  # import machine output from file -----------------------------------------
   
-  # raw cation data imported from icp output (file)
+  # raw data imported from machine output (file)
   rawReactive <- reactive({
     
     # require file input
     req(input$machineOutputFile)
     
     # import file with params
-    cationsUpload <- read_excel(path = input$machineOutputFile$datapath,
-                                skip = 4)
+    fileUpload <- read_excel(path = input$machineOutputFile$datapath,
+                             skip = 4)
     
     # confirm appropriate file structure
     expectedColumnNames <- tolower(c("Ca3158","Ca3179","Ca3933","Na5889","Na5895","Zn2025","Zn2138"))
     
-    if (ncol(cationsUpload) != 11 | !all(expectedColumnNames %in% tolower(colnames(cationsUpload)))) {
+    if (ncol(fileUpload) != 11 | !all(expectedColumnNames %in% tolower(colnames(fileUpload)))) {
       
       showNotification(ui = "unexpected data structure: check number and names of columns",
                        duration = NULL,
@@ -206,52 +203,24 @@ cations <- function(input, output, session) {
     }
     
     # add filename as a variable
-    cationsUpload$filename <- input$machineOutputFile$name
+    fileUpload$filename <- input$machineOutputFile$name
     
     # format column names
-    colnames(cationsUpload) <- tolower(colnames(cationsUpload)) # colnames to lowercase
-    colnames(cationsUpload) <- gsub("\\.", "\\_", colnames(cationsUpload)) # replace dots with underscores
+    colnames(fileUpload) <- tolower(colnames(fileUpload)) # colnames to lowercase
+    colnames(fileUpload) <- gsub("\\.", "\\_", colnames(fileUpload)) # replace dots with underscores
     
     # add missing column names
-    colnames(cationsUpload)[1] <- "date_analyzed"
-    colnames(cationsUpload)[2] <- "temp_out_id"
-    colnames(cationsUpload)[3] <- "operator"
-    colnames(cationsUpload)[4] <- "icp_id"
+    colnames(fileUpload)[1] <- "date_analyzed"
+    colnames(fileUpload)[2] <- "temp_out_id"
+    colnames(fileUpload)[3] <- "operator"
+    colnames(fileUpload)[4] <- "icp_id"
     
     # add run identifier as maxrun
     maxrun <- as.numeric(run_interpolated_query(interpolatedQuery = "SELECT MAX(run_id) FROM stormwater.results;"))
-    cationsUpload$run_id <- maxrun + 1
-    
-    # add a join field
-    cationsUpload <- cationsUpload %>% 
-      mutate(
-        idToJoin = toupper(trimws(temp_out_id)),
-        idToJoin = case_when(
-          !grepl("blank|calib|qc", temp_out_id, ignore.case = T) ~ gsub("\\.", "\\_", idToJoin),
-          TRUE ~ idToJoin 
-        )
-      )
-    
-    # join cations to sample list (if possible sans creating ambiguous samples)
-    if (nrow(cationsUpload %>% left_join(samplesSelection(), by = c("idToJoin" = "bottle"))) > nrow(cationsUpload)) {
-      
-      cationsUpload <- cationsUpload %>% 
-        mutate(samples = as.character(NA))
-      
-      showNotification(ui = "cannot guess sample IDs, enter all IDs or try narrowing the range of sample choices",
-                       duration = NULL,
-                       closeButton = TRUE,
-                       type = 'warning')
-      
-    } else {
-      
-      cationsUpload <- cationsUpload %>% 
-        left_join(samplesSelection() %>% select(-sample_id), by = c("idToJoin" = "bottle")) 
-      
-    }
+    fileUpload$run_id <- maxrun + 1
     
     # return modified object
-    return(cationsUpload) 
+    return(fileUpload) 
     
   })
   
@@ -262,11 +231,11 @@ cations <- function(input, output, session) {
     
     # session$sendCustomMessage('unbind-DT', 'resultView') # notable stmt
     
-    cationsResults <- rawReactive() %>% 
+    lachatResults <- rawReactive() %>% 
       filter(!grepl('Blank|CalibStd|QC|Tank', temp_out_id, ignore.case = F)) %>% 
       select(-c(ca3158, ca3179, na5895, zn2025, filename))
     
-    return(cationsResults)
+    return(lachatResults)
     
   })
   
@@ -290,11 +259,11 @@ cations <- function(input, output, session) {
     
     resultReactive() %>%
       mutate(
-        newSample = shinyInputOther(FUN = selectInput,
-                                    len = nrow(resultReactive()),
-                                    id = paste0(session$ns('newSample_')),
-                                    choices = samplesSelection()$samples,
-                                    width = "220px"),
+        sampleID = shinyInputOther(FUN = selectInput,
+                                   len = nrow(resultReactive()),
+                                   id = paste0(session$ns('sampID_')),
+                                   choices = samplesSelection()$samples,
+                                   width = "220px"),
         omit = shinyInputOther(checkboxInput,
                                nrow(resultReactive()),
                                id = paste0(session$ns("omit_")),
@@ -310,8 +279,7 @@ cations <- function(input, output, session) {
                                    id = paste0(session$ns('comments_')),
                                    width = "120px")
       ) %>%
-      select(samples, newSample, omit, replicate, comments, everything()) %>% 
-      select(-idToJoin, -run_id)
+      select(sampleID, omit, replicate, comments, everything())
     
   },
   selection = 'none',
@@ -337,8 +305,8 @@ cations <- function(input, output, session) {
     
     resultReactive() %>%
       mutate(
-        newSample = shinyValue(id = "newSample_",
-                               len = nrow(resultReactive())),
+        sampleID = shinyValue(id = "sampID_",
+                              len = nrow(resultReactive())),
         omit = shinyValue(id = "omit_",
                           len = nrow(resultReactive())),
         replicate = shinyValue(id = "rep_",
@@ -346,7 +314,6 @@ cations <- function(input, output, session) {
         comments = shinyValue(id = "comments_",
                               len = nrow(resultReactive()))
       ) %>%
-      mutate(newSample = as.character(newSample)) %>% # cast newSample to char to avoid case_when logical errors
       filter(omit == FALSE)
     
   })
@@ -361,15 +328,8 @@ cations <- function(input, output, session) {
           grepl('blk', temp_out_id, ignore.case = T) & comments != "" ~ paste(comments, 'blank', sep = "; "),
           TRUE ~ as.character(comments))
       ) %>% 
-      mutate(
-        newSample = replace(newSample, newSample == "NULL", NA),
-        samples = case_when(
-          !is.na(newSample) ~ newSample,
-          TRUE ~ samples 
-        )
-      ) %>% 
-      # select(-omit) %>% 
-      select(samples, replicate, comments, date_analyzed, temp_out_id, operator, icp_id)
+      select(-omit) %>% 
+      select(sampleID, replicate, comments, everything())
     
   },
   selection = 'none',
@@ -387,26 +347,26 @@ cations <- function(input, output, session) {
   
   observeEvent(input$submitData, {
     
-    # # workflow: RAW
-    # 
-    # # rename raw and results data for easier reference
-    # temp_raw <- rawReactive()
-    # 
-    # # write temporary table: raw data
-    # 
-    # if (dbExistsTable(stormPool, c('stormwater', 'temp_raw'))) {
-    #   
-    #   dbRemoveTable(stormPool, c('stormwater', 'temp_raw'))
-    #   
-    # }
-    # 
-    # dbWriteTable(conn = stormPool,
-    #              name = c('stormwater', 'temp_raw'),
-    #              value = temp_raw,
-    #              row.names = F)
-    # 
-    # # build raw insert query
-    # insert_raw_cation_query <- build_insert_raw_cation_query()
+    # workflow: RAW
+    
+    # rename raw and results data for easier reference
+    temp_raw <- rawReactive()
+    
+    # write temporary table: raw data
+    
+    if (dbExistsTable(stormPool, c('stormwater', 'temp_raw'))) {
+      
+      dbRemoveTable(stormPool, c('stormwater', 'temp_raw'))
+      
+    }
+    
+    dbWriteTable(conn = stormPool,
+                 name = c('stormwater', 'temp_raw'),
+                 value = temp_raw,
+                 row.names = F)
+    
+    # build raw insert query
+    insert_raw_cation_query <- build_insert_raw_cation_query()
     
     # workflow: RESULTS
     
@@ -414,79 +374,78 @@ cations <- function(input, output, session) {
     temp_results <- icp_to_rslt(cationDataFormatted = resultsMetadata(),
                                 sampleMetadata = samplesSelection())
     
-    print(temp_results)
     
-    # # write temporary table: results data
-    # 
-    # if (dbExistsTable(stormPool, c('stormwater', 'temp_results'))) {
-    #   
-    #   dbRemoveTable(stormPool, c('stormwater', 'temp_results'))
-    #   
-    # }
-    # 
-    # dbWriteTable(conn = stormPool,
-    #              name = c('stormwater', 'temp_results'),
-    #              value = temp_results,
-    #              row.names = F)
-    # 
-    # # build results insert query
-    # insert_results_cation_query <- build_insert_results_cation_query()
-    # 
-    # 
-    # # begin tryCatch - transaction
-    # tryCatch({
-    #   
-    #   poolWithTransaction(stormPool, function(conn) {
-    #     
-    #     dbExecute(conn,
-    #               insert_raw_cation_query)
-    #     
-    #     dbExecute(conn,
-    #               insert_results_cation_query)
-    #     
-    #   })
-    #   
-    #   showNotification(ui = "successfully uploaded",
-    #                    duration = NULL,
-    #                    closeButton = TRUE,
-    #                    type = 'message',
-    #                    action = a(href = "javascript:location.reload();", "reload the page"))
-    #   
-    # }, warning = function(warn) {
-    #   
-    #   showNotification(ui = paste("there is a warning:  ", warn),
-    #                    duration = NULL,
-    #                    closeButton = TRUE,
-    #                    type = 'warning')
-    #   
-    #   print(paste("WARNING: ", warn))
-    #   
-    # }, error = function(err) {
-    #   
-    #   showNotification(ui = paste("there was an error:  ", err),
-    #                    duration = NULL,
-    #                    closeButton = TRUE,
-    #                    type = 'error')
-    #   
-    #   print(paste("ERROR: ", err))
-    #   print("ROLLING BACK TRANSACTION")
-    #   
-    # }) # close try catch
-    # 
-    # 
-    # # remove temporary tables
-    # 
-    # if (dbExistsTable(stormPool, c('stormwater', 'temp_raw'))) {
-    #   
-    #   dbRemoveTable(stormPool, c('stormwater', 'temp_raw'))
-    #   
-    # }
-    # 
-    # if (dbExistsTable(stormPool, c('stormwater', 'temp_results'))) {
-    #   
-    #   dbRemoveTable(stormPool, c('stormwater', 'temp_results'))
-    #   
-    # }
+    # write temporary table: results data
+    
+    if (dbExistsTable(stormPool, c('stormwater', 'temp_results'))) {
+      
+      dbRemoveTable(stormPool, c('stormwater', 'temp_results'))
+      
+    }
+    
+    dbWriteTable(conn = stormPool,
+                 name = c('stormwater', 'temp_results'),
+                 value = temp_results,
+                 row.names = F)
+    
+    # build results insert query
+    insert_results_cation_query <- build_insert_results_cation_query()
+    
+    
+    # begin tryCatch - transaction
+    tryCatch({
+      
+      poolWithTransaction(stormPool, function(conn) {
+        
+        dbExecute(conn,
+                  insert_raw_cation_query)
+        
+        dbExecute(conn,
+                  insert_results_cation_query)
+        
+      })
+      
+      showNotification(ui = "successfully uploaded",
+                       duration = NULL,
+                       closeButton = TRUE,
+                       type = 'message',
+                       action = a(href = "javascript:location.reload();", "reload the page"))
+      
+    }, warning = function(warn) {
+      
+      showNotification(ui = paste("there is a warning:  ", warn),
+                       duration = NULL,
+                       closeButton = TRUE,
+                       type = 'warning')
+      
+      print(paste("WARNING: ", warn))
+      
+    }, error = function(err) {
+      
+      showNotification(ui = paste("there was an error:  ", err),
+                       duration = NULL,
+                       closeButton = TRUE,
+                       type = 'error')
+      
+      print(paste("ERROR: ", err))
+      print("ROLLING BACK TRANSACTION")
+      
+    }) # close try catch
+    
+    
+    # remove temporary tables
+    
+    if (dbExistsTable(stormPool, c('stormwater', 'temp_raw'))) {
+      
+      dbRemoveTable(stormPool, c('stormwater', 'temp_raw'))
+      
+    }
+    
+    if (dbExistsTable(stormPool, c('stormwater', 'temp_results'))) {
+      
+      dbRemoveTable(stormPool, c('stormwater', 'temp_results'))
+      
+    }
     
   }) # close submitData 
   
@@ -496,11 +455,10 @@ cations <- function(input, output, session) {
   # observe(print({ head(resultReactive()) }))
   # observe(print({ resultsMetadata() }))
   # observe(print({ samplesSelection() }))
-  # observe(print({ rawReactive() %>% print(n=Inf) }))
   # observe(print({ queryType$default }))
   # observe(print({ input$ReachPatchs_cell_edit }))
   
   
-  # close module cations ----------------------------------------------------
+  # close module lachat ----------------------------------------------------
   
-} # close module::cations
+} # close module::lachat
