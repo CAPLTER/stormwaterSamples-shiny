@@ -279,90 +279,145 @@ cations <- function(input, output, session) {
   
   observeEvent(machineInputs$submit(), {
     
-    # workflow: RAW
+    # run a series of data validations
     
-    # rename raw and results data for easier reference
-    temp_raw <- rawReactive()
-    
-    # write temporary table: raw data
-    
-    if (dbExistsTable(stormPool, c('stormwater', 'temp_raw'))) {
+    # 1. check if any samples not flagged to omit are missing a sample ID
+    if (
       
-      dbRemoveTable(stormPool, c('stormwater', 'temp_raw'))
+      any(
+        is.na(
+          resultsMetadata() %>%
+          mutate(
+            newSample = replace(newSample, newSample == "NULL", NA),
+            samples = case_when(
+              !is.na(newSample) ~ newSample,
+              TRUE ~ samples
+            )
+          ) %>%
+          filter(omit == FALSE) %>%
+          pull(samples)
+        ) # close is.na
+      ) # close any
       
-    }
-    
-    dbWriteTable(conn = stormPool,
-                 name = c('stormwater', 'temp_raw'),
-                 value = temp_raw,
-                 row.names = F)
-    
-    # build raw insert query
-    insert_raw_cation_query <- build_insert_raw_cation_query()
-    
-    # workflow: RESULTS
-    
-    # format resultsMetadata() for insert
-    temp_results <- icp_to_rslt(cationDataFormatted = resultsMetadata(),
-                                sampleMetadata = machineInputs$samples())
-    
-    # write temporary table: results data
-    
-    if (dbExistsTable(stormPool, c('stormwater', 'temp_results'))) {
+    ) {
       
-      dbRemoveTable(stormPool, c('stormwater', 'temp_results'))
-      
-    }
-    
-    dbWriteTable(conn = stormPool,
-                 name = c('stormwater', 'temp_results'),
-                 value = temp_results,
-                 row.names = F)
-    
-    # build results insert query
-    insert_results_cation_query <- build_insert_results_cation_query()
-    
-    
-    # begin tryCatch - transaction
-    tryCatch({
-      
-      poolWithTransaction(stormPool, function(conn) {
-        
-        dbExecute(conn,
-                  insert_raw_cation_query)
-        
-        dbExecute(conn,
-                  insert_results_cation_query)
-        
-      })
-      
-      showNotification(ui = "successfully uploaded",
-                       duration = NULL,
-                       closeButton = TRUE,
-                       type = 'message',
-                       action = a(href = "javascript:location.reload();", "reload the page"))
-      
-    }, warning = function(warn) {
-      
-      showNotification(ui = paste("there is a warning:  ", warn),
-                       duration = NULL,
-                       closeButton = TRUE,
-                       type = 'warning')
-      
-      print(paste("WARNING: ", warn))
-      
-    }, error = function(err) {
-      
-      showNotification(ui = paste("there was an error:  ", err),
+      showNotification(ui = "at least one sample missing sample ID or flag to omit",
                        duration = NULL,
                        closeButton = TRUE,
                        type = 'error')
       
-      print(paste("ERROR: ", err))
-      print("ROLLING BACK TRANSACTION")
+      # 2. check for duplicate combinations of sample ID x replicate discounting
+      # samples flagged for omit
+    } else if (
       
-    }) # close try catch
-    
+      anyDuplicated(
+        resultsMetadata() %>%
+        mutate(
+          newSample = replace(newSample, newSample == "NULL", NA),
+          samples = case_when(
+            !is.na(newSample) ~ newSample,
+            TRUE ~ samples
+          )
+        ) %>%
+        filter(omit == FALSE) %>%
+        select(samples, replicate)
+      ) # close anyDuplicated
+      
+    ) {
+      
+      showNotification(ui = "at least one duplicate sample ID x replicate x omit",
+                       duration = NULL,
+                       closeButton = TRUE,
+                       type = 'error')
+      
+      # else proceed through workflow
+    } else {
+      
+      # workflow: RAW
+      
+      # rename raw and results data for easier reference
+      temp_raw <- rawReactive()
+      
+      # write temporary table: raw data
+      
+      if (dbExistsTable(stormPool, c('stormwater', 'temp_raw'))) {
+        
+        dbRemoveTable(stormPool, c('stormwater', 'temp_raw'))
+        
+      }
+      
+      dbWriteTable(conn = stormPool,
+                   name = c('stormwater', 'temp_raw'),
+                   value = temp_raw,
+                   row.names = F)
+      
+      # build raw insert query
+      insert_raw_cation_query <- build_insert_raw_cation_query()
+      
+      # workflow: RESULTS
+      
+      # format resultsMetadata() for insert
+      temp_results <- icp_to_rslt(cationDataFormatted = resultsMetadata(),
+                                  sampleMetadata = machineInputs$samples())
+      
+      # write temporary table: results data
+      
+      if (dbExistsTable(stormPool, c('stormwater', 'temp_results'))) {
+        
+        dbRemoveTable(stormPool, c('stormwater', 'temp_results'))
+        
+      }
+      
+      dbWriteTable(conn = stormPool,
+                   name = c('stormwater', 'temp_results'),
+                   value = temp_results,
+                   row.names = F)
+      
+      # build results insert query
+      insert_results_cation_query <- build_insert_results_cation_query()
+      
+      
+      # begin tryCatch - transaction
+      tryCatch({
+        
+        poolWithTransaction(stormPool, function(conn) {
+          
+          dbExecute(conn,
+                    insert_raw_cation_query)
+          
+          dbExecute(conn,
+                    insert_results_cation_query)
+          
+        })
+        
+        showNotification(ui = "successfully uploaded",
+                         duration = NULL,
+                         closeButton = TRUE,
+                         type = 'message',
+                         action = a(href = "javascript:location.reload();", "reload the page"))
+        
+      }, warning = function(warn) {
+        
+        showNotification(ui = paste("there is a warning:  ", warn),
+                         duration = NULL,
+                         closeButton = TRUE,
+                         type = 'warning')
+        
+        print(paste("WARNING: ", warn))
+        
+      }, error = function(err) {
+        
+        showNotification(ui = paste("there was an error:  ", err),
+                         duration = NULL,
+                         closeButton = TRUE,
+                         type = 'error')
+        
+        print(paste("ERROR: ", err))
+        print("ROLLING BACK TRANSACTION")
+        
+      }) # close try catch
+      
+    } # close if-validations
     
     # remove temporary tables
     
