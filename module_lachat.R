@@ -31,6 +31,8 @@ lachatUI <- function(id) {
     fluidPage(
       fluidRow( 
         column(id = 'leftPanel', 2,
+               checkboxInput(inputId = ns("nitriteFlag"),
+                             label = "NITRITE !!!"),
                machineInputUI(ns("lachatSamples")) # ns(wrap call to inner mod)
         ), # close the left col
         column(id = "rightPanel", 10,
@@ -354,7 +356,13 @@ lachat <- function(input, output, session, tab = NULL) {
       # format resultsMetadata() for insert
       temp_results <- format_raw(annotatedData = resultsMetadata(),
                                  sampleMetadata = machineInputs$samples(),
-                                 currentTab = tab())
+                                 currentTab = tab(),
+                                 nitrite = input$nitriteFlag)
+      
+      # debuggging ----
+      print(temp_results)
+      print(str(temp_results))
+      # end
       
       # write temporary table: results data
       

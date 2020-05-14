@@ -7,7 +7,7 @@
 #'   stormwater.x table.
 
 
-format_raw <- function(annotatedData, sampleMetadata, currentTab) {
+format_raw <- function(annotatedData, sampleMetadata, currentTab, nitrite = FALSE) {
   
   # general formatting ------------------------------------------------------
   
@@ -28,7 +28,7 @@ format_raw <- function(annotatedData, sampleMetadata, currentTab) {
     select(-sample_id) %>% # remove data sample_id to avoid conflict with database sample_id
     inner_join(sampleMetadata, by = c("samples" = "samples"))
   
-  if (grepl("cation", currentTab)) {
+  if (grepl("cation", currentTab, ignore.case = TRUE)) {
 
     formattedData <- formattedData %>%
       pivot_longer(
@@ -54,7 +54,7 @@ format_raw <- function(annotatedData, sampleMetadata, currentTab) {
         data_qualifier = as.integer(data_qualifier)
       )
 
-  } else if (grepl("lachat", currentTab)) {
+  } else if (grepl("lachat", currentTab, ignore.case = TRUE)) {
 
     formattedData <- formattedData %>%
       mutate(
@@ -68,6 +68,13 @@ format_raw <- function(annotatedData, sampleMetadata, currentTab) {
         detection_time = as.character(detection_time, format = "%H:%M:%S"),
         date_analyzed = as.POSIXct(paste(detection_date, detection_time))
       )
+    
+    if (nitrite == TRUE) {
+      
+    formattedData <- formattedData %>%
+      mutate(analysis_id = as.integer(37))
+      
+    }
     
   } else {
 
