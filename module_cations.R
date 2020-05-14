@@ -48,7 +48,7 @@ cationsUI <- function(id) {
 
 # upload main -------------------------------------------------------------
 
-cations <- function(input, output, session) {
+cations <- function(input, output, session, tab = NULL) {
   
   # added to facilitate renderUIs
   # ns <- session$ns
@@ -105,7 +105,7 @@ cations <- function(input, output, session) {
     
     # add missing column names
     colnames(cationsUpload)[1] <- "date_analyzed"
-    colnames(cationsUpload)[2] <- "temp_out_id"
+    colnames(cationsUpload)[2] <- "sample_id"
     colnames(cationsUpload)[3] <- "operator"
     colnames(cationsUpload)[4] <- "icp_id"
     
@@ -116,9 +116,9 @@ cations <- function(input, output, session) {
     # add a join field
     cationsUpload <- cationsUpload %>%
       mutate(
-        idToJoin = toupper(trimws(temp_out_id)),
+        idToJoin = toupper(trimws(sample_id)),
         idToJoin = case_when(
-          !grepl("blank|calib|qc", temp_out_id, ignore.case = T) ~ gsub("\\.", "\\_", idToJoin),
+          !grepl("blank|calib|qc", sample_id, ignore.case = T) ~ gsub("\\.", "\\_", idToJoin),
           TRUE ~ idToJoin
         )
       )
@@ -136,6 +136,7 @@ cations <- function(input, output, session) {
       
     } else {
       
+      # join with machineInputs but remove database sample_id to avoid conflict with data sample_id
       cationsUpload <- cationsUpload %>%
         left_join(machineInputs$samples() %>% select(-sample_id), by = c("idToJoin" = "bottle"))
       
@@ -154,7 +155,7 @@ cations <- function(input, output, session) {
     # session$sendCustomMessage('unbind-DT', 'resultView') # notable stmt
     
     cationsResults <- rawReactive() %>%
-      filter(!grepl('Blank|CalibStd|QC|Tank', temp_out_id, ignore.case = F)) %>%
+      filter(!grepl('Blank|CalibStd|QC|Tank', sample_id, ignore.case = F)) %>%
       select(-c(ca3158, ca3179, na5895, zn2025, filename))
     
     return(cationsResults)
@@ -249,8 +250,8 @@ cations <- function(input, output, session) {
     resultsMetadata() %>%
       mutate(
         comments = case_when(
-          grepl('blk', temp_out_id, ignore.case = T) & comments == "" ~ 'blank',
-          grepl('blk', temp_out_id, ignore.case = T) & comments != "" ~ paste(comments, 'blank', sep = "; "),
+          grepl('blk', sample_id, ignore.case = T) & comments == "" ~ 'blank',
+          grepl('blk', sample_id, ignore.case = T) & comments != "" ~ paste(comments, 'blank', sep = "; "),
           TRUE ~ as.character(comments))
       ) %>%
       mutate(
@@ -261,7 +262,7 @@ cations <- function(input, output, session) {
         )
       ) %>%
       # select(-omit) %>%
-      select(samples, replicate, comments, date_analyzed, temp_out_id, operator, icp_id)
+      select(samples, replicate, comments, date_analyzed, sample_id, operator, icp_id)
     
   },
   selection = 'none',
@@ -352,13 +353,14 @@ cations <- function(input, output, session) {
                    row.names = F)
       
       # build raw insert query
-      insert_raw_cation_query <- build_insert_raw_cation_query()
+      insert_raw_query <- build_insert_raw_query(currentTab = tab())
       
       # workflow: RESULTS
       
       # format resultsMetadata() for insert
-      temp_results <- icp_to_rslt(cationDataFormatted = resultsMetadata(),
-                                  sampleMetadata = machineInputs$samples())
+      temp_results <- format_raw(annotatedData = resultsMetadata(),
+                                 sampleMetadata = machineInputs$samples(),
+                                 currentTab = tab())
       
       # write temporary table: results data
       
@@ -374,47 +376,47 @@ cations <- function(input, output, session) {
                    row.names = F)
       
       # build results insert query
-      insert_results_cation_query <- build_insert_results_cation_query()
+      insert_results_query <- build_insert_results_query(currentTab = tab())
       
       
       # begin tryCatch - transaction
       tryCatch({
-        
+
         poolWithTransaction(stormPool, function(conn) {
-          
+
           dbExecute(conn,
-                    insert_raw_cation_query)
-          
+                    insert_raw_query)
+
           dbExecute(conn,
-                    insert_results_cation_query)
-          
+                    insert_results_query)
+
         })
-        
+
         showNotification(ui = "successfully uploaded",
                          duration = NULL,
                          closeButton = TRUE,
                          type = 'message',
                          action = a(href = "javascript:location.reload();", "reload the page"))
-        
+
       }, warning = function(warn) {
-        
+
         showNotification(ui = paste("there is a warning:  ", warn),
                          duration = NULL,
                          closeButton = TRUE,
                          type = 'warning')
-        
+
         print(paste("WARNING: ", warn))
-        
+
       }, error = function(err) {
-        
+
         showNotification(ui = paste("there was an error:  ", err),
                          duration = NULL,
                          closeButton = TRUE,
                          type = 'error')
-        
+
         print(paste("ERROR: ", err))
         print("ROLLING BACK TRANSACTION")
-        
+
       }) # close try catch
       
     } # close if-validations
@@ -422,15 +424,15 @@ cations <- function(input, output, session) {
     # remove temporary tables
     
     if (dbExistsTable(stormPool, c('stormwater', 'temp_raw'))) {
-      
+
       dbRemoveTable(stormPool, c('stormwater', 'temp_raw'))
-      
+
     }
-    
+
     if (dbExistsTable(stormPool, c('stormwater', 'temp_results'))) {
-      
+
       dbRemoveTable(stormPool, c('stormwater', 'temp_results'))
-      
+
     }
     
   }) # close submitData
@@ -440,6 +442,7 @@ cations <- function(input, output, session) {
   
   # observe(print({ machineInputs$samples() }))
   # observe(print({ rawReactive() }))
+  # observe(print({ resultReactive() }))
   # observe(print({ resultsMetadata() }))
   # observe(print({ head(resultReactive()) }))
   # observe(print({ samplesSelection() }))

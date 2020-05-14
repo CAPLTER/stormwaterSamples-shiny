@@ -36,7 +36,8 @@ ui <- tagList(
                           color: white; }")
     ) # close tags$head
   ), # close tagss$style
-  navbarPage("stormwater",
+  navbarPage(title = "stormwater",
+             id = "tabs", # use explicit id to access tab position
              
              # isco tab ----------------------------------------------------------------
              
@@ -820,20 +821,28 @@ server <- function(input, output, session) {
   })
   
   
+  # establish tab position as input to modules ------------------------------
+  
+  tabID <- reactive({ input$tabs })
+  
+  
   # call to cations module --------------------------------------------------
   
   callModule(module = cations,
-             id = "icpCations")
+             id = "icpCations",
+             tab = tabID)
   
   
-  # call to cations module --------------------------------------------------
+  # call to lachat module ---------------------------------------------------
   
-  # callModule(module = lahcat,
-  #            id = "lachat")
+  callModule(module = lachat,
+             id = "lachat",
+             tab = tabID)
   
   
   # debugging ---------------------------------------------------------------
   
+  # observe(print({ input$tabs }))
   # observe(print({ solidsDataReactive() }))
   # observe(print({ listenModifySolids$dbVersion }))
   # observe(print({ queryType$default }))
