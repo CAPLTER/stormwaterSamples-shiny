@@ -161,7 +161,13 @@ ui <- tagList(
              
              tabPanel("lachat",
                       lachatUI("lachat") 
-             ) # close lachat tab 
+             ), # close lachat tab 
+             
+             # chem data view ----------------------------------------------------------
+             
+             tabPanel("chemistry: data viewer",
+                      ChemViewer1$ui()
+             ) # close 'chemistry: data viewer' tab panel
              
              # closing UI --------------------------------------------------------------
              
@@ -838,6 +844,11 @@ server <- function(input, output, session) {
   callModule(module = lachat,
              id = "lachat",
              tab = tabID)
+  
+  
+  # call to chem viewer module ----------------------------------------------
+  
+  ChemViewer1$call() 
   
   
   # debugging ---------------------------------------------------------------

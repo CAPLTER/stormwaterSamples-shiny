@@ -13,7 +13,7 @@ library(RPostgreSQL)
 library(pool)
 library(readxl)
 library(glue)
-# library(shinyjs)
+library(R6)
 
 
 # options -----------------------------------------------------------------
@@ -34,7 +34,8 @@ bottleList <- read_csv('allPossibleBottleCombinations.csv',
 # functions
 source('helper_sql_execution.R')
 source('helper_query_samples.R')
-source('helper_sample_locations.R')
+source('helper_query_sites.R')
+source('helper_query_analyses.R')
 source('helper_shiny_input.R')
 source('helper_query_solids.R')
 source('helper_query_discharge.R')
@@ -49,3 +50,7 @@ source('module_view_discharge.R')
 source('module_cations.R')
 source('module_lachat.R')
 source('module_machine_inputs.R')
+source('module_chemistry_viewer.R')
+
+# generate objects
+ChemViewer1 <- ChemViewer$new(id = "chem_display")
