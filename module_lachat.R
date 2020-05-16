@@ -31,8 +31,10 @@ lachatUI <- function(id) {
     fluidPage(
       fluidRow( 
         column(id = 'leftPanel', 2,
+               helpText("important: check this box (first) if data to upload are nitrite (NO2)",
+                        style = "font-weight: bold; color: DarkBlue;"),
                checkboxInput(inputId = ns("nitriteFlag"),
-                             label = "NITRITE !!!"),
+                             label = HTML('<p style="color: #800080; font-weight: bold;">nitrite?</p>')),
                machineInputUI(ns("lachatSamples")) # ns(wrap call to inner mod)
         ), # close the left col
         column(id = "rightPanel", 10,
@@ -257,6 +259,10 @@ lachat <- function(input, output, session, tab = NULL) {
           TRUE ~ samples
         )
       ) %>%
+      mutate( 
+        detection_date = as.character(detection_date),
+        detection_time = as.character(detection_time, format = "%H:%M:%S")
+      ) %>% 
       select(-omit) %>%
       select(samples, replicate, comments, sample_id, cup_number, detection_date, detection_time, analyte_name, peak_concentration)
     
@@ -443,6 +449,8 @@ lachat <- function(input, output, session, tab = NULL) {
   # debugging: module level -------------------------------------------------
   
   # observe(print({ machineInputs$samples() }))
+  # observe(write_csv(machineInputs$samples(), '~/Desktop/machineinputs.csv'))
+  # observe(write_csv(rawReactive(), '~/Desktop/rawreactive.csv'))
   # observe(print({ rawReactive() }))
   # observe(print({ resultsMetadata() }))
   # observe(print({ str(resultsMetadata()) }))

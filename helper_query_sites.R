@@ -21,4 +21,5 @@ query_sample_sites <- function() {
 sampleSites <- query_sample_sites()
 
 siteAbbreviations <- sampleSites %>%
+  arrange(abbreviation) %>% 
   pull(abbreviation)
