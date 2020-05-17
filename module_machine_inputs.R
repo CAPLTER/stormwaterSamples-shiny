@@ -1,11 +1,20 @@
 #' @title Module: machineInput
 #' 
 #' @description The module machineInput facilitates identifying a set of samples
-#'   based on collection site(s), months(s), and year that can be joined (where
+#'   based on collection site(s) and a date range that can be joined (where
 #'   matches exist) to sample IDs in the imported machine output. The action
 #'   button triggers an attempt to write data + metadata to the database.
 #'   machineInput is basically the left column of the cations (icp), Lachat,
 #'   AQ2, and Shimadzu input modules.
+#'   
+#' @note The intitial implementation had the user identify samples for the join
+#'   by selecting site(s), year, and month. However, with that approach, there
+#'   was no way to disambiguate bottles between discrete storms occuring in the
+#'   same month, and could thus not be joined. Though the initial approach of
+#'   winnowing by year and month is a bit faster and easier than using start and
+#'   end date pickers, having the finer resolution is far more important to help
+#'   with joins, potentially eliminating many mouse clicks when joins are not
+#'   feasible.
 #'   
 #' @note Cannot discern any difference in functionality when Shiny bind/unbind
 #'   statements are included, except that inclusion in resultsMetadata prevents
@@ -41,16 +50,12 @@ machineInputUI <- function(id) {
                    choices = siteAbbreviations,
                    selected = NULL,
                    multiple = TRUE),
-    selectizeInput(inputId = ns("narrowSampleMonth"),
-                   "month",
-                   choices = month.abb,
-                   selected = NULL,
-                   multiple = TRUE),
-    selectizeInput(inputId = ns("narrowSampleYear"),
-                   "year",
-                   choices = lastFiveYears,
-                   selected = NULL,
-                   multiple = FALSE),
+    dateInput(inputId = ns("startDate"),
+              "start:",
+              format = "yyyy-mm-dd"),
+    dateInput(inputId = ns("endDate"),
+              "end:",
+              format = "yyyy-mm-dd"),
     br(),
     verbatimTextOutput(ns("samplesList")),
     br(),
@@ -71,12 +76,6 @@ machineInputUI <- function(id) {
 
 # machine input main ------------------------------------------------------
 
-# vector of last five year for filtering sample ids
-lastFiveYears <- rev(seq(from = as.numeric(format(Sys.Date(),'%Y')) - 5,
-                         to = as.numeric(format(Sys.Date(),'%Y')),
-                         by = 1))
-
-
 # main function
 machineInput <- function(input, output, session) {
   
@@ -89,15 +88,15 @@ machineInput <- function(input, output, session) {
     
     req(
       input$narrowSamplesSite,
-      input$narrowSampleMonth,
-      input$narrowSampleYear
+      input$startDate,
+      input$endDate
     )
     
     # convert month abbreviations to integers for query
-    monthTibble <- tibble(number = seq(1:12), abbr = month.abb)
-    integerMonths <- glue::glue_sql(
-      "{monthTibble[monthTibble$abbr %in% c(input$narrowSampleMonth),]$number*}"
-    )
+    # monthTibble <- tibble(number = seq(1:12), abbr = month.abb)
+    # integerMonths <- glue::glue_sql(
+    #   "{monthTibble[monthTibble$abbr %in% c(input$narrowSampleMonth),]$number*}"
+    # )
     
     # convert site abbreviations to site_id for query
     integerSites <- glue::glue_sql(
@@ -113,7 +112,7 @@ machineInput <- function(input, output, session) {
     FROM stormwater.samples
     WHERE
       samples.site_id IN (?theseSites) AND
-      (EXTRACT (MONTH FROM sample_datetime) IN (?theseMonth) AND EXTRACT (YEAR FROM sample_datetime) = ?thisYear)
+      samples.sample_datetime BETWEEN ?start AND ?end
     ORDER BY
       samples.site_id, 
       samples.sample_datetime;"
@@ -122,9 +121,8 @@ machineInput <- function(input, output, session) {
     parameterizedQuery <- sqlInterpolate(ANSI(),
                                          baseQuery,
                                          theseSites = integerSites,
-                                         theseMonth = integerMonths,
-                                         thisYear = input$narrowSampleYear
-    )
+                                         start = input$startDate,
+                                         end = input$endDate)
     
     # sample IDs subset from query
     bottleOptions <- run_interpolated_query(parameterizedQuery)
