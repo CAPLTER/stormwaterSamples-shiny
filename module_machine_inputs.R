@@ -103,6 +103,9 @@ machineInput <- function(input, output, session) {
       "{sampleSites[sampleSites$abbreviation %in% input$narrowSamplesSite,]$site_id*}"
     )
     
+    start <- as.character(as.Date(input$startDate))
+    end <- as.character(as.Date(input$endDate))
+    
     # base query
     baseQuery <- "
     SELECT 
@@ -112,7 +115,7 @@ machineInput <- function(input, output, session) {
     FROM stormwater.samples
     WHERE
       samples.site_id IN (?theseSites) AND
-      samples.sample_datetime BETWEEN ?start AND ?end
+      samples.sample_datetime BETWEEN ?thisStart AND ?thisEnd
     ORDER BY
       samples.site_id, 
       samples.sample_datetime;"
@@ -121,8 +124,8 @@ machineInput <- function(input, output, session) {
     parameterizedQuery <- sqlInterpolate(ANSI(),
                                          baseQuery,
                                          theseSites = integerSites,
-                                         start = input$startDate,
-                                         end = input$endDate)
+                                         thisStart = start,
+                                         thisEnd = end)
     
     # sample IDs subset from query
     bottleOptions <- run_interpolated_query(parameterizedQuery)
