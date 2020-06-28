@@ -60,7 +60,7 @@ build_insert_results_query <- function(currentTab) {
         replicate,
         analysis_id,
         date_analyzed,
-        peak_concentration,
+        conc_x_adf_x_mdf,
         NULLIF(comments, '')::text
       FROM stormwater.temp_results
     );"
