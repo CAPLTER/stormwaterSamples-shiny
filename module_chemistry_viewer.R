@@ -123,8 +123,8 @@ ChemViewer <- R6Class("ChemViewer", list(
         }
         
         # user-provided start- and end-dates
-        start <- input$startDate
-        end <- input$endDate
+        start <- as.character(input$startDate)
+        end <- as.character(input$endDate)
         
       }
       
