@@ -264,7 +264,7 @@ lachat <- function(input, output, session, tab = NULL) {
         detection_time = as.character(detection_time, format = "%H:%M:%S")
       ) %>% 
       select(-omit) %>%
-      select(samples, replicate, comments, sample_id, cup_number, detection_date, detection_time, analyte_name, peak_concentration)
+      select(samples, replicate, comments, sample_id, cup_number, detection_date, detection_time, analyte_name, conc_x_adf_x_mdf)
     
   },
   selection = 'none',
