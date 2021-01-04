@@ -6,11 +6,11 @@
 #'   stormwater.x table.
 
 build_insert_raw_query <- function(currentTab) {
-  
+
   # raw: cations ------------------------------------------------------------
-  
+
   if (grepl("cation", currentTab, ignore.case = TRUE)) {
-    
+
     baseQuery <- "
     INSERT INTO stormwater.icp(
       run_id,
@@ -44,9 +44,9 @@ build_insert_raw_query <- function(currentTab) {
         filename
       FROM stormwater.temp_raw
     );"
-    
+
   } else if (grepl("lachat", currentTab, ignore.case = TRUE)) {
-    
+
     baseQuery <- '
     INSERT INTO stormwater.lachat
     (
@@ -116,18 +116,53 @@ build_insert_raw_query <- function(currentTab) {
         conc_x_adf_x_mdf,
         filename
       FROM stormwater.temp_raw
-    );'  
-    
+    );'
+
+  } else if (grepl("aq2", currentTab, ignore.case = TRUE)) {
+
+    baseQuery <- "
+    INSERT INTO stormwater.aq2
+    (
+      run_id,
+      aq2_out_id,
+      sample_details,
+      test,
+      results,
+      units,
+      absorbance,
+      date_and_time,
+      operator,
+      pre_dil_factor,
+      auto_dil_factor,
+      source_file
+    )
+    (
+      SELECT
+        run_id,
+        sample_id,
+        sample_details,
+        test,
+        results,
+        units,
+        absorbance,
+        date_and_time,
+        operator,
+        pre_dil_factor,
+        auto_dil_factor,
+        filename
+      FROM stormwater.temp_raw
+      );"
+
   } else {
-    
+
     baseQuery <- NULL
-    
+
   }
-  
+
   # parameterized query
   parameterizedQuery <- sqlInterpolate(ANSI(),
                                        baseQuery)
-  
+
   return(parameterizedQuery)
-  
+
 }
