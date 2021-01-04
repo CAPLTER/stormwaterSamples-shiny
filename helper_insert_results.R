@@ -9,11 +9,11 @@
 #'   field that is not present in other analyis outputs.
 
 build_insert_results_query <- function(currentTab) {
-  
-  # unique base query for cations due to data_qualifier field
-  
+
+  # cation-specific query (accomodates data_qualifier field)
+
   if (grepl("cation", currentTab, ignore.case = TRUE)) {
-    
+
     baseQuery <- "
     INSERT INTO stormwater.results
     (
@@ -28,20 +28,21 @@ build_insert_results_query <- function(currentTab) {
     )
     (
       SELECT
-        sample_id,
-        run_id,
-        replicate,
-        analysis_id,
-        date_analyzed,
-        results,
-        data_qualifier,
-        NULLIF(comments, '')::text
+      sample_id,
+      run_id,
+      replicate,
+      analysis_id,
+      date_analyzed,
+      results,
+      data_qualifier,
+      NULLIF(comments, '')::text
       FROM stormwater.temp_results
-    );"
-    
-  } else {
-    
-    # base query
+      );"
+
+    # lachat-specfic query
+
+  } else if (grepl("lachat", currentTab, ignore.case = TRUE)) {
+
     baseQuery <- "
     INSERT INTO stormwater.results
     (
@@ -55,22 +56,55 @@ build_insert_results_query <- function(currentTab) {
     )
     (
       SELECT
-        sample_id,
-        run_id,
-        replicate,
-        analysis_id,
-        date_analyzed,
-        conc_x_adf_x_mdf,
-        NULLIF(comments, '')::text
+      sample_id,
+      run_id,
+      replicate,
+      analysis_id,
+      date_analyzed,
+      conc_x_adf_x_mdf,
+      NULLIF(comments, '')::text
       FROM stormwater.temp_results
+      );"
+
+  # aq2-specfic query
+
+} else if (grepl("aq2", currentTab, ignore.case = TRUE)) {
+
+  baseQuery <- "
+  INSERT INTO stormwater.results
+  (
+    sample_id,
+    run_id,
+    replicate,
+    analysis_id,
+    date_analyzed,
+    concentration,
+    comments
+  )
+  (
+    SELECT
+    sample_id,
+    run_id,
+    replicate,
+    analysis_id,
+    date_analyzed,
+    results,
+    NULLIF(comments, '')::text
+    FROM stormwater.temp_results
     );"
-    
+
+  } else {
+
+    baseQuery <- NULL
+
   }
-  
-  # parameterized query
-  parameterizedQuery <- sqlInterpolate(ANSI(),
-                                       baseQuery)
-  
-  return(parameterizedQuery)
-  
+
+
+# parameterized query
+
+parameterizedQuery <- sqlInterpolate(ANSI(),
+  baseQuery)
+
+return(parameterizedQuery)
+
 }

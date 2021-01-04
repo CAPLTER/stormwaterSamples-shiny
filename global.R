@@ -51,6 +51,7 @@ source('module_cations.R')
 source('module_lachat.R')
 source('module_machine_inputs.R')
 source('module_chemistry_viewer.R')
+source('module_aq2.R')
 
 # generate objects
 ChemViewer1 <- ChemViewer$new(id = "chem_display")
