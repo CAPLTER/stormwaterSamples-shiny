@@ -163,12 +163,17 @@ ui <- tagList(
                       lachatUI("lachat")
              ), # close lachat tab
 
-
              # aq2 tab --------------------------------------------------------------
 
              tabPanel("aq2",
                       aq2UI("aq2")
              ), # close aq2 tab
+
+             # shimadzu tab --------------------------------------------------------------
+
+             tabPanel("shimadzu",
+                      shimadzuUI("shimadzu")
+             ), # close shimadzu tab
 
              # chem data view ----------------------------------------------------------
 
@@ -857,6 +862,13 @@ server <- function(input, output, session) {
 
   callModule(module = aq2,
              id = "aq2",
+             tab = tabID)
+
+
+  # call to shimadzu module ---------------------------------------------------
+
+  callModule(module = shimadzu,
+             id = "shimadzu",
              tab = tabID)
 
 
