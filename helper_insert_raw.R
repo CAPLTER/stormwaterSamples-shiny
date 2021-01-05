@@ -45,6 +45,8 @@ build_insert_raw_query <- function(currentTab) {
       FROM stormwater.temp_raw
     );"
 
+  # raw: lachat ------------------------------------------------------------
+
   } else if (grepl("lachat", currentTab, ignore.case = TRUE)) {
 
     baseQuery <- '
@@ -118,6 +120,8 @@ build_insert_raw_query <- function(currentTab) {
       FROM stormwater.temp_raw
     );'
 
+  # raw: aq2 ------------------------------------------------------------
+
   } else if (grepl("aq2", currentTab, ignore.case = TRUE)) {
 
     baseQuery <- "
@@ -149,6 +153,39 @@ build_insert_raw_query <- function(currentTab) {
         operator,
         pre_dil_factor,
         auto_dil_factor,
+        filename
+      FROM stormwater.temp_raw
+      );"
+
+  # raw: shimadzu ------------------------------------------------------------
+
+  } else if (grepl("shimadzu", currentTab, ignore.case = TRUE)) {
+
+    baseQuery <- "
+    INSERT INTO stormwater.shimadzu
+    (
+      run_id,
+      type,
+      analysis,
+      sample_name,
+      shimadzu_out_id,
+      origin,
+      result,
+      date_time,
+      vial,
+      source_file
+    )
+    (
+      SELECT
+        run_id,
+        type,
+        analysis,
+        sample_name,
+        sample_id,
+        origin,
+        result,
+        date_time,
+        vial,
         filename
       FROM stormwater.temp_raw
       );"

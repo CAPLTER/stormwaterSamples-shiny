@@ -83,15 +83,42 @@ build_insert_results_query <- function(currentTab) {
   )
   (
     SELECT
+      sample_id,
+      run_id,
+      replicate,
+      analysis_id,
+      date_analyzed,
+      results,
+      NULLIF(comments, '')::text
+    FROM stormwater.temp_results
+    );"
+
+  # shimadzu-specfic query
+
+} else if (grepl("shimadzu", currentTab, ignore.case = TRUE)) {
+
+  baseQuery <- "
+  INSERT INTO stormwater.results
+  (
     sample_id,
     run_id,
     replicate,
     analysis_id,
     date_analyzed,
-    results,
-    NULLIF(comments, '')::text
+    concentration,
+    comments
+  )
+  (
+    SELECT
+      sample_id,
+      run_id,
+      replicate,
+      analysis_id,
+      date_analyzed,
+      concentration,
+      NULLIF(comments, '')::text
     FROM stormwater.temp_results
-    );"
+  );"
 
   } else {
 

@@ -88,7 +88,6 @@ format_raw <- function(annotatedData, sampleMetadata, currentTab, nitrite = FALS
 
     }
 
-
     # aq2-specific formatting
 
   } else if (grepl("aq2", currentTab, ignore.case = TRUE)) {
@@ -102,6 +101,38 @@ format_raw <- function(annotatedData, sampleMetadata, currentTab, nitrite = FALS
           ),
         date_analyzed = as.POSIXct(date_and_time, format = "%a %b %d %H:%M:%S %Y")
       )
+
+    # shimadzu-specific formatting
+
+  } else if (grepl("shimadzu", currentTab, ignore.case = TRUE)) {
+
+    formattedData$doc <- unlist(lapply(strsplit(formattedData$result, "\\:|\\s|m"), "[", 2)) # doc_toc (19)
+    formattedData$tn <- unlist(lapply(strsplit(formattedData$result, "\\:|\\s|m"), "[", 5))  # no3t_toc_tn (42)
+
+    formattedData <- formattedData %>%
+      select(
+        sample_id,
+        run_id,
+        replicate,
+        date_time,
+        comments,
+        doc,
+        tn
+        ) %>%
+    pivot_longer(
+      cols = doc:tn,
+      names_to = "analysis",
+      values_to = "concentration"
+      ) %>%
+    mutate(
+      analysis_id = case_when(
+        grepl("doc", analysis, ignore.case = TRUE) ~ as.integer(19),
+        grepl("tn", analysis, ignore.case = TRUE) ~  as.integer(42),
+        TRUE ~ NA_integer_
+        ),
+      date_analyzed = as.POSIXct(date_time, format = "%Y-%m-%d %H:%M:%S"),
+      concentration = as.numeric(concentration)
+    )
 
   } else {
 
