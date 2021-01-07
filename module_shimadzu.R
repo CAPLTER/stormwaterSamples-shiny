@@ -84,53 +84,79 @@ shimadzu <- function(input, output, session, tab = NULL) {
       shimadzuUpload <- read_excel(path = machineInputs$machineFile()$datapath)
     )
 
-    # remove empty columns and any analysis notes added to end of file
+    # remove empty columns
     shimadzuUpload <- shimadzuUpload %>%
-      filter(!is.na(Type) & !is.na(Analysis)) %>%
       select_if(function(x) {
         !all(is.na(x)) })
 
-      # add filename as a variable
-      shimadzuUpload$filename <- machineInputs$machineFile()$name
+    # add filename as a variable
+    shimadzuUpload$filename <- machineInputs$machineFile()$name
 
-      # format column names
-      colnames(shimadzuUpload) <- tolower(colnames(shimadzuUpload)) # colnames to lowercase
-      colnames(shimadzuUpload) <- gsub("\\.", "\\_", colnames(shimadzuUpload)) # replace dots with underscores
-      colnames(shimadzuUpload) <- gsub(" ", "\\_", colnames(shimadzuUpload)) # replace spaces with underscores
-      colnames(shimadzuUpload) <- gsub("/", "\\_", colnames(shimadzuUpload)) # replace forward slashes with underscores
+    # format column names
+    colnames(shimadzuUpload) <- tolower(colnames(shimadzuUpload)) # colnames to lowercase
+    colnames(shimadzuUpload) <- gsub("\\.", "\\_", colnames(shimadzuUpload)) # replace dots with underscores
+    colnames(shimadzuUpload) <- gsub(" ", "\\_", colnames(shimadzuUpload)) # replace spaces with underscores
+    colnames(shimadzuUpload) <- gsub("/", "\\_", colnames(shimadzuUpload)) # replace forward slashes with underscores
 
-      # add run identifier as maxrun
-      maxrun <- as.numeric(run_interpolated_query(interpolatedQuery = "SELECT MAX(run_id) FROM stormwater.results;"))
-      shimadzuUpload$run_id <- maxrun + 1
+    # (attempt to) remove analysis notes added to end of file
+    shimadzuUpload <- shimadzuUpload %>%
+      filter(
+        !is.na(analysis),
+        !is.na(date_time)
+      )
 
-      # add a join field
+    # standardize column name (results) before writing to database
+    if ("results" %in% names(shimadzuUpload)) {
       shimadzuUpload <- shimadzuUpload %>%
-        mutate(
-          idToJoin = toupper(trimws(sample_id)),
-          idToJoin = gsub("(\\w+\\.\\w+)(\\s[0-9].+)", "\\1", idToJoin),
-          idToJoin = gsub("\\.", "\\_", idToJoin)
-        )
+        rename(result = results)
+    }
 
-      # join shimadzu to sample list (if possible sans creating ambiguous samples)
-      if (nrow(shimadzuUpload %>% left_join(machineInputs$samples(), by = c("idToJoin" = "bottle"))) > nrow(shimadzuUpload)) {
+    # standardize presence of columns before writing to database
 
-        shimadzuUpload <- shimadzuUpload %>%
-          mutate(samples = as.character(NA))
+    if (!any(grepl("vial", names(shimadzuUpload)))) {
+      shimadzuUpload$vial <- NA_character_
+    }
 
-        showNotification(ui = "cannot guess sample IDs, enter all IDs or try narrowing the range of sample choices",
-          duration = NULL,
-          closeButton = TRUE,
-          type = "warning")
+    if (!any(grepl("type", names(shimadzuUpload)))) {
+      shimadzuUpload$type <- NA_character_
+    }
 
-      } else {
+    if (!any(grepl("origin", names(shimadzuUpload)))) {
+      shimadzuUpload$origin <- NA_character_
+    }
 
-        shimadzuUpload <- shimadzuUpload %>%
-          left_join(machineInputs$samples() %>% select(-sample_id), by = c("idToJoin" = "bottle"))
+    # add run identifier as maxrun
+    maxrun <- as.numeric(run_interpolated_query(interpolatedQuery = "SELECT MAX(run_id) FROM stormwater.results;"))
+    shimadzuUpload$run_id <- maxrun + 1
 
-      }
+    # add a join field
+    shimadzuUpload <- shimadzuUpload %>%
+      mutate(
+        idToJoin = toupper(trimws(sample_id)),
+        idToJoin = gsub("(\\w+\\.\\w+)(\\s[0-9].+)", "\\1", idToJoin),
+        idToJoin = gsub("\\.", "\\_", idToJoin)
+      )
 
-      # return modified object
-      return(shimadzuUpload)
+    # join shimadzu to sample list (if possible sans creating ambiguous samples)
+    if (nrow(shimadzuUpload %>% left_join(machineInputs$samples(), by = c("idToJoin" = "bottle"))) > nrow(shimadzuUpload)) {
+
+      shimadzuUpload <- shimadzuUpload %>%
+        mutate(samples = as.character(NA))
+
+      showNotification(ui = "cannot guess sample IDs, enter all IDs or try narrowing the range of sample choices",
+        duration = NULL,
+        closeButton = TRUE,
+        type = "warning")
+
+    } else {
+
+      shimadzuUpload <- shimadzuUpload %>%
+        left_join(machineInputs$samples() %>% select(-sample_id), by = c("idToJoin" = "bottle"))
+
+    }
+
+    # return modified object
+    return(shimadzuUpload)
 
   })
 
@@ -141,7 +167,7 @@ shimadzu <- function(input, output, session, tab = NULL) {
 
     shimadzu_results <- rawReactive() %>%
       filter(grepl("sample", sample_name, ignore.case = T)) %>%
-      filter(!(grepl("adp|lsa|tres|rios", sample_id, ignore.case = T)))
+      filter(!(grepl("adp|lsa|tres|rios|orange|mall", sample_id, ignore.case = T)))
 
     return(shimadzu_results)
 
@@ -245,7 +271,7 @@ shimadzu <- function(input, output, session, tab = NULL) {
         )
         ) %>%
       select(-omit) %>%
-      select(sample_id, samples, newSample, replicate, comments, origin, result, date_time, vial)
+      select(samples, replicate, comments, sample_id, result, date_time)
 
     },
     selection = "none",
