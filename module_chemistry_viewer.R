@@ -1,26 +1,26 @@
-#' @title Module: ChemViewer 
-#' 
+#' @title Module: ChemViewer
+#'
 #' @description ChemViewer is an R6 class that facilitates a module for viewing
 #'   machine-derived stormwater chemistry data. An instance of this class is
 #'   generated in global then accessed from app.
 
 ChemViewer <- R6Class("ChemViewer", list(
-  
+
   # attributes
   id = NULL,
-  
+
   # initalizer
   initialize = function(id) {
-    
+
     self$id <- id
-    
+
   },
-  
+
   # UI
   ui = function() {
-    
+
     ns <- NS(self$id)
-    
+
     fluidPage(
       fluidRow(
         column(id = "leftPanel", 2,
@@ -56,78 +56,78 @@ ChemViewer <- R6Class("ChemViewer", list(
         ) # close the right col
       ) # close the row
     ) # close the page
-    
+
   }, # close ui
-  
+
   # server
   server = function(input, output, session) {
-    
+
     # queryType: default vs parameterized query for observations
     queryType <- reactiveValues(default = "default")
-    
+
     # actionButton filterObservations = parameterized query type
     observeEvent(input$filterObservations, {
-      
+
       queryType$default <- "param"
-      
+
     })
-    
+
     # actionButton clearFilterObservations = default query type
     observeEvent(input$clearFilterObservations, {
-      
+
       queryType$default <- "default"
-      
+
     })
-    
+
     chemData <- reactive({
-      
+
       if (queryType$default == "default") {
-        
+
         # default params
-        
+
         integerSites <- glue::glue_sql("{sampleSites$site_id*}")
         integerAnalyses <- glue::glue_sql("{analyses$analysis_id*}")
         start <- as.character(Sys.Date() - lubridate::years(3))
         end <- as.character(Sys.Date())
-        
+
       } else {
-        
-        # user-provided params         
-        
+
+        # user-provided params
+
         # convert site abbreviations to site_id for query
-        
+
         if (is.null(input$samplesSite)) {
-          
+
           integerSites <- glue::glue_sql("{sampleSites$site_id*}")
-          
+
         } else {
-          
+
           integerSites <- glue::glue_sql(
             "{sampleSites[sampleSites$abbreviation %in% input$samplesSite,]$site_id*}"
           )
-          
+
         }
-        
+
         # convert analysis name(s) to analysis_id for query
-        
+
         if (is.null(input$analysis))  {
-          
+
           integerAnalyses <- glue::glue_sql("{analyses$analysis_id*}")
-          
+
         } else {
-          
+
           integerAnalyses <- glue::glue_sql(
             "{analyses[analyses$analysis_name %in% input$analysis,]$analysis_id*}"
           )
-          
+
         }
-        
+
         # user-provided start- and end-dates
         start <- as.character(input$startDate)
         end <- as.character(input$endDate)
-        
+
       }
-      
+
       baseQuery <- "
       SELECT
         sites.abbreviation AS site,
@@ -142,8 +142,8 @@ ChemViewer <- R6Class("ChemViewer", list(
         CASE
           WHEN icp_file.source_file IS NOT NULL THEN icp_file.source_file
           WHEN lachat_file.source_file IS NOT NULL THEN lachat_file.source_file
-          WHEN aq2_file.source_file IS NOT NULL THEN lachat_file.source_file
-          WHEN shimadzu_file.source_file IS NOT NULL THEN lachat_file.source_file
+          WHEN aq2_file.source_file IS NOT NULL THEN aq2_file.source_file
+          WHEN shimadzu_file.source_file IS NOT NULL THEN shimadzu_file.source_file
           ELSE NULL
         END AS source_file
       FROM stormwater.results
@@ -201,7 +201,7 @@ ChemViewer <- R6Class("ChemViewer", list(
       ORDER BY
         results.run_id DESC,
         results.result_id ASC;"
-      
+
       # parameterized query
       parameterizedQuery <- sqlInterpolate(ANSI(),
                                            baseQuery,
@@ -210,20 +210,20 @@ ChemViewer <- R6Class("ChemViewer", list(
                                            thisStart = start,
                                            thisEnd = end
       )
-      
+
       # sample IDs subset from query
       queryResult <- run_interpolated_query(parameterizedQuery)
-      
-      
+
+
       # return result
       return(queryResult)
-      
+
     })
-    
-    
+
+
     # render discharge data for viewing
     output$dataOutput <- DT::renderDataTable({
-      
+
       # return empty frame and message if empty set
       if (nrow(chemData()) == 0) {
 
@@ -241,7 +241,7 @@ ChemViewer <- R6Class("ChemViewer", list(
       }
 
       return(results)
-      
+
     },
     selection = "none",
     escape = FALSE,
@@ -251,16 +251,16 @@ ChemViewer <- R6Class("ChemViewer", list(
                    ordering = TRUE,
                    searching = TRUE),
     rownames = F) # close output$resinDataOutput
-    
+
   },
-  
+
   # call
   call = function(input, ouput, session) {
-    
+
     callModule(self$server, self$id)
-    
+
   }
-  
+
 ) # close public
 
 )  # close R6::ChemViewer

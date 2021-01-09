@@ -105,10 +105,16 @@ shimadzu <- function(input, output, session, tab = NULL) {
         !is.na(date_time)
       )
 
-    # standardize column name (results) before writing to database
+    # standardize column names before writing to database
+
     if ("results" %in% names(shimadzuUpload)) {
       shimadzuUpload <- shimadzuUpload %>%
         rename(result = results)
+    }
+
+    if ("vials" %in% names(shimadzuUpload)) {
+      shimadzuUpload <- shimadzuUpload %>%
+        rename(vial = vials)
     }
 
     # standardize presence of columns before writing to database
