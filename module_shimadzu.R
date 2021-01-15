@@ -80,9 +80,27 @@ shimadzu <- function(input, output, session, tab = NULL) {
     req(machineInputs$machineFile())
 
     # import file
-    suppressMessages(
-      shimadzuUpload <- read_excel(path = machineInputs$machineFile()$datapath)
-    )
+    if (tools::file_ext(machineInputs$machineFile()$datapath) == "xlsx") {
+
+      suppressMessages(
+        shimadzuUpload <- read_excel(path = machineInputs$machineFile()$datapath)
+      )
+
+    } else if (tools::file_ext(machineInputs$machineFile()$datapath) == "csv") {
+
+      suppressMessages(
+        shimadzuUpload <- read_csv(file = machineInputs$machineFile()$datapath)
+      )
+
+    } else {
+
+      showNotification(
+        ui = "file type must be xlsx or csv",
+        duration = NULL,
+        closeButton = TRUE,
+        type = "warning")
+
+    }
 
     # remove empty columns
     shimadzuUpload <- shimadzuUpload %>%
