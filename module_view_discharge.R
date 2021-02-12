@@ -6,9 +6,9 @@
 # view discharge UI -------------------------------------------------------
 
 viewDischargeUI <- function(id) {
-  
+
   ns <- NS(id)
-  
+
   tagList(
     p(HTML('&emsp;'), "warning: load times for filtered data can be very long",
       style = "text-align: left; background-color: #89cff0; color: black;"),
@@ -18,7 +18,7 @@ viewDischargeUI <- function(id) {
       ) # close tags$style
     ), # close tagss$head
     fluidPage(
-      fluidRow( 
+      fluidRow(
         column(id = 'leftPanel', 2,
                # filter existing
                strong("filter data",
@@ -45,50 +45,50 @@ viewDischargeUI <- function(id) {
       ) # close the row
     ) # close the page
   ) # close tagList
-  
+
 } # close viewDischargeUI
 
 
 # modify reach patches main -----------------------------------------------
 
 viewDischarge <- function(input, output, session) {
-  
+
   # queryType: default vs parameterized query for transects
   queryType <- reactiveValues(default = "default")
-  
+
   # actionButton filterDischarge = parameterized query type
   observeEvent(input$filterDischarge, {
-    
+
     queryType$default <- "param"
-    
+
   })
-  
+
   # query samples data
   dischargeDataReactive <- reactive({
-    
+
     # add listener for adding and deleting records
     # listenviewDischarge$dbVersion
-    
+
     if (queryType$default == "default") {
-      
+
       dischargeData <- query_discharge_default()
-      
+
     } else {
-      
+
       # parameters cannot be passed to function directly
       filterStart <- as.character(input$viewDischargeStartDate)
       filterEnd <- as.character(input$viewDischargeEndDate)
       filterSite <- input$viewDischargeSite
-      
+
       # run query with params
       dischargeData <- query_discharge_site_date(start = filterStart,
                                                  end = filterEnd,
                                                  site = filterSite)
-      
+
     }
-    
+
     if (nrow(dischargeData) == 0) {
-      
+
       dischargeData <- data.frame(
         discharge_id = NA,
         site_id = NA,
@@ -98,18 +98,18 @@ viewDischarge <- function(input, output, session) {
         discharge = NA,
         discharge_corrected = NA
       )
-      
-    } 
-    
+
+    }
+
     return(dischargeData)
-    
+
   })
-  
+
   # render editable table of samples data
   output$dischargeView <- DT::renderDT({
-    
+
     dischargeDataReactive()
-    
+
   },
   escape = FALSE,
   selection = "none",
@@ -121,18 +121,18 @@ viewDischarge <- function(input, output, session) {
                  autoWidth = TRUE,
                  columnDefs = list(list(width = '100px', targets = c(1)))
   )
-  ) # close output$dischargeView 
-  
- 
+  ) # close output$dischargeView
+
+
   # debugging: module level -------------------------------------------------
-  
+
   ############# START debugging
   # observe(print({ queryType }))
   # observe(print({ queryType$default }))
   # observe(print({ input$ReachPatchs_cell_edit }))
   ############# END debugging
-  
-  
+
+
   # close module viewDischarge ----------------------------------------------
-  
+
 } # close module viewDischarge
