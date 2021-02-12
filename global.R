@@ -14,6 +14,7 @@ library(pool)
 library(readxl)
 library(glue)
 library(R6)
+library(ggplot2)
 
 
 # options -----------------------------------------------------------------
@@ -53,6 +54,8 @@ source("module_machine_inputs.R")
 source("module_chemistry_viewer.R")
 source("module_aq2.R")
 source("module_shimadzu.R")
+source("module_chemistry_inventory.R")
 
 # generate objects
 ChemViewer1 <- ChemViewer$new(id = "chem_display")
+ChemInventory1 <- ChemInventory$new(id = "chem_inventory")

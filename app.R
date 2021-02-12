@@ -13,7 +13,7 @@
 
 # call global R -----------------------------------------------------------
 
-source('global.R')
+source("global.R")
 
 
 # UI ----------------------------------------------------------------------
@@ -36,7 +36,8 @@ ui <- tagList(
                           color: white; }")
     ) # close tags$head
   ), # close tagss$style
-  navbarPage(title = "stormwater",
+  navbarPage(
+    title = "stormwater",
              id = "tabs", # use explicit id to access tab position
 
              # isco tab ----------------------------------------------------------------
@@ -179,7 +180,13 @@ ui <- tagList(
 
              tabPanel("chemistry: data viewer",
                       ChemViewer1$ui()
-             ) # close 'chemistry: data viewer' tab panel
+             ), # close 'chemistry: data viewer' tab panel
+
+             # chem inventory ----------------------------------------------------------
+
+             tabPanel("chemistry: data inventory",
+                      ChemInventory1$ui()
+             ) # close 'chemistry: inventory viewer' tab panel
 
              # closing UI --------------------------------------------------------------
 
@@ -875,6 +882,10 @@ server <- function(input, output, session) {
   # call to chem viewer module ----------------------------------------------
 
   ChemViewer1$call()
+
+  # call to chem inventory module ----------------------------------------------
+
+  ChemInventory1$call()
 
 
   # debugging ---------------------------------------------------------------
