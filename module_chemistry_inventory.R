@@ -27,7 +27,11 @@ ChemInventory <- R6Class("ChemInventory", list(
           column(
             id = "leftPanel", 1,
             align = "left",
+            p("select parameters then plot/replot to view results",
+              style = "text-align: left; background-color: LightGray; color: black;"),
             p("brush and double-click to zoom",
+              style = "text-align: left; background-color: LightGray; color: black;"),
+            p("double click empty space in the plot to exit zoom",
               style = "text-align: left; background-color: LightGray; color: black;"),
             br(),
             selectizeInput(
