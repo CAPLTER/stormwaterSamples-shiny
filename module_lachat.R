@@ -154,7 +154,10 @@ lachat <- function(input, output, session, tab = NULL) {
     # session$sendCustomMessage('unbind-DT', 'resultView') # notable stmt
 
     lachatResults <- rawReactive() %>%
-      filter(grepl('unknown', sample_type, ignore.case = TRUE))
+      filter(
+        grepl("unknown", sample_type, ignore.case = TRUE),
+        !grepl("om|tres|tr", sample_id, ignore.case = TRUE),
+      )
 
     return(lachatResults)
 
