@@ -1,5 +1,11 @@
+# user auth
+.htpasswd
+
+# configuration
+config.yml
+
 # database config
-config.R
+# config.R
 
 # History files
 .Rhistory
@@ -34,3 +40,6 @@ vignettes/*.pdf
 # Temporary files created by R markdown
 *.utf8.md
 *.knit.md
+
+# Shiny token, see https://shiny.rstudio.com/articles/shinyapps.html
+rsconnect/
