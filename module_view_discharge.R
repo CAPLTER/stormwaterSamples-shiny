@@ -105,32 +105,31 @@ viewDischarge <- function(input, output, session) {
 
   })
 
-  # render editable table of samples data
+  # render table of discharge data
   output$dischargeView <- DT::renderDT({
 
-    dischargeDataReactive()
+    dischargeDataReactive() |>
+      dplyr::mutate(event_datetime = as.character(event_datetime))
 
   },
   escape = FALSE,
   selection = "none",
   rownames = FALSE,
-  options = list(bFilter = 0,
-                 bLengthChange = FALSE,
-                 bPaginate = FALSE,
-                 bSort = FALSE,
-                 autoWidth = TRUE,
-                 columnDefs = list(list(width = '100px', targets = c(1)))
+  options = list(
+    bFilter = 0,
+    bLengthChange = FALSE,
+    bPaginate = FALSE,
+    bSort = FALSE,
+    autoWidth = TRUE
   )
   ) # close output$dischargeView
 
 
   # debugging: module level -------------------------------------------------
 
-  ############# START debugging
   # observe(print({ queryType }))
   # observe(print({ queryType$default }))
   # observe(print({ input$ReachPatchs_cell_edit }))
-  ############# END debugging
 
 
   # close module viewDischarge ----------------------------------------------

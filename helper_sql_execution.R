@@ -39,7 +39,7 @@ run_interpolated_query <- function(interpolatedQuery) {
 } # close run_interpolated_query 
 
 
-run_interpolated_execution <- function(interpolatedQuery) {
+run_interpolated_execution <- function(interpolatedQuery, success_notice = FALSE) {
   
   tryCatch({
     
@@ -47,6 +47,15 @@ run_interpolated_execution <- function(interpolatedQuery) {
       dbExecute(conn,
                 interpolatedQuery)
     })    
+
+    if (success_notice == TRUE) {
+
+      showNotification(ui = "successfully executed",
+        duration = NULL,
+        closeButton = TRUE,
+        type = 'message',
+        action = a(href = "javascript:location.reload();", "reload the page"))
+    }
     
   }, warning = function(warn) {
     
