@@ -36,161 +36,169 @@ ui <- tagList(
                           color: white; }")
     ) # close tags$head
   ), # close tagss$style
-  navbarPage(
-    title = "stormwater",
-             id = "tabs", # use explicit id to access tab position
+navbarPage(
+  title = "stormwater",
+  id = "tabs", # use explicit id to access tab position
 
-             # isco tab ----------------------------------------------------------------
+  # isco tab ----------------------------------------------------------------
 
-             tabPanel("isco",
-                      fluidPage(
-                        fluidRow(
-                          column(id = "leftPanel", 2,
-                                 fileInput("file1", "choose csv file",
-                                           multiple = FALSE,
-                                           accept = c("text/csv",
-                                                      "text/comma-separated-values,text/plain",
-                                                      ".csv")),
-                                 sliderInput(inputId = "storm",
-                                             label = "storm/carousel",
-                                             min = 1,
-                                             max = 5,
-                                             value = 1),
-                                 textAreaInput("fileUploadNotes",
-                                               "notes (applied to all samples)",
-                                               resize = "vertical",
-                                               value = NULL),
-                                 actionButton("submitFileUpload",
-                                              "submit data"),
-                                 br(),
-                                 br()
-                          ), # close the left col
+  tabPanel("isco",
+    fluidPage(
+      fluidRow(
+        column(
+          id = "leftPanel", 2,
+          fileInput("file1", "choose csv file",
+            multiple = FALSE,
+            accept = c("text/csv",
+              "text/comma-separated-values,text/plain",
+              ".csv")),
+          sliderInput(inputId = "storm",
+            label = "storm/carousel",
+            min = 1,
+            max = 5,
+            value = 1),
+          textAreaInput("fileUploadNotes",
+            "notes (applied to all samples)",
+            resize = "vertical",
+            value = NULL),
+          actionButton("submitFileUpload",
+            "submit data"),
+          br(),
+          br()
+          ), # close the left col
 
-                          column(id = "fileUploadMiddlePanel", 5,
-                                 DT::dataTableOutput("buttonsInTable"),
-                                 tags$script(HTML("Shiny.addCustomMessageHandler('unbind-DT', function(id) {
-          Shiny.unbindAll($('#'+id).find('table').DataTable().table().node());
-                            })")) # notable stmt
-                          ), # close the middle col
+        column(
+          id = "fileUploadMiddlePanel", 5,
+          DT::dataTableOutput("buttonsInTable"),
+          tags$script(
+            HTML("Shiny.addCustomMessageHandler('unbind-DT', function(id) {
+              Shiny.unbindAll($('#'+id).find('table').DataTable().table().node()); })")
+          ) # notable stmt
+          ), # close the middle col
 
-                          column(id = "fileUploadRightPanel", 5,
-                                 DT::dataTableOutput("checked")
-                          ) # close the right col
+        column(
+          id = "fileUploadRightPanel", 5,
+          DT::dataTableOutput("checked")
+        ) # close the right col
 
-                        ) # close the row
-                      ) # close the page
-             ), # clase file upload tab panel
+      ) # close the row
+    ) # close the page
+    ), # clase file upload tab panel
 
-             # samples tab -------------------------------------------------------------
+  # samples tab -------------------------------------------------------------
 
-             tabPanel("samples",
-                      modifySamplesUI("modifySamples")
-             ), # close samples tab
+  tabPanel("samples",
+    modifySamplesUI("modifySamples")
+    ), # close samples tab
 
-             # discharge upload tab ----------------------------------------------------
+  # discharge upload tab ----------------------------------------------------
 
-             tabPanel("discharge: upload",
-                      fluidPage(
-                        fluidRow(
-                          column(id = "leftPanel", 2,
-                                 fileInput("dischargeFile", "Choose CSV File",
-                                           multiple = FALSE,
-                                           accept = c("text/csv",
-                                                      "text/comma-separated-values,text/plain",
-                                                      ".csv")),
-                                 actionButton("submitDischargeFileUpload",
-                                              "submit data"),
-                                 br(),
-                                 br()
-                          ), # close the left col
-                          column(id = "dischargeRightPanel", 10,
-                                 strong("Data Preview"),
-                                 hr(),
-                                 tableOutput("levelDataPreview")
-                          ) # close the right col
-                        ) # close the row
-                      ) # close the page
-             ), # close discharge: file upload
+  tabPanel("discharge: upload",
+    fluidPage(
+      fluidRow(
+        column(
+          id = "leftPanel", 2,
+          fileInput("dischargeFile", "Choose CSV File",
+            multiple = FALSE,
+            accept = c("text/csv",
+              "text/comma-separated-values,text/plain",
+              ".csv")),
+          actionButton("submitDischargeFileUpload",
+            "submit data"),
+          br(),
+          br()
+          ), # close the left col
+        column(
+          id = "dischargeRightPanel", 10,
+          strong("Data Preview"),
+          hr(),
+          tableOutput("levelDataPreview")
+        ) # close the right col
+      ) # close the row
+    ) # close the page
+    ), # close discharge: file upload
 
-             # discharge viewing tab ---------------------------------------------------
+  # discharge viewing tab ---------------------------------------------------
 
-             tabPanel("discharge",
-                      viewDischargeUI("viewDischarge")
-             ), # close discharge tab
+  tabPanel("discharge",
+    viewDischargeUI("viewDischarge")
+    ), # close discharge tab
 
-             # solids tab --------------------------------------------------------------
+  # solids tab --------------------------------------------------------------
 
-             tabPanel("solids",
-                      fluidPage(
-                        fluidRow(
-                          column(id = "leftPanel", 2,
-                                 # filter existing
-                                 strong("filter samples",
-                                        style = "text-align: center; color: black"),
-                                 selectizeInput(inputId = "viewSamplesSolidsSite",
-                                                "site",
-                                                choices = siteAbbreviations,
-                                                selected = NULL,
-                                                multiple = FALSE),
-                                 dateInput(inputId = "viewSamplesSolidsStartDate",
-                                           "start:",
-                                           format = "yyyy-mm-dd"),
-                                 dateInput(inputId = "viewSamplesSolidsEndDate",
-                                           "end:",
-                                           format = "yyyy-mm-dd"),
-                                 actionButton(inputId = "filterSamplesSolids",
-                                              label = "view samples",
-                                              style = "text-align:center; border-sytle:solid; border-color:#0000ff;")
-                          ), # close the left col
-                          column(id = "rightPanel", 10,
-                                 DT::DTOutput("samplesSolidsDataView"),
-                                 DT::DTOutput("solidsData"),
-                                 uiOutput("addNewSolidUI"),
-                                 div(id = "modifySolidsDiv")
-                          ) # close the right col
-                        ) # close the row
-                      ) # close the page
-             ), # close AFDM tab panel
+  tabPanel("solids",
+    fluidPage(
+      fluidRow(
+        column(
+          id = "leftPanel", 2,
+          # filter existing
+          strong("filter samples",
+            style = "text-align: center; color: black"),
+          selectizeInput(inputId = "viewSamplesSolidsSite",
+            "site",
+            choices = siteAbbreviations,
+            selected = NULL,
+            multiple = FALSE),
+          dateInput(inputId = "viewSamplesSolidsStartDate",
+            "start:",
+            format = "yyyy-mm-dd"),
+          dateInput(inputId = "viewSamplesSolidsEndDate",
+            "end:",
+            format = "yyyy-mm-dd"),
+          actionButton(inputId = "filterSamplesSolids",
+            label = "view samples",
+            style = "text-align:center; border-sytle:solid; border-color:#0000ff;")
+          ), # close the left col
+        column(
+          id = "rightPanel", 10,
+          DT::DTOutput("samplesSolidsDataView"),
+          DT::DTOutput("solidsData"),
+          uiOutput("addNewSolidUI"),
+          div(id = "modifySolidsDiv")
+        ) # close the right col
+      ) # close the row
+    ) # close the page
+    ), # close AFDM tab panel
 
-             # cations tab -------------------------------------------------------------
+  # cations tab -------------------------------------------------------------
 
-             tabPanel("cations",
-                      cationsUI("icpCations")
-             ), # close cations tab
+  tabPanel("cations",
+    cationsUI("icpCations")
+    ), # close cations tab
 
-             # lachat tab --------------------------------------------------------------
+  # lachat tab --------------------------------------------------------------
 
-             tabPanel("lachat",
-                      lachatUI("lachat")
-             ), # close lachat tab
+  tabPanel("lachat",
+    lachatUI("lachat")
+    ), # close lachat tab
 
-             # aq2 tab --------------------------------------------------------------
+  # aq2 tab --------------------------------------------------------------
 
-             tabPanel("aq2",
-                      aq2UI("aq2")
-             ), # close aq2 tab
+  tabPanel("aq2",
+    aq2UI("aq2")
+    ), # close aq2 tab
 
-             # shimadzu tab --------------------------------------------------------------
+  # shimadzu tab --------------------------------------------------------------
 
-             tabPanel("shimadzu",
-                      shimadzuUI("shimadzu")
-             ), # close shimadzu tab
+  tabPanel("shimadzu",
+    shimadzuUI("shimadzu")
+    ), # close shimadzu tab
 
-             # chem data view ----------------------------------------------------------
+  # chem data view ----------------------------------------------------------
 
-             tabPanel("chemistry: data viewer",
-                      ChemViewer1$ui()
-             ), # close 'chemistry: data viewer' tab panel
+  tabPanel("chemistry: data viewer",
+    ChemViewer1$ui()
+    ), # close 'chemistry: data viewer' tab panel
 
-             # chem inventory ----------------------------------------------------------
+  # chem inventory ----------------------------------------------------------
 
-             tabPanel("chemistry: data inventory",
-                      ChemInventory1$ui()
-             ) # close 'chemistry: inventory viewer' tab panel
+  tabPanel("chemistry: data inventory",
+    ChemInventory1$ui()
+  ) # close 'chemistry: inventory viewer' tab panel
 
-             # closing UI --------------------------------------------------------------
+  # closing UI --------------------------------------------------------------
 
-  ) # close navbar/page
+) # close navbar/page
 ) # close tagList
 
 
@@ -216,11 +224,12 @@ server <- function(input, output, session) {
 
     req(input$file1)
 
-    read_csv(input$file1$datapath,
-             n_max = 1,
-             col_names = c("reportText", "siteID")) %>%
-      dplyr::select(siteID) %>%
-      unlist(., use.names = FALSE)
+    read_csv(
+      input$file1$datapath,
+      n_max = 1,
+      col_names = c("reportText", "siteID")) %>%
+    dplyr::select(siteID) %>%
+    unlist(., use.names = FALSE)
 
   })
 
@@ -230,15 +239,16 @@ server <- function(input, output, session) {
 
     req(input$file1)
 
-    maxDate <- read_csv(input$file1$datapath,
-                        skip = 7,
-                        col_names = c("sample_datetime", "eventNumber")) %>%
-      dplyr::select(sample_datetime) %>%
-      dplyr::filter(!is.na(sample_datetime)) %>%
-      dplyr::mutate(
-        sample_datetime = parse_date_time(sample_datetime, c("mdY HMS p", "mdY HMS", "mdY HM"))
+    maxDate <- read_csv(
+      input$file1$datapath,
+      skip = 7,
+      col_names = c("sample_datetime", "eventNumber")) %>%
+    dplyr::select(sample_datetime) %>%
+    dplyr::filter(!is.na(sample_datetime)) %>%
+    dplyr::mutate(
+      sample_datetime = parse_date_time(sample_datetime, c("mdY HMS p", "mdY HMS", "mdY HM"))
       ) %>%
-      dplyr::summarise(maxDTTM = max(sample_datetime))
+    dplyr::summarise(maxDTTM = max(sample_datetime))
 
     # because this function is to add a blank, set the time according to
     # prescribed approach for blank times (e.g., blank #2 = 00:00:20)
@@ -258,16 +268,19 @@ server <- function(input, output, session) {
 
     req(input$file1)
 
-    read_csv(input$file1$datapath,
-             skip = 7,
-             col_names = c("sample_datetime", "eventNumber")) %>%
-      mutate(bottle = paste0(sampleReportSiteId(), "_", input$storm, "_", eventNumber)) %>%
-      dplyr::select(bottle, sample_datetime) %>%
-      dplyr::filter(!is.na(sample_datetime)) %>%
-      dplyr::mutate(sample_datetime = parse_date_time(sample_datetime, c("mdY HMS p", "mdY HMS", "mdY HM"))) %>%
-      add_row(bottle = paste0(sampleReportSiteId(), "_", input$storm, "_BLK"),
-              sample_datetime = sampleReportMaxDate()) %>%
-      mutate(sample_datetime = format(sample_datetime, "%Y-%m-%d %H:%M:%S"))
+    read_csv(
+      input$file1$datapath,
+      skip = 7,
+      col_names = c("sample_datetime", "eventNumber")
+      ) %>%
+    dplyr::mutate(bottle = paste0(sampleReportSiteId(), "_", input$storm, "_", eventNumber)) %>%
+    dplyr::select(bottle, sample_datetime) %>%
+    dplyr::filter(!is.na(sample_datetime)) %>%
+    dplyr::mutate(sample_datetime = parse_date_time(sample_datetime, c("mdY HMS p", "mdY HMS", "mdY HM"))) %>%
+    add_row(
+      bottle = paste0(sampleReportSiteId(), "_", input$storm, "_BLK"),
+      sample_datetime = sampleReportMaxDate()) %>%
+    mutate(sample_datetime = format(sample_datetime, "%Y-%m-%d %H:%M:%S"))
 
   })
 
@@ -728,11 +741,12 @@ server <- function(input, output, session) {
 
     req(input$dischargeFile)
 
-    read_csv(input$dischargeFile$datapath,
-             n_max = 1,
-             col_names = c("reportText", "siteID")) %>%
-      dplyr::select(siteID) %>%
-      unlist(., use.names = FALSE)
+    readr::read_csv(
+      file = input$dischargeFile$datapath,
+      n_max = 1,
+      col_names = c("reportText", "siteID")) %>%
+    dplyr::select(siteID) %>%
+    unlist(., use.names = FALSE)
 
   })
 
@@ -742,16 +756,25 @@ server <- function(input, output, session) {
 
     req(input$dischargeFile)
 
-    read_csv(input$dischargeFile$datapath,
-             skip = 7,
-             col_names = c("event_datetime", "level")) %>%
-      dplyr::filter(!is.na(event_datetime)) %>%
-      mutate(
-        event_datetime = parse_date_time(event_datetime, c("mdY HMS p", "mdY HMS")),
-        event_datetime = format(event_datetime, "%Y-%m-%d %H:%M:%S")
+    readr::read_csv(
+      file = input$dischargeFile$datapath,
+      skip = 7,
+      col_names = c("event_datetime", "level")
       ) %>%
-      mutate(site_id = levelDataSiteId()) %>%
-      select(site_id, event_datetime, level)
+    dplyr::filter(!is.na(event_datetime)) %>%
+    dplyr::mutate(
+      event_datetime = parse_date_time(event_datetime, c("mdY HMS p", "mdY HMS")),
+      event_datetime = format(event_datetime, "%Y-%m-%d %H:%M:%S"),
+      site_id = levelDataSiteId(),
+      site_id = as.integer(site_id),
+      source_file = input$dischargeFile$name
+      ) %>%
+    dplyr::select(
+      site_id,
+      event_datetime,
+      water_height = level,
+      source_file
+    )
 
   })
 
@@ -769,9 +792,39 @@ server <- function(input, output, session) {
 
     # modify data object as needed for the DB
     dischargeToWrite <- levelData() %>%
-      mutate(event_datetime = as.POSIXct(event_datetime, format = "%Y-%m-%d %H:%M:%S"))
+      dplyr::mutate(
+        event_datetime = as.POSIXct(event_datetime, format = "%Y-%m-%d %H:%M:%S")
+      )
 
-    # beging DB sequence
+    # add run identifier as maxrun
+    maxrun <- as.numeric(run_interpolated_query(interpolatedQuery = "SELECT MAX(run_id) FROM stormwater.discharge ;"))
+
+    if (is.na(maxrun) | is.null(maxrun)) { maxrun <- 0 }
+
+    dischargeToWrite$run_id <- maxrun + 1
+
+    # write temp table
+    if (dbExistsTable(stormPool, c('stormwater', 'discharge_temp'))) {
+
+      dbRemoveTable(stormPool, c('stormwater', 'discharge_temp'))
+
+    }
+
+    dbWriteTable(
+      conn = stormPool,
+      name = c('stormwater', 'discharge_temp'),
+      value = dischargeToWrite,
+      row.names = F
+    )
+
+    # remove timezone type generated by dbWriteTable function
+    remove_timezone_query <- '
+    ALTER TABLE stormwater.discharge_temp
+    ALTER COLUMN event_datetime TYPE TIMESTAMP WITHOUT TIME ZONE ;'
+
+    run_interpolated_execution(interpolatedQuery = remove_timezone_query)
+
+    # write temp data to database
 
     # insert into samples. the 'ON CONFLICT' clause allows for skipping
     # inserting any data that are already in the database.
@@ -780,70 +833,37 @@ server <- function(input, output, session) {
     (
       site_id,
       event_datetime,
-      water_height
+      water_height,
+      source_file,
+      run_id
     )
     (
       SELECT
         site_id,
         event_datetime,
-        level
+        water_height,
+        source_file,
+        run_id
       FROM
       stormwater.discharge_temp
     )
     ON CONFLICT ON CONSTRAINT discharge_unique_observations DO NOTHING;'
 
+    # write temp data to database
+    run_interpolated_execution(
+      interpolatedQuery = insertLevelDataQuery, 
+      success_notice = TRUE
+    )
 
-    tryCatch({
+    # remove temporary table
+    if (dbExistsTable(stormPool, c('stormwater', 'discharge_temp'))) {
 
-      dbGetQuery(stormPool, "BEGIN TRANSACTION")
-
-      # write new samples to samples_temp
-      if (dbExistsTable(stormPool, c('stormwater', 'discharge_temp'))) dbRemoveTable(stormPool, c('stormwater', 'discharge_temp'))
-      dbWriteTable(stormPool, c('stormwater', 'discharge_temp'), value = dischargeToWrite, row.names = F)
-
-      # remove timezone type generated by dbWriteTable function
-      dbExecute(stormPool,'
-            ALTER TABLE stormwater.discharge_temp
-            ALTER COLUMN event_datetime TYPE TIMESTAMP WITHOUT TIME ZONE;')
-
-      # execute insert query
-      dbExecute(stormPool, insertLevelDataQuery)
-
-      # clean up
       dbRemoveTable(stormPool, c('stormwater', 'discharge_temp'))
 
-      dbCommit(stormPool)
+    }
 
-      showNotification(ui = "successfully uploaded",
-                       duration = NULL,
-                       closeButton = TRUE,
-                       type = 'message',
-                       action = a(href = "javascript:location.reload();", "reload the page"))
 
-    }, warning = function(warn) {
-
-      showNotification(ui = paste("there is a warning:  ", warn),
-                       duration = NULL,
-                       closeButton = TRUE,
-                       type = 'warning')
-
-      print(paste("WARNING: ", warn))
-
-    }, error = function(err) {
-
-      showNotification(ui = paste("there was an error:  ", err),
-                       duration = NULL,
-                       closeButton = TRUE,
-                       type = 'error')
-
-      print(paste("ERROR: ", err))
-      print("ROLLING BACK TRANSACTION")
-
-      dbRollback(stormPool)
-
-    }) # close try catch
-
-  })
+  }) # close observe event upload level data
 
 
   # establish tab position as input to modules ------------------------------
