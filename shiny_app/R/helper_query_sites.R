@@ -12,7 +12,7 @@ query_sample_sites <- function() {
   FROM stormwater.sites
   WHERE abbreviation IN ('IBW', 'LM', 'SGC', 'Ave7th', 'centralNorth', 'centralSouth', 'Price');"
 
-  sampleSites <- dbGetQuery(stormPool, baseQuery)
+  sampleSites <- run_interpolated_query(baseQuery)
 
   return(sampleSites)
 
@@ -20,6 +20,6 @@ query_sample_sites <- function() {
 
 sampleSites <- query_sample_sites()
 
-siteAbbreviations <- sampleSites %>%
-  arrange(abbreviation) %>%
-  pull(abbreviation)
+siteAbbreviations <- sampleSites |>
+  dplyr::arrange(abbreviation) |>
+  dplyr::pull(abbreviation)

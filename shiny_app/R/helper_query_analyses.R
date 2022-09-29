@@ -38,7 +38,7 @@ query_analyses <- function() {
   ORDER BY
     analysis_name;"
   
-  commonAnalyses <- dbGetQuery(stormPool, baseQuery)
+  commonAnalyses <- run_interpolated_query(baseQuery)
   
   return(commonAnalyses)
   
@@ -46,5 +46,5 @@ query_analyses <- function() {
 
 analyses <- query_analyses()
 
-analysesNames <- analyses %>%
-  pull(analysis_name)
+analysesNames <- analyses |>
+  dplyr::pull(analysis_name)

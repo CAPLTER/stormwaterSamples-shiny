@@ -4,7 +4,7 @@
 #'   machine-derived stormwater chemistry data. An instance of this class is
 #'   generated in global then accessed from app.
 
-ChemViewer <- R6Class("ChemViewer", list(
+ChemViewer <- R6::R6Class("ChemViewer", list(
 
     # attributes
     id = NULL,
@@ -295,3 +295,7 @@ ChemViewer <- R6Class("ChemViewer", list(
 ) # close public
 
 )  # close R6::ChemViewer
+
+ChemViewer1    <- ChemViewer$new(id = "chem_display")
+ChemInventory1 <- ChemInventory$new(id = "chem_inventory")
+

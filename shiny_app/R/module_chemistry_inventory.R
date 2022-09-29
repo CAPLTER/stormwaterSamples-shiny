@@ -5,7 +5,7 @@
 #'  site and date range. An instance of this class is generated in global then
 #'  accessed from app.
 
-ChemInventory <- R6Class("ChemInventory", list(
+ChemInventory <- R6::R6Class("ChemInventory", list(
 
     # attributes
     id = NULL,
