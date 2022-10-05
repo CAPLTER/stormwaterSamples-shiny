@@ -1,0 +1,50 @@
+#samplesLeftPanel   { background: #D3D3D3; color: #484848; }
+#col_action_filter  { padding-top: 25px; }
+#col_action_clear   { padding-top: 25px; }
+
+.shiny-notification {
+position:fixed;
+top:  calc(90%);
+left: calc(1%);
+}
+
+.dataTables_wrapper {
+  font-size: 85%
+}
+
+.selectize-dropdown {
+  font-size: 12px;
+}
+
+.selectize-input {
+  font-size: 12px;
+}
+
+.control-label {
+  font-size: 90%
+}
+
+.form-control {
+  font-size: 90%
+}
+
+.form-control.shinytime-hours {
+  padding-left: 8px;
+  padding-right: 8px;
+  font-size: 95%
+}
+
+.form-control.shinytime-mins {
+  padding-left: 8px;
+  padding-right: 8px;
+  font-size: 95%
+}
+
+#readme_box {
+  padding: 19px;
+  margin-bottom: 20px;
+  background-color: #FFFFE0;
+  border: 1px solid #e3e3e3;
+  border-radius: 4px;
+}
+

@@ -19,23 +19,11 @@
 # UI ----------------------------------------------------------------------
 
 ui <- tagList(
+
   tags$head(
-    tags$style(
-      HTML("#leftPanel { background: #D3D3D3; }"),
-      HTML("#submitFileUpload { background-color: #800000;
-                          color: white; }"),
-      HTML("#addSample { border-style: solid;
-                         border-color: #0000ff; }"),
-      HTML("#deleteManualEntryRow { border-style: solid;
-                                    border-color: #ff0000 }"),
-      HTML("#submitEnteredData { background-color: #800000;
-                                 color: white; }"),
-      HTML("#submitDischargeFileUpload { background-color: #800000;
-                                         color: white; }"),
-      HTML("#submitAFDM { background-color: #800000;
-                          color: white; }")
-    ) # close tags$head
-  ), # close tagss$style
+    tags$link(rel = "stylesheet", type = "text/css", href = "custom.css")
+  ),
+
 shiny::navbarPage(
   title = "stormwater",
   id    = "tabs", # use explicit id to access tab position
@@ -47,48 +35,6 @@ shiny::navbarPage(
     upload_reportUI("upload_report")
   ),
 
-#     fluidPage(
-#       fluidRow(
-#         column(
-#           id = "leftPanel", 2,
-#           fileInput("file1", "choose csv file",
-#             multiple = FALSE,
-#             accept = c("text/csv",
-#               "text/comma-separated-values,text/plain",
-#               ".csv")),
-#           sliderInput(inputId = "storm",
-#             label = "storm/carousel",
-#             min = 1,
-#             max = 5,
-#             value = 1),
-#           textAreaInput("fileUploadNotes",
-#             "notes (applied to all samples)",
-#             resize = "vertical",
-#             value = NULL),
-#           actionButton("submitFileUpload",
-#             "submit data"),
-#           br(),
-#           br()
-#           ), # close the left col
-# 
-#         column(
-#           id = "fileUploadMiddlePanel", 5,
-#           DT::dataTableOutput("buttonsInTable"),
-#           tags$script(
-#             HTML("Shiny.addCustomMessageHandler('unbind-DT', function(id) {
-#               Shiny.unbindAll($('#'+id).find('table').DataTable().table().node()); })")
-#           ) # notable stmt
-#           ), # close the middle col
-# 
-#         column(
-#           id = "fileUploadRightPanel", 5,
-#           DT::dataTableOutput("checked")
-#         ) # close the right col
-# 
-#       ) # close the row
-#     ) # close the page
-# 
-#     ), # clase file upload tab panel
 
   # samples tab -------------------------------------------------------------
 
