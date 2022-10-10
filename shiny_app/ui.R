@@ -30,7 +30,7 @@ shiny::navbarPage(
 
   # isco tab ----------------------------------------------------------------
 
-  tabPanel(
+  shiny::tabPanel(
     "isco",
     upload_reportUI("upload_report")
   ),
@@ -38,9 +38,14 @@ shiny::navbarPage(
 
   # samples tab -------------------------------------------------------------
 
-  tabPanel("samples",
-    modifySamplesUI("modifySamples")
-    ), # close samples tab
+  shiny::tabPanel(
+    "samples",
+    samples_inventoryUI("samples_inventory")
+  ),
+
+#   tabPanel("samples",
+#     modifySamplesUI("modifySamples")
+#     ), # close samples tab
 
   # discharge upload tab ----------------------------------------------------
 

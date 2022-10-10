@@ -20,12 +20,14 @@ server <- function(input, output, session) {
   upload_report("upload_report")
 
 
-  # call to modifySamples module --------------------------------------------
+  # call to samples inventory module --------------------------------------------
 
-  callModule(
-    module = modifySamples,
-    id     = "modifySamples"
-  )
+  samples_inventory("samples_inventory")
+
+#   callModule(
+#     module = modifySamples,
+#     id     = "modifySamples"
+#   )
 
 
   # solids ------------------------------------------------------------------
