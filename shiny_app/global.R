@@ -39,7 +39,11 @@ source("R/helper_sql_execution.R") # ensure that this is loaded first
 
 # selectors --------------------------------------------------------------------
 
-bottleList <- readr::read_csv("documents/allPossibleBottleCombinations.csv", col_names = TRUE)
+bottleList <- readr::read_csv(
+  file      = "documents/allPossibleBottleCombinations.csv",
+  col_names = TRUE
+  ) |>
+dplyr::filter(grepl("^9|^10_|^11_", bottles, ignore.case = TRUE))
 
 
 # R6 ---------------------------------------------------------------------------

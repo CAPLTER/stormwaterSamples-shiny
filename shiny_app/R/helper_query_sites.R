@@ -5,21 +5,23 @@
 
 query_sample_sites <- function() {
 
-  baseQuery <- "
+  base_query <- "
   SELECT
     site_id,
     abbreviation
   FROM stormwater.sites
-  WHERE abbreviation IN ('IBW', 'LM', 'SGC', 'Ave7th', 'centralNorth', 'centralSouth', 'Price');"
+  WHERE abbreviation IN ('IBW', 'LM', 'SGC')
+  ;
+  "
 
-  sampleSites <- run_interpolated_query(baseQuery)
+  sample_sites <- run_interpolated_query(base_query)
 
-  return(sampleSites)
+  return(sample_sites)
 
 }
 
-sampleSites <- query_sample_sites()
+sample_sites <- query_sample_sites()
 
-siteAbbreviations <- sampleSites |>
+siteAbbreviations <- sample_sites |>
   dplyr::arrange(abbreviation) |>
   dplyr::pull(abbreviation)

@@ -23,8 +23,7 @@
 #col_action_filter	shiny_app/www/custom.css	/^#col_action_filter  { padding-top: 25px; }$/;"	i
 #readme_box	shiny_app/www/custom.css	/^#readme_box {$/;"	i
 #samplesLeftPanel	shiny_app/www/custom.css	/^#samplesLeftPanel   { background: #D3D3D3; color: #484848; }$/;"	i
-.con	shiny_app/R/helper_query_samples.R	/^  .con = DBI::ANSI()$/;"	v	function:query_samples
-.con	shiny_app/R/helper_query_samples.R	/^  .con = DBI::ANSI()$/;"	v	function:query_single_sample
+.con	shiny_app/R/helper_delete_sample.R	/^    .con = DBI::ANSI()$/;"	v	function:delete_sample
 .control-label	shiny_app/www/custom.css	/^.control-label {$/;"	c
 .dataTables_wrapper	shiny_app/www/custom.css	/^.dataTables_wrapper {$/;"	c
 .form-control	shiny_app/www/custom.css	/^.form-control {$/;"	c
@@ -64,6 +63,8 @@ anonFunc5edf18490d00	shiny_app/R/module_aq2.R	/^        }, warning = function(wa
 anonFunc89beec4c0100	archive/config.R	/^onStop(function() {$/;"	f
 anonFunca2e1b29e0100	shiny_app/R/module_samples_main.R	/^  shiny::moduleServer(id, function(input, output, session) {$/;"	f	function:samples_inventory
 anonFunca2e1b29e0200	shiny_app/R/module_samples_main.R	/^      actions <- purrr::map_chr(samples_inventory_queried$id, function(id_) {$/;"	f	function:samples_inventory.anonFunca2e1b29e0100
+anonFunca2e1b29e0900	shiny_app/R/module_samples_main.R	/^      sample_to_edit = function() NULL,$/;"	f	function:samples_inventory.anonFunca2e1b29e0100
+anonFunca2e1b29e0a00	shiny_app/R/module_samples_main.R	/^      }, warning = function(warn) {$/;"	f	function:samples_inventory.anonFunca2e1b29e0100
 anonFunca9d6de850100	shiny_app/R/module_upload_report.R	/^  shiny::moduleServer(id, function(input, output, session) {$/;"	f	function:upload_report
 anonFunca9d6de850600	shiny_app/R/module_upload_report.R	/^      }, warning = function(warn) {$/;"	f	function:upload_report.anonFunca9d6de850100
 anonFuncc170fab20100	shiny_app/R/module_lachat.R	/^    unlist(lapply(seq_len(len), function(i) {$/;"	f	function:lachat.shinyValue
@@ -75,6 +76,11 @@ anonFuncdebda2d90100	shiny_app/R/helper_shiny_input.R	/^    unlist(lapply(seq_le
 anonFunced49a1e10200	shiny_app/R/module_modify_samples.R	/^    }, warning = function(warn) {$/;"	f	function:modifySamples
 anonFunced49a1e10300	shiny_app/R/module_modify_samples.R	/^    }, warning = function(warn) {$/;"	f	function:modifySamples
 anonFunced9332b00100	shiny_app/R/module_sample_new.R	/^  shiny::moduleServer(id, function(input, output, session) {$/;"	f	function:module_sample_new
+anonFunced9332b00200	shiny_app/R/module_sample_new.R	/^    iv$add_rule("new_date", function(value) {$/;"	f	function:module_sample_new.anonFunced9332b00100
+anonFunced9332b00300	shiny_app/R/module_sample_new.R	/^    iv$add_rule("new_temperature", function(value) {$/;"	f	function:module_sample_new.anonFunced9332b00100
+anonFunced9332b00400	shiny_app/R/module_sample_new.R	/^    iv$add_rule("new_temperature", function(value) {$/;"	f	function:module_sample_new.anonFunced9332b00100
+anonFunced9332b00500	shiny_app/R/module_sample_new.R	/^    iv$add_rule("new_conductivity", function(value) {$/;"	f	function:module_sample_new.anonFunced9332b00100
+anonFunced9332b00600	shiny_app/R/module_sample_new.R	/^    iv$add_rule("new_conductivity", function(value) {$/;"	f	function:module_sample_new.anonFunced9332b00100
 anonFuncf71eb7560100	shiny_app/R/module_cations.R	/^    unlist(lapply(seq_len(len), function(i) {$/;"	f	function:cations.shinyValue
 anonFuncf71eb7560e00	shiny_app/R/module_cations.R	/^        poolWithTransaction(stormPool, function(conn) {$/;"	f	function:cations
 anonFuncf71eb7560f00	shiny_app/R/module_cations.R	/^      }, warning = function(warn) {$/;"	f	function:cations
@@ -85,6 +91,7 @@ anonLista2e1b29e0407	shiny_app/R/module_samples_main.R	/^        list($/;"	L	nam
 anonLista2e1b29e0507	shiny_app/R/module_samples_main.R	/^        list($/;"	L	nameattr:samples_inventory.anonFunca2e1b29e0100.options.columnDefs
 anonLista2e1b29e0607	shiny_app/R/module_samples_main.R	/^        list($/;"	L	nameattr:samples_inventory.anonFunca2e1b29e0100.options.columnDefs
 anonLista2e1b29e0707	shiny_app/R/module_samples_main.R	/^        list($/;"	L	nameattr:samples_inventory.anonFunca2e1b29e0100.options.columnDefs
+anonLista2e1b29e0807	shiny_app/R/module_samples_main.R	/^        list($/;"	L	nameattr:samples_inventory.anonFunca2e1b29e0100.options.columnDefs
 anonLista9d6de850407	shiny_app/R/module_upload_report.R	/^        list($/;"	L	nameattr:upload_report.anonFunca9d6de850100.options.columnDefs
 anonListc5c909e00d07	shiny_app/app.R	/^                 columnDefs = list(list(width = "100px", targets = c(1)))$/;"	L	list:columnDefs
 anonListed49a1e10107	shiny_app/R/module_modify_samples.R	/^                 columnDefs = list(list(width = '100px', targets = c(1)))$/;"	L	nameattr:modifySamples.options.columnDefs
@@ -216,6 +223,7 @@ baseQuery	shiny_app/app.R	/^    WHERE solids.solid_id = ?RWE_ID;'$/;"	v	function
 baseQuery	shiny_app/server.R	/^      );"$/;"	v	function:server.addSolid
 baseQuery	shiny_app/server.R	/^    WHERE solid_id = ?tuple;'$/;"	v	function:server.updateSolid
 baseQuery	shiny_app/server.R	/^    WHERE solids.solid_id = ?RWE_ID;'$/;"	v	function:server.deleteSolid
+base_query	shiny_app/R/helper_query_sites.R	/^  "$/;"	v	function:query_sample_sites
 blank_time_seconds	shiny_app/R/module_upload_report.R	/^      blank_time_seconds <- input$storm * 10$/;"	v	function:upload_report.anonFunca9d6de850100
 bottle	shiny_app/R/app.R	/^        bottle = NA,$/;"	g
 bottle	shiny_app/R/app.R	/^    dplyr::mutate(bottle = paste0(sampleReportSiteId(), "_", input$storm, "_", eventNumber)) %>%$/;"	v	function:server
@@ -227,9 +235,10 @@ bottle	shiny_app/app.R	/^    dplyr::mutate(bottle = paste0(sampleReportSiteId(),
 bottle	shiny_app/server.R	/^        bottle = NA,$/;"	g
 bottleID	shiny_app/R/module_modify_samples.R	/^    bottleID <- input$bottleIdentity$/;"	v	function:modifySamples
 bottleList	archive/global.R	/^bottleList <- read_csv("allPossibleBottleCombinations.csv",$/;"	g
-bottleList	shiny_app/global.R	/^bottleList <- readr::read_csv("documents\/allPossibleBottleCombinations.csv", col_names = TRUE)$/;"	g
+bottleList	shiny_app/global.R	/^bottleList <- readr::read_csv($/;"	g
 bottleOptions	shiny_app/R/module_machine_inputs.R	/^    bottleOptions <- run_interpolated_query(parameterizedQuery)$/;"	v	function:machineInput
 bottleOptions	shiny_app/R/module_modify_samples.R	/^    bottleOptions <- bottleList %>%$/;"	v	function:modifySamples
+bottles_subset	shiny_app/R/module_sample_new.R	/^      bottles_subset <- bottleList[$/;"	v	function:module_sample_new.anonFunced9332b00100
 build_insert_raw_query	shiny_app/R/helper_insert_raw.R	/^build_insert_raw_query <- function(currentTab) {$/;"	f
 build_insert_results_query	shiny_app/R/helper_insert_results.R	/^build_insert_results_query <- function(currentTab) {$/;"	f
 carousel_string	shiny_app/R/module_upload_report.R	/^      carousel_string    <- paste0("_", as.character(input$storm), "_")$/;"	v	function:upload_report.anonFunca9d6de850100
@@ -237,11 +246,14 @@ cations	shiny_app/R/module_cations.R	/^cations <- function(input, output, sessio
 cationsResults	shiny_app/R/module_cations.R	/^    cationsResults <- rawReactive() %>%$/;"	v	function:cations
 cationsUI	shiny_app/R/module_cations.R	/^cationsUI <- function(id) {$/;"	f
 cationsUpload	shiny_app/R/module_cations.R	/^    cationsUpload <- read_excel(path = machineInputs$machineFile()$datapath,$/;"	v	function:cations
-class	shiny_app/R/module_sample_new.R	/^              class = "btn btn-primary",$/;"	n	list:module_sample_new.anonFunced9332b00100.footer
+choices	shiny_app/R/module_sample_new.R	/^                choices   = sample_sites[["abbreviation"]],$/;"	v	function:module_sample_new.anonFunced9332b00100
+class	shiny_app/R/module_sample_new.R	/^              class   = "btn btn-primary",$/;"	n	list:module_sample_new.anonFunced9332b00100.footer
 class	shiny_app/R/module_samples_main.R	/^            class   = "btn-success",$/;"	v	function:samples_inventoryUI
 class	shiny_app/R/module_upload_report.R	/^            class   = "btn-success",$/;"	v	function:upload_reportUI
 className	shiny_app/R/module_samples_main.R	/^          className = "dt-center"$/;"	n	list:samples_inventory.anonFunca2e1b29e0100.options.columnDefs.anonLista2e1b29e0507
 className	shiny_app/R/module_samples_main.R	/^          className = "dt-right"$/;"	n	list:samples_inventory.anonFunca2e1b29e0100.options.columnDefs.anonLista2e1b29e0607
+closeButton	shiny_app/R/module_samples_main.R	/^          closeButton = TRUE,$/;"	v	function:samples_inventory.anonFunca2e1b29e0100.anonFunca2e1b29e0a00
+closeButton	shiny_app/R/module_samples_main.R	/^          closeButton = TRUE,$/;"	v	function:samples_inventory.anonFunca2e1b29e0100.anonFunca2e1b29e0a00.error
 closeButton	shiny_app/R/module_upload_report.R	/^          closeButton = TRUE,$/;"	v	function:upload_report.anonFunca9d6de850100
 closeButton	shiny_app/R/module_upload_report.R	/^          closeButton = TRUE,$/;"	v	function:upload_report.anonFunca9d6de850100.anonFunca9d6de850600
 closeButton	shiny_app/R/module_upload_report.R	/^          closeButton = TRUE,$/;"	v	function:upload_report.anonFunca9d6de850100.anonFunca9d6de850600.error
@@ -251,7 +263,7 @@ col_names	shiny_app/R/module_upload_report.R	/^        col_names = c("reportText
 col_names	shiny_app/R/module_upload_report.R	/^        col_names = c("sample_datetime", "eventNumber"),$/;"	c	function:upload_report.anonFunca9d6de850100.generate_report
 col_names	shiny_app/R/module_upload_report.R	/^        col_names = c("sample_datetime", "eventNumber"),$/;"	c	function:upload_report.anonFunca9d6de850100.get_max_date
 col_names	shiny_app/app.R	/^      col_names = c("reportText", "siteID")) %>%$/;"	c	function:server
-col_names	shiny_app/global.R	/^bottleList <- readr::read_csv("documents\/allPossibleBottleCombinations.csv", col_names = TRUE)$/;"	g
+col_names	shiny_app/global.R	/^  col_names = TRUE$/;"	g
 col_names	shiny_app/server.R	/^      col_names = c("reportText", "siteID")) %>%$/;"	c	function:server
 columnDefs	shiny_app/R/app.R	/^                 columnDefs = list(list(width = "100px", targets = c(1)))$/;"	L
 columnDefs	shiny_app/R/module_modify_samples.R	/^                 columnDefs = list(list(width = '100px', targets = c(1)))$/;"	n	list:modifySamples.options	constructor:list
@@ -281,6 +293,7 @@ deleteSample	shiny_app/R/module_modify_samples.R	/^  deleteSample <- function(ro
 deleteSolid	shiny_app/R/app.R	/^  deleteSolid <- function(row_to_delete) {$/;"	f	function:server
 deleteSolid	shiny_app/app.R	/^  deleteSolid <- function(row_to_delete) {$/;"	f	function:server
 deleteSolid	shiny_app/server.R	/^  deleteSolid <- function(row_to_delete) {$/;"	f	function:server
+delete_sample	shiny_app/R/helper_delete_sample.R	/^delete_sample <- function(sample_to_delete) {$/;"	f
 disable	shiny_app/R/app.R	/^                  disable = list(columns = c(0,1,2,3,4,5,12,13))),$/;"	n	list:server.editable	constructor:list
 disable	shiny_app/R/module_modify_samples.R	/^                  disable = list(columns = c(0,1,2,7,8,9,10))),$/;"	n	list:modifySamples.editable	constructor:list
 disable	shiny_app/R/module_upload_report.R	/^      disable = list(columns = c(0, 1))$/;"	n	list:upload_report.anonFunca9d6de850100.editable	constructor:list
@@ -301,6 +314,8 @@ drawCallback	shiny_app/R/module_cations.R	/^                 drawCallback = JS('
 drawCallback	shiny_app/R/module_lachat.R	/^                 drawCallback = JS('function() {$/;"	n	list:lachat.options
 drawCallback	shiny_app/R/module_shimadzu.R	/^      drawCallback = JS("function() {$/;"	n	list:shimadzu.options
 drawCallback	shiny_app/app.R	/^                 drawCallback = JS('function() {$/;"	n	list:server.options
+duration	shiny_app/R/module_samples_main.R	/^          duration    = NULL,$/;"	v	function:samples_inventory.anonFunca2e1b29e0100.anonFunca2e1b29e0a00
+duration	shiny_app/R/module_samples_main.R	/^          duration    = NULL,$/;"	v	function:samples_inventory.anonFunca2e1b29e0100.anonFunca2e1b29e0a00.error
 duration	shiny_app/R/module_upload_report.R	/^          duration    = NULL,$/;"	v	function:upload_report.anonFunca9d6de850100
 duration	shiny_app/R/module_upload_report.R	/^          duration    = NULL,$/;"	v	function:upload_report.anonFunca9d6de850100.anonFunca9d6de850600
 duration	shiny_app/R/module_upload_report.R	/^          duration    = NULL,$/;"	v	function:upload_report.anonFunca9d6de850100.anonFunca9d6de850600.error
@@ -325,6 +340,7 @@ error	shiny_app/R/module_cations.R	/^      }, error = function(err) {$/;"	f	func
 error	shiny_app/R/module_lachat.R	/^      }, error = function(err) {$/;"	f	function:lachat.anonFuncc170fab20d00
 error	shiny_app/R/module_modify_samples.R	/^    }, error = function(err) {$/;"	f	function:modifySamples.anonFunced49a1e10200
 error	shiny_app/R/module_modify_samples.R	/^    }, error = function(err) {$/;"	f	function:modifySamples.anonFunced49a1e10300
+error	shiny_app/R/module_samples_main.R	/^      }, error = function(err) {$/;"	f	function:samples_inventory.anonFunca2e1b29e0100.anonFunca2e1b29e0a00
 error	shiny_app/R/module_shimadzu.R	/^        }, error = function(err) {$/;"	f	function:shimadzu.anonFunc36c26b0a0e00
 error	shiny_app/R/module_upload_report.R	/^      }, error = function(err) {$/;"	f	function:upload_report.anonFunca9d6de850100.anonFunca9d6de850600
 error	shiny_app/app.R	/^    }, error = function(err) {$/;"	f	function:server.anonFuncc5c909e00c00
@@ -351,6 +367,7 @@ file	shiny_app/R/module_upload_report.R	/^        file      = isco_file$datapath
 file	shiny_app/R/module_upload_report.R	/^        file      = isco_file$datapath,$/;"	v	function:upload_report.anonFunca9d6de850100.get_max_date
 file	shiny_app/R/module_upload_report.R	/^        file      = isco_file$datapath,$/;"	v	function:upload_report.anonFunca9d6de850100.get_site_id
 file	shiny_app/app.R	/^      file = input$dischargeFile$datapath,$/;"	v	function:server
+file	shiny_app/global.R	/^  file      = "documents\/allPossibleBottleCombinations.csv",$/;"	g
 file	shiny_app/server.R	/^      file = input$dischargeFile$datapath,$/;"	v	function:server
 fileName	shiny_app/R/module_machine_inputs.R	/^      fileName = reactive({ input$machineOutputFile$name }),$/;"	n	list:machineInput.anonListfadb393c0107
 filePath	shiny_app/R/module_machine_inputs.R	/^      filePath = reactive({ input$machineOutputFile$datapath }),$/;"	n	list:machineInput.anonListfadb393c0107
@@ -379,8 +396,9 @@ filter_dry	shiny_app/server.R	/^        filter_dry = NA,$/;"	g
 filter_initial	shiny_app/R/app.R	/^        filter_initial = NA,$/;"	g
 filter_initial	shiny_app/app.R	/^        filter_initial = NA,$/;"	g
 filter_initial	shiny_app/server.R	/^        filter_initial = NA,$/;"	g
-fixedHeader	shiny_app/R/module_samples_main.R	/^      fixedHeader = FALSE,$/;"	n	list:samples_inventory.anonFunca2e1b29e0100.options
+fixedHeader	shiny_app/R/module_samples_main.R	/^      fixedHeader   = FALSE,$/;"	n	list:samples_inventory.anonFunca2e1b29e0100.options
 footer	shiny_app/R/module_sample_new.R	/^          footer = list($/;"	L	function:module_sample_new.anonFunced9332b00100
+format	shiny_app/R/module_sample_new.R	/^                format  = "yyyy-mm-dd",$/;"	v	function:module_sample_new.anonFunced9332b00100
 format_raw	shiny_app/R/helper_format_raw.R	/^format_raw <- function(annotatedData, sampleMetadata, currentTab, nitrite = FALSE) {$/;"	f
 formattedData	shiny_app/R/helper_format_raw.R	/^  formattedData <- annotatedData %>%$/;"	v	function:format_raw
 func	shiny_app/R/module_upload_report.R	/^          func = function(conn) {$/;"	f	function:upload_report.anonFunca9d6de850100
@@ -398,12 +416,12 @@ icon	shiny_app/R/module_upload_report.R	/^            icon    = shiny::icon("plu
 id	archive/global.R	/^ChemInventory1 <- ChemInventory$new(id = "chem_inventory")$/;"	g
 id	archive/global.R	/^ChemViewer1 <- ChemViewer$new(id = "chem_display")$/;"	g
 id	shiny_app/R/module_modify_samples.R	/^        id = NA,$/;"	g
-id	shiny_app/R/module_sample_new.R	/^              id = "a",$/;"	v	function:module_sample_new.anonFunced9332b00100
+id	shiny_app/R/module_sample_new.R	/^              id = "col_add_sample",$/;"	v	function:module_sample_new.anonFunced9332b00100
 id	shiny_app/ui.R	/^  id    = "tabs", # use explicit id to access tab position$/;"	g
 ident	shiny_app/R/helper_shiny_input.R	/^        ident = as.character(reactiveObject %>% select(id) %>% slice(i:i))$/;"	v	function:shinyInput
 ident	shiny_app/R/helper_shiny_input.R	/^        ident = as.character(reactiveObject %>% select(id) %>% slice(i:i))$/;"	v	function:shinyInputFlex
 info	shiny_app/R/module_upload_report.R	/^      info <- input$sample_report_table_cell_edit$/;"	v	function:upload_report.anonFunca9d6de850100
-inputId	shiny_app/R/module_sample_new.R	/^                inputId = ns("temperature"),$/;"	v	function:module_sample_new.anonFunced9332b00100
+inputId	shiny_app/R/module_sample_new.R	/^                inputId   = ns("new_site"),$/;"	v	function:module_sample_new.anonFunced9332b00100
 inputId	shiny_app/R/module_sample_new.R	/^              inputId = ns("submit"),$/;"	n	list:module_sample_new.anonFunced9332b00100.footer
 inputId	shiny_app/R/module_samples_main.R	/^            inputId = ns("add_sample"),$/;"	v	function:samples_inventoryUI
 inputId	shiny_app/R/module_upload_report.R	/^            inputId  = ns("isco_6700_report_file"),$/;"	v	function:upload_reportUI
@@ -427,9 +445,10 @@ insert_results_query	shiny_app/R/module_shimadzu.R	/^        insert_results_quer
 integerSites	shiny_app/R/module_machine_inputs.R	/^    integerSites <- glue::glue_sql($/;"	v	function:machineInput
 isco_data	shiny_app/R/module_upload_report.R	/^    isco_data <- shiny::reactiveValues()$/;"	v	function:upload_report.anonFunca9d6de850100
 isco_report	shiny_app/R/module_upload_report.R	/^      isco_report <- readr::read_csv($/;"	v	function:upload_report.anonFunca9d6de850100.generate_report
+iv	shiny_app/R/module_sample_new.R	/^    iv <- shinyvalidate::InputValidator$new()$/;"	v	function:module_sample_new.anonFunced9332b00100
 j	shiny_app/R/module_upload_report.R	/^      j    <- info$col + 1L$/;"	v	function:upload_report.anonFunca9d6de850100
-label	shiny_app/R/module_sample_new.R	/^                label = "temperature",$/;"	v	function:module_sample_new.anonFunced9332b00100
-label	shiny_app/R/module_sample_new.R	/^              label = "submit",$/;"	n	list:module_sample_new.anonFunced9332b00100.footer
+label	shiny_app/R/module_sample_new.R	/^                label     = "site",$/;"	v	function:module_sample_new.anonFunced9332b00100
+label	shiny_app/R/module_sample_new.R	/^              label   = "submit",$/;"	n	list:module_sample_new.anonFunced9332b00100.footer
 label	shiny_app/R/module_samples_main.R	/^            label   = "add sample",$/;"	v	function:samples_inventoryUI
 label	shiny_app/R/module_upload_report.R	/^            label    = "choose csv file",$/;"	v	function:upload_reportUI
 label	shiny_app/R/module_upload_report.R	/^          label   = "notes (applied to all samples)",$/;"	v	function:upload_report.anonFunca9d6de850100
@@ -456,7 +475,7 @@ machineInputs	shiny_app/R/module_aq2.R	/^  machineInputs <- callModule(module = 
 machineInputs	shiny_app/R/module_cations.R	/^  machineInputs <- callModule(module = machineInput,$/;"	v	function:cations
 machineInputs	shiny_app/R/module_lachat.R	/^  machineInputs <- callModule(module = machineInput,$/;"	v	function:lachat
 machineInputs	shiny_app/R/module_shimadzu.R	/^  machineInputs <- callModule(module = machineInput,$/;"	v	function:shimadzu
-max	shiny_app/R/module_sample_new.R	/^                max = NA$/;"	v	function:module_sample_new.anonFunced9332b00100
+max	shiny_app/R/module_sample_new.R	/^                max     = Sys.Date()$/;"	v	function:module_sample_new.anonFunced9332b00100
 max	shiny_app/R/module_upload_report.R	/^            max     = 5,$/;"	v	function:upload_reportUI
 maxDTTM	shiny_app/R/app.R	/^    dplyr::summarise(maxDTTM = max(sample_datetime))$/;"	v	function:server
 maxDTTM	shiny_app/R/module_upload_report.R	/^      dplyr::summarise(maxDTTM = max(sample_datetime))$/;"	v	function:upload_report.anonFunca9d6de850100.get_max_date
@@ -472,11 +491,12 @@ maxrun	shiny_app/R/module_lachat.R	/^    maxrun <- as.numeric(run_interpolated_q
 maxrun	shiny_app/R/module_shimadzu.R	/^    maxrun <- as.numeric(run_interpolated_query(interpolatedQuery = "SELECT MAX(run_id) FROM sto/;"	v	function:shimadzu
 maxrun	shiny_app/app.R	/^    maxrun <- as.numeric(run_interpolated_query(interpolatedQuery = "SELECT MAX(run_id) FROM sto/;"	v	function:server
 maxrun	shiny_app/server.R	/^    maxrun <- as.numeric(run_interpolated_query(interpolatedQuery = "SELECT MAX(run_id) FROM sto/;"	v	function:server
-min	shiny_app/R/module_sample_new.R	/^                min = 0,$/;"	v	function:module_sample_new.anonFunced9332b00100
+min	shiny_app/R/module_sample_new.R	/^                min     = "2020-01-01",$/;"	v	function:module_sample_new.anonFunced9332b00100
 min	shiny_app/R/module_upload_report.R	/^            min     = 1,$/;"	v	function:upload_reportUI
 modifySamples	shiny_app/R/module_modify_samples.R	/^modifySamples <- function(input, output, session, samplesID) {$/;"	f
 modifySamplesUI	shiny_app/R/module_modify_samples.R	/^modifySamplesUI <- function(id) {$/;"	f
 module_sample_new	shiny_app/R/module_sample_new.R	/^module_sample_new <- function(id, modal_title, sample_to_edit, modal_trigger) {$/;"	f
+multiple	shiny_app/R/module_sample_new.R	/^                multiple  = FALSE,$/;"	v	function:module_sample_new.anonFunced9332b00100
 multiple	shiny_app/R/module_upload_report.R	/^            multiple = FALSE,$/;"	v	function:upload_reportUI
 n_max	shiny_app/R/app.R	/^      n_max = 1,$/;"	v	function:server
 n_max	shiny_app/R/module_upload_report.R	/^        n_max     = 1,$/;"	v	function:upload_report.anonFunca9d6de850100.get_site_id
@@ -515,11 +535,11 @@ options	shiny_app/R/module_upload_report.R	/^    options   = list($/;"	L	functio
 options	shiny_app/R/module_view_discharge.R	/^  options = list($/;"	L	function:viewDischarge
 options	shiny_app/app.R	/^  options = list(bFilter = 0,$/;"	L	function:server
 options	shiny_app/server.R	/^  options = list($/;"	L	function:server
-orderable	shiny_app/R/module_samples_main.R	/^          orderable = FALSE$/;"	n	list:samples_inventory.anonFunca2e1b29e0100.options.columnDefs.anonLista2e1b29e0707
+orderable	shiny_app/R/module_samples_main.R	/^          orderable = FALSE$/;"	n	list:samples_inventory.anonFunca2e1b29e0100.options.columnDefs.anonLista2e1b29e0807
 outputId	shiny_app/R/module_upload_report.R	/^    sample_report_proxy <- DT::dataTableProxy(outputId = "sample_report_table")$/;"	v	function:upload_report.anonFunca9d6de850100
 overwrite	shiny_app/R/module_upload_report.R	/^              overwrite = FALSE,$/;"	v	function:upload_report.anonFunca9d6de850100.func
 pH	shiny_app/R/module_modify_samples.R	/^        pH = NA,$/;"	g
-pageLength	shiny_app/R/module_samples_main.R	/^      pageLength = 50,$/;"	n	list:samples_inventory.anonFunca2e1b29e0100.options
+pageLength	shiny_app/R/module_samples_main.R	/^      pageLength    = 50,$/;"	n	list:samples_inventory.anonFunca2e1b29e0100.options
 parameterizedQuery	shiny_app/R/app.R	/^    parameterizedQuery <- sqlInterpolate(ANSI(),$/;"	v	function:server.addSolid
 parameterizedQuery	shiny_app/R/app.R	/^    parameterizedQuery <- sqlInterpolate(ANSI(),$/;"	v	function:server.deleteSolid
 parameterizedQuery	shiny_app/R/app.R	/^    parameterizedQuery <- sqlInterpolate(ANSI(),$/;"	v	function:server.updateSolid
@@ -541,8 +561,8 @@ parameterizedQuery	shiny_app/app.R	/^    parameterizedQuery <- sqlInterpolate(AN
 parameterizedQuery	shiny_app/server.R	/^    parameterizedQuery <- sqlInterpolate($/;"	v	function:server.addSolid
 parameterizedQuery	shiny_app/server.R	/^    parameterizedQuery <- sqlInterpolate(ANSI(),$/;"	v	function:server.deleteSolid
 parameterizedQuery	shiny_app/server.R	/^    parameterizedQuery <- sqlInterpolate(ANSI(),$/;"	v	function:server.updateSolid
-parameterized_query	shiny_app/R/helper_query_samples.R	/^  parameterized_query <- glue::glue_sql("$/;"	v	function:query_samples
-parameterized_query	shiny_app/R/helper_query_samples.R	/^  parameterized_query <- glue::glue_sql("$/;"	v	function:query_single_sample
+parameterized_query	shiny_app/R/helper_delete_sample.R	/^  parameterized_query <- glue::glue_sql("$/;"	v	function:delete_sample
+placeholder	shiny_app/R/module_sample_new.R	/^                placeholder = "bottles only partially filled",$/;"	v	function:module_sample_new.anonFunced9332b00100
 plugins	shiny_app/R/module_samples_main.R	/^    plugins    = c("ellipsis"),$/;"	c	function:samples_inventory.anonFunca2e1b29e0100
 pool	shiny_app/R/module_upload_report.R	/^          pool = this_pool,$/;"	v	function:upload_report.anonFunca9d6de850100
 preDrawCallback	shiny_app/R/app.R	/^                 preDrawCallback = JS('function() {$/;"	n	list:server.options
@@ -562,8 +582,7 @@ queryTypeSamplesSolids	shiny_app/app.R	/^  queryTypeSamplesSolids <- reactiveVal
 queryTypeSamplesSolids	shiny_app/server.R	/^  queryTypeSamplesSolids <- reactiveValues(default = "default")$/;"	v	function:server
 query_discharge_default	shiny_app/R/helper_query_discharge.R	/^query_discharge_default <- function() {$/;"	f
 query_discharge_site_date	shiny_app/R/helper_query_discharge.R	/^query_discharge_site_date <- function(start, end, site) {$/;"	f
-query_samples	shiny_app/R/helper_query_samples.R	/^query_samples <- function() {$/;"	f
-query_single_sample	shiny_app/R/helper_query_samples.R	/^query_single_sample <- function(sample_id) {$/;"	f
+query_sample_sites	shiny_app/R/helper_query_sites.R	/^query_sample_sites <- function() {$/;"	f
 query_solids_default	shiny_app/R/helper_query_solids.R	/^query_solids_default <- function() {$/;"	f
 query_solids_site_date	shiny_app/R/helper_query_solids.R	/^query_solids_site_date <- function(start, end, site) {$/;"	f
 rawReactive	shiny_app/R/module_aq2.R	/^  rawReactive <- reactive({$/;"	v	function:aq2
@@ -578,11 +597,12 @@ rel	shiny_app/ui.R	/^    tags$link(rel = "stylesheet", type = "text\/css", href 
 remove_timezone_query	shiny_app/R/app.R	/^    ALTER COLUMN event_datetime TYPE TIMESTAMP WITHOUT TIME ZONE ;'$/;"	v	function:server
 remove_timezone_query	shiny_app/app.R	/^    ALTER COLUMN event_datetime TYPE TIMESTAMP WITHOUT TIME ZONE ;'$/;"	v	function:server
 remove_timezone_query	shiny_app/server.R	/^    ALTER COLUMN event_datetime TYPE TIMESTAMP WITHOUT TIME ZONE ;'$/;"	v	function:server
-render	shiny_app/R/module_samples_main.R	/^          render  = JS("$.fn.dataTable.render.ellipsis( 12 )")$/;"	n	list:samples_inventory.anonFunca2e1b29e0100.options.columnDefs.anonLista2e1b29e0307
+render	shiny_app/R/module_samples_main.R	/^          render    = JS("$.fn.dataTable.render.ellipsis( 50 )")$/;"	n	list:samples_inventory.anonFunca2e1b29e0100.options.columnDefs.anonLista2e1b29e0307
 replicate	shiny_app/R/app.R	/^        replicate = NA,$/;"	g
 replicate	shiny_app/app.R	/^        replicate = NA,$/;"	g
 replicate	shiny_app/server.R	/^        replicate = NA,$/;"	g
 resetPaging	shiny_app/R/module_upload_report.R	/^        resetPaging = FALSE,$/;"	v	function:upload_report.anonFunca9d6de850100
+resize	shiny_app/R/module_sample_new.R	/^                resize      = "vertical"$/;"	v	function:module_sample_new.anonFunced9332b00100
 resize	shiny_app/R/module_upload_report.R	/^            resize  = "vertical",$/;"	v	function:upload_reportUI
 resultReactive	shiny_app/R/module_aq2.R	/^  resultReactive <- reactive({$/;"	v	function:aq2
 resultReactive	shiny_app/R/module_cations.R	/^  resultReactive <- reactive({$/;"	v	function:cations
@@ -627,6 +647,8 @@ sample_id	shiny_app/R/app.R	/^        sample_id = NA,$/;"	g
 sample_id	shiny_app/app.R	/^        sample_id = NA,$/;"	g
 sample_id	shiny_app/server.R	/^        sample_id = NA,$/;"	g
 sample_report_proxy	shiny_app/R/module_upload_report.R	/^    sample_report_proxy <- DT::dataTableProxy(outputId = "sample_report_table")$/;"	v	function:upload_report.anonFunca9d6de850100
+sample_sites	shiny_app/R/helper_query_sites.R	/^  sample_sites <- run_interpolated_query(base_query)$/;"	v	function:query_sample_sites
+sample_sites	shiny_app/R/helper_query_sites.R	/^sample_sites <- query_sample_sites()$/;"	g
 samples	shiny_app/R/module_machine_inputs.R	/^      samples = reactive({ samplesSelection() }),$/;"	n	list:machineInput.anonListfadb393c0107
 samplesData	shiny_app/R/module_modify_samples.R	/^      samplesData <- query_samples_default()$/;"	v	function:modifySamples
 samplesDataReactive	shiny_app/R/module_modify_samples.R	/^  samplesDataReactive <- reactive({$/;"	v	function:modifySamples
@@ -644,7 +666,9 @@ samples_inventory_module_js	shiny_app/www/samples_inventory_module.js	/^function
 samples_inventory_queried	shiny_app/R/module_samples_main.R	/^      samples_inventory_queried <- query_samples()$/;"	v	function:samples_inventory.anonFunca2e1b29e0100
 samples_inventory_reactive	shiny_app/R/module_samples_main.R	/^    samples_inventory_reactive <- reactive({$/;"	v	function:samples_inventory.anonFunca2e1b29e0100
 samples_upload	shiny_app/R/module_upload_report.R	/^      samples_upload <- isco_data[["samples"]] |>$/;"	v	function:upload_report.anonFunca9d6de850100
-scrollX	shiny_app/R/module_samples_main.R	/^      scrollX       = TRUE,$/;"	n	list:samples_inventory.anonFunca2e1b29e0100.options
+scrollX	shiny_app/R/module_samples_main.R	/^      scrollX       = FALSE,$/;"	n	list:samples_inventory.anonFunca2e1b29e0100.options
+seconds	shiny_app/R/module_sample_new.R	/^                seconds = TRUE$/;"	v	function:module_sample_new.anonFunced9332b00100
+selected	shiny_app/R/module_sample_new.R	/^                selected  = ifelse(is.null(hold), "", hold$site),$/;"	v	function:module_sample_new.anonFunced9332b00100
 selection	shiny_app/R/app.R	/^  selection = 'none',$/;"	v	function:server
 selection	shiny_app/R/module_aq2.R	/^  selection = "none",$/;"	v	function:aq2
 selection	shiny_app/R/module_cations.R	/^  selection = 'none',$/;"	v	function:cations
@@ -656,6 +680,7 @@ selection	shiny_app/R/module_upload_report.R	/^    selection = "multiple",$/;"	v
 selection	shiny_app/R/module_view_discharge.R	/^  selection = "none",$/;"	v	function:viewDischarge
 selection	shiny_app/app.R	/^  selection = 'none',$/;"	v	function:server
 selection	shiny_app/server.R	/^  selection = "none",$/;"	v	function:server
+selectize	shiny_app/R/module_sample_new.R	/^                selectize = FALSE$/;"	v	function:module_sample_new.anonFunced9332b00100
 server	shiny_app/R/app.R	/^  server = FALSE,$/;"	v	function:server
 server	shiny_app/R/app.R	/^server <- function(input, output, session) {$/;"	f
 server	shiny_app/R/module_aq2.R	/^  server = TRUE, # use server-side to accomodate large tables$/;"	v	function:aq2
@@ -686,6 +711,7 @@ site	shiny_app/R/module_modify_samples.R	/^        site = NA,$/;"	g
 site	shiny_app/R/module_view_discharge.R	/^        site = as.character("match not found"),$/;"	g
 site	shiny_app/app.R	/^        site = NA,$/;"	g
 site	shiny_app/server.R	/^        site = NA,$/;"	g
+siteAbbreviations	shiny_app/R/helper_query_sites.R	/^siteAbbreviations <- sample_sites |>$/;"	g
 siteCode	shiny_app/R/module_modify_samples.R	/^    siteCode <- sampleSites %>%$/;"	v	function:modifySamples.addNewSample
 siteNum	shiny_app/R/module_modify_samples.R	/^    siteNum <- sampleSites %>% $/;"	v	function:modifySamples
 site_id	shiny_app/R/app.R	/^      site_id = levelDataSiteId(),$/;"	v	function:server
@@ -711,7 +737,7 @@ src	shiny_app/R/module_samples_main.R	/^      tags$script(src = "samples_invento
 start	shiny_app/R/module_machine_inputs.R	/^    start <- as.character(as.Date(input$startDate))$/;"	v	function:machineInput
 stormPool	archive/config.R	/^stormPool <- dbPool($/;"	g
 stormwaterSamples-shiny	README.md	/^# stormwaterSamples-shiny$/;"	c
-style	shiny_app/R/module_sample_new.R	/^              style = "color: white"$/;"	n	list:module_sample_new.anonFunced9332b00100.footer
+style	shiny_app/R/module_sample_new.R	/^              style   = "color: white"$/;"	n	list:module_sample_new.anonFunced9332b00100.footer
 style	shiny_app/R/module_samples_main.R	/^            style   = "color: #fff; margin-bottom: 2px;",$/;"	v	function:samples_inventoryUI
 style	shiny_app/R/module_upload_report.R	/^            style   = "color: #fff;",$/;"	v	function:upload_reportUI
 submit	shiny_app/R/module_machine_inputs.R	/^      submit = reactive({ input$submitData })$/;"	n	list:machineInput.anonListfadb393c0107
@@ -725,11 +751,12 @@ target	shiny_app/app.R	/^  editable = list(target = "cell",$/;"	n	list:server.ed
 target	shiny_app/server.R	/^    target = "cell",$/;"	n	list:server.editable
 targets	shiny_app/R/app.R	/^                 columnDefs = list(list(width = "100px", targets = c(1)))$/;"	n	list:columnDefs.anonList40ff69010d07	constructor:c
 targets	shiny_app/R/module_modify_samples.R	/^                 columnDefs = list(list(width = '100px', targets = c(1)))$/;"	n	list:modifySamples.options.columnDefs.anonListed49a1e10107	constructor:c
-targets	shiny_app/R/module_samples_main.R	/^          targets   = c(1, 2, 8),$/;"	n	list:samples_inventory.anonFunca2e1b29e0100.options.columnDefs.anonLista2e1b29e0507	constructor:c
-targets	shiny_app/R/module_samples_main.R	/^          targets   = c(7),$/;"	n	list:samples_inventory.anonFunca2e1b29e0100.options.columnDefs.anonLista2e1b29e0607	constructor:c
-targets	shiny_app/R/module_samples_main.R	/^          targets   = c(8),$/;"	n	list:samples_inventory.anonFunca2e1b29e0100.options.columnDefs.anonLista2e1b29e0707	constructor:c
-targets	shiny_app/R/module_samples_main.R	/^          targets = 0$/;"	n	list:samples_inventory.anonFunca2e1b29e0100.options.columnDefs.anonLista2e1b29e0407
-targets	shiny_app/R/module_samples_main.R	/^          targets = c(3),$/;"	n	list:samples_inventory.anonFunca2e1b29e0100.options.columnDefs.anonLista2e1b29e0307	constructor:c
+targets	shiny_app/R/module_samples_main.R	/^          targets   = 0$/;"	n	list:samples_inventory.anonFunca2e1b29e0100.options.columnDefs.anonLista2e1b29e0407
+targets	shiny_app/R/module_samples_main.R	/^          targets   = c(1, 2, 7),$/;"	n	list:samples_inventory.anonFunca2e1b29e0100.options.columnDefs.anonLista2e1b29e0507	constructor:c
+targets	shiny_app/R/module_samples_main.R	/^          targets   = c(3),$/;"	n	list:samples_inventory.anonFunca2e1b29e0100.options.columnDefs.anonLista2e1b29e0307	constructor:c
+targets	shiny_app/R/module_samples_main.R	/^          targets   = c(5),$/;"	n	list:samples_inventory.anonFunca2e1b29e0100.options.columnDefs.anonLista2e1b29e0607	constructor:c
+targets	shiny_app/R/module_samples_main.R	/^          targets   = c(7),$/;"	n	list:samples_inventory.anonFunca2e1b29e0100.options.columnDefs.anonLista2e1b29e0807	constructor:c
+targets	shiny_app/R/module_samples_main.R	/^          targets = c(1, 2, 4:7),$/;"	n	list:samples_inventory.anonFunca2e1b29e0100.options.columnDefs.anonLista2e1b29e0707	constructor:c
 targets	shiny_app/R/module_upload_report.R	/^          targets = c(0, 1),$/;"	n	list:upload_report.anonFunca9d6de850100.options.columnDefs.anonLista9d6de850407	constructor:c
 targets	shiny_app/app.R	/^                 columnDefs = list(list(width = "100px", targets = c(1)))$/;"	n	list:columnDefs.anonListc5c909e00d07	constructor:c
 targets	shiny_app/server.R	/^    columnDefs = list(list(width = "100px", targets = c(1))$/;"	n	list:server.options.columnDefs.anonList3a4125560207	constructor:c
@@ -745,8 +772,14 @@ temp_results	shiny_app/R/module_shimadzu.R	/^        temp_results <- format_raw(
 this_configuration	archive/config.R	/^this_configuration <- config::get(config = "default")$/;"	g
 this_configuration	shiny_app/global.R	/^this_configuration <- config::get(config = "default")$/;"	g
 this_pool	shiny_app/global.R	/^this_pool <- dbPool($/;"	g
+this_sample	shiny_app/R/module_samples_main.R	/^      this_sample <- query_single_sample(sample_id = input$sample_id_to_edit)$/;"	v	function:samples_inventory.anonFunca2e1b29e0100
+this_sample_id	shiny_app/R/module_sample_new.R	/^        this_sample_id   <- NULL$/;"	v	function:module_sample_new.anonFunced9332b00100
+this_sample_to_edit	shiny_app/R/module_samples_main.R	/^    this_sample_to_edit <- shiny::eventReactive(input$sample_id_to_edit, {$/;"	v	function:samples_inventory.anonFunca2e1b29e0100
+this_sample_type	shiny_app/R/module_sample_new.R	/^        this_sample_type <- "insert"$/;"	v	function:module_sample_new.anonFunced9332b00100
 title	shiny_app/R/module_sample_new.R	/^          title = modal_title,$/;"	v	function:module_sample_new.anonFunced9332b00100
 title	shiny_app/ui.R	/^  title = "stormwater",$/;"	g
+type	shiny_app/R/module_samples_main.R	/^          type        = "error"$/;"	v	function:samples_inventory.anonFunca2e1b29e0100.anonFunca2e1b29e0a00.error
+type	shiny_app/R/module_samples_main.R	/^          type        = "warning"$/;"	v	function:samples_inventory.anonFunca2e1b29e0100.anonFunca2e1b29e0a00
 type	shiny_app/R/module_upload_report.R	/^          type        = "error"$/;"	v	function:upload_report.anonFunca9d6de850100.anonFunca9d6de850600.error
 type	shiny_app/R/module_upload_report.R	/^          type        = "message",$/;"	v	function:upload_report.anonFunca9d6de850100
 type	shiny_app/R/module_upload_report.R	/^          type        = "warning"$/;"	v	function:upload_report.anonFunca9d6de850100.anonFunca9d6de850600
@@ -754,6 +787,8 @@ type	shiny_app/ui.R	/^    tags$link(rel = "stylesheet", type = "text\/css", href
 tz	shiny_app/R/module_upload_report.R	/^        locale    = readr::locale(tz = "America\/Phoenix")$/;"	v	function:upload_report.anonFunca9d6de850100.generate_report
 tz	shiny_app/R/module_upload_report.R	/^        locale    = readr::locale(tz = "America\/Phoenix")$/;"	v	function:upload_report.anonFunca9d6de850100.get_max_date
 ui	shiny_app/R/app.R	/^ui <- tagList($/;"	g
+ui	shiny_app/R/module_samples_main.R	/^          ui          = paste("error: ", err),$/;"	v	function:samples_inventory.anonFunca2e1b29e0100.anonFunca2e1b29e0a00.error
+ui	shiny_app/R/module_samples_main.R	/^          ui          = paste("warning: ", warn),$/;"	v	function:samples_inventory.anonFunca2e1b29e0100.anonFunca2e1b29e0a00
 ui	shiny_app/R/module_upload_report.R	/^          ui          = paste("there is a warning:  ", warn),$/;"	v	function:upload_report.anonFunca9d6de850100.anonFunca9d6de850600
 ui	shiny_app/R/module_upload_report.R	/^          ui          = paste("there was an error:  ", err),$/;"	v	function:upload_report.anonFunca9d6de850100.anonFunca9d6de850600.error
 ui	shiny_app/R/module_upload_report.R	/^          ui          = paste0("uploaded ", nrow(samples_upload), " samples"),$/;"	v	function:upload_report.anonFunca9d6de850100
@@ -772,7 +807,7 @@ value	shiny_app/R/helper_shiny_input.R	/^        value = input[[paste0(id, i)]]$
 value	shiny_app/R/module_aq2.R	/^        value = input[[paste0(id, i)]]$/;"	v	function:aq2.shinyValue.anonFunc5edf18490100
 value	shiny_app/R/module_cations.R	/^      value = input[[paste0(id, i)]]$/;"	v	function:cations.shinyValue.anonFuncf71eb7560100
 value	shiny_app/R/module_lachat.R	/^      value = input[[paste0(id, i)]]$/;"	v	function:lachat.shinyValue.anonFuncc170fab20100
-value	shiny_app/R/module_sample_new.R	/^                value = ifelse(is.null(hold), "", as.character(hold$temp)),$/;"	v	function:module_sample_new.anonFunced9332b00100
+value	shiny_app/R/module_sample_new.R	/^                value   = ifelse($/;"	v	function:module_sample_new.anonFunced9332b00100
 value	shiny_app/R/module_shimadzu.R	/^        value = input[[paste0(id, i)]]$/;"	v	function:shimadzu.shinyValue.anonFunc36c26b0a0100
 value	shiny_app/R/module_upload_report.R	/^              value     = samples_upload,$/;"	v	function:upload_report.anonFunca9d6de850100.func
 value	shiny_app/R/module_upload_report.R	/^            value   = 1$/;"	v	function:upload_reportUI
@@ -782,7 +817,7 @@ value	shiny_app/app.R	/^      value = input[[paste0(id, i)]]$/;"	v	function:serv
 value	shiny_app/server.R	/^        value = input[[paste0(id, i)]]$/;"	v	function:server.shinyValue.anonFunc3a4125560100
 viewDischarge	shiny_app/R/module_view_discharge.R	/^viewDischarge <- function(input, output, session) {$/;"	f
 viewDischargeUI	shiny_app/R/module_view_discharge.R	/^viewDischargeUI <- function(id) {$/;"	f
-visible	shiny_app/R/module_samples_main.R	/^          visible = FALSE,$/;"	n	list:samples_inventory.anonFunca2e1b29e0100.options.columnDefs.anonLista2e1b29e0407
+visible	shiny_app/R/module_samples_main.R	/^          visible   = FALSE,$/;"	n	list:samples_inventory.anonFunca2e1b29e0100.options.columnDefs.anonLista2e1b29e0407
 volume_filtered	shiny_app/R/app.R	/^        volume_filtered = NA,$/;"	g
 volume_filtered	shiny_app/app.R	/^        volume_filtered = NA,$/;"	g
 volume_filtered	shiny_app/server.R	/^        volume_filtered = NA,$/;"	g
@@ -793,6 +828,7 @@ water_height	shiny_app/server.R	/^      water_height = level,$/;"	v	function:ser
 width	shiny_app/R/app.R	/^                 columnDefs = list(list(width = "100px", targets = c(1)))$/;"	n	list:columnDefs.anonList40ff69010d07
 width	shiny_app/R/module_modify_samples.R	/^                 columnDefs = list(list(width = '100px', targets = c(1)))$/;"	n	list:modifySamples.options.columnDefs.anonListed49a1e10107
 width	shiny_app/R/module_sample_new.R	/^              width = 10,$/;"	v	function:module_sample_new.anonFunced9332b00100
+width	shiny_app/R/module_samples_main.R	/^          width   = "100px"$/;"	n	list:samples_inventory.anonFunca2e1b29e0100.options.columnDefs.anonLista2e1b29e0707
 width	shiny_app/R/module_samples_main.R	/^          width = 12$/;"	v	function:samples_inventoryUI
 width	shiny_app/R/module_upload_report.R	/^          width = "120px"$/;"	n	list:upload_report.anonFunca9d6de850100.options.columnDefs.anonLista9d6de850407
 width	shiny_app/R/module_upload_report.R	/^        id = "readme_row", width = 12,$/;"	v	function:upload_reportUI

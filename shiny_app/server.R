@@ -15,19 +15,16 @@ server <- function(input, output, session) {
     )
   }
 
-  # call module to upload 6700 sample report -----------------------------------
 
-  upload_report("upload_report")
+  # listeners ------------------------------------------------------------------
+
+  listener_init("update_sample")
 
 
-  # call to samples inventory module --------------------------------------------
+  # modules --------------------------------------------------------------------
 
-  samples_inventory("samples_inventory")
-
-#   callModule(
-#     module = modifySamples,
-#     id     = "modifySamples"
-#   )
+  upload_report("upload_report") # upload 6700 sample report
+  samples_inventory("samples_inventory") # manage samples data
 
 
   # solids ------------------------------------------------------------------

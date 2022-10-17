@@ -41,7 +41,7 @@ samples_inventoryUI <- function(id) {
           width = 12,
           DT::DTOutput(ns("samples_inventory_view"))
         )  # close column samples_main_panel
-        ), # close row    row_samples_data
+        ), # close row row_samples_data
 
       tags$script(src = "samples_inventory_module.js"),
       tags$script(paste0("samples_inventory_module_js('", ns(''), "')"))
@@ -66,6 +66,9 @@ samples_inventory <- function(id) {
 
     # query samples data
     samples_inventory_reactive <- reactive({
+
+      # add listener for adding and editing records
+      listener_watch("update_sample")
 
       samples_inventory_queried <- query_samples()
 
@@ -103,33 +106,38 @@ samples_inventory <- function(id) {
     selection  = "none",
     rownames   = FALSE,
     options    = list(
-      scrollX       = TRUE,
       # bFilter       = 0,
+      autoWidth     = FALSE,
+      scrollX       = FALSE,
       bLengthChange = FALSE,
       bPaginate     = TRUE,
       bSort         = TRUE,
       autoWidth     = FALSE,
-      pageLength = 50,
-      fixedHeader = FALSE,
+      pageLength    = 50,
+      fixedHeader   = FALSE,
       columnDefs    = list(
         list(
-          targets = c(3),
-          render  = JS("$.fn.dataTable.render.ellipsis( 12 )")
+          targets   = c(3),
+          render    = JS("$.fn.dataTable.render.ellipsis( 50 )")
           ),
         list(
-          visible = FALSE,
-          targets = 0
+          visible   = FALSE,
+          targets   = 0
           ),
         list(
-          targets   = c(1, 2, 8),
+          targets   = c(1, 2, 7),
           className = "dt-center"
           ),
         list(
-          targets   = c(7),
+          targets   = c(5),
           className = "dt-right"
           ),
         list(
-          targets   = c(8),
+          targets = c(1, 2, 4:7),
+          width   = "100px"
+          ),
+        list(
+          targets   = c(7),
           orderable = FALSE
         )
       )
@@ -139,71 +147,70 @@ samples_inventory <- function(id) {
 
     # module: edit sample
 
-    #   this_sample_to_edit <- shiny::eventReactive(input$sample_id_to_edit, {
-    # 
-    #     this_sample <- query_single_sample(sample_id = input$sample_id_to_edit)
-    # 
-    #     return(this_sample)
-    # 
-    #   })
-    # 
-    #   module_sample_new(
-    #     id            = "edit_sample",
-    #     modal_title   = "edit sample",
-    #     sample_to_edit  = this_sample_to_edit,
-    #     survey_id     = survey_id,
-    #     modal_trigger = reactive({input$sample_id_to_edit})
-    #   )
+    this_sample_to_edit <- shiny::eventReactive(input$sample_id_to_edit, {
+    
+      this_sample <- query_single_sample(sample_id = input$sample_id_to_edit)
+    
+      return(this_sample)
+    
+    })
+    
+    module_sample_new(
+      id             = "edit_sample",
+      modal_title    = "add or edit sample",
+      sample_to_edit = this_sample_to_edit,
+      modal_trigger  = reactive({input$sample_id_to_edit})
+    )
 
 
     # module: add sample
 
-    #   module_sample_new(
-    #     id            = "add_sample",
-    #     modal_title   = "add sample",
-    #     bird_to_edit  = function() NULL,
-    #     survey_id     = survey_id,
-    #     modal_trigger = reactive({input$add_sample})
-    #   )
+    module_sample_new(
+      id             = "add_sample",
+      modal_title    = "add sample",
+      sample_to_edit = function() NULL,
+      modal_trigger  = reactive({input$add_sample})
+    )
 
 
     # delete sample
 
-    #   shiny::observeEvent(input$sample_id_to_delete, {
-    # 
-    #     tryCatch({
-    # 
-    #       delete_sample(sample_to_delete = input$sample_id_to_delete)
-    # 
-    #       listener_trigger("update_birds")
-    # 
-    #     }, warning = function(warn) {
-    # 
-    #       shiny::showNotification(
-    #         ui          = paste("warning: ", warn),
-    #         duration    = NULL,
-    #         closeButton = TRUE,
-    #         type        = "warning"
-    #       )
-    # 
-    #     }, error = function(err) {
-    # 
-    #       shiny::showNotification(
-    #         ui          = paste("error: ", err),
-    #         duration    = NULL,
-    #         closeButton = TRUE,
-    #         type        = "error"
-    #       )
-    # 
-    #     }) # close tryCatch
-    # 
-    #   }) # close delete sample
+    shiny::observeEvent(input$sample_id_to_delete, {
+    
+      tryCatch({
+    
+        delete_sample(sample_to_delete = input$sample_id_to_delete)
+    
+        listener_trigger("update_sample")
+    
+      }, warning = function(warn) {
+    
+        shiny::showNotification(
+          ui          = paste("warning: ", warn),
+          duration    = NULL,
+          closeButton = TRUE,
+          type        = "warning"
+        )
+    
+      }, error = function(err) {
+    
+        shiny::showNotification(
+          ui          = paste("error: ", err),
+          duration    = NULL,
+          closeButton = TRUE,
+          type        = "error"
+        )
+    
+      }) # close tryCatch
+    
+    }) # close delete sample
 
 
     # debugging: module level -------------------------------------------------
 
-    # observe(print({ birds_inventory_reactive() |> dplyr::select(-actions) }))
+    # observe(print({ samples_inventory_reactive() |> dplyr::select(-actions) |> head() }))
+    # observe(print({ samples_inventory_reactive() |> dplyr::select(-actions) |> str() }))
 
 
-  }) # close module sever
+  }) # close module server
 } # close module function
