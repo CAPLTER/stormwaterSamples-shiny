@@ -25,319 +25,320 @@ server <- function(input, output, session) {
 
   upload_report("upload_report") # upload 6700 sample report
   samples_inventory("samples_inventory") # manage samples data
+  solids_inventory("solids_inventory") # manage samples data
 
 
   # solids ------------------------------------------------------------------
 
-  # create listener for adding, deleting, and updating solids data
-  listenModifySamplesSolids <- reactiveValues(dbVersion = 0)
-
-  # queryType: default vs parameterized query for transects
-  queryTypeSamplesSolids <- reactiveValues(default = "default")
-
-  # actionButton filterSamples = parameterized query type
-  observeEvent(input$filterSamplesSolids, {
-
-    queryTypeSamplesSolids$default <- "param"
-
-  })
-
-  # query samples-solids data
-  samplesSolidsDataReactive <- reactive({
-
-    # add listener for adding, deleting, and editing records
-    listenModifySamplesSolids$dbVersion
-
-    if (queryTypeSamplesSolids$default == "default") {
-
-      samplesSolidsData <- query_solids_default()
-
-    } else {
-
-      # parameters cannot be passed to function directly
-      filterSamplesSolidsStart <- as.character(input$viewSamplesSolidsStartDate)
-      filterSamplesSolidsEnd <- as.character(input$viewSamplesSolidsEndDate)
-      filterSamplesSolidsSite <- input$viewSamplesSolidsSite
-
-      # run query with params
-      samplesSolidsData <- query_solids_site_date(start = filterSamplesSolidsStart,
-        end = filterSamplesSolidsEnd,
-        site = filterSamplesSolidsSite)
-
-    }
-
-    if (nrow(samplesSolidsData) == 0) {
-
-      samplesSolidsData <- data.frame(
-        solid_id = NA,
-        sample_id = NA,
-        site = NA,
-        sample_datetime = NA,
-        bottle = NA,
-        afdm_bottle_id = NA,
-        filter_initial = NA,
-        filter_dry = NA,
-        volume_filtered = NA,
-        filter_ashed = NA,
-        replicate = NA,
-        comments = as.character("match not found")
-      )
-
-    } else {
-
-      # add and delete buttons to samplesSolidsData data
-      samplesSolidsData <- samplesSolidsData |>
-      dplyr::mutate(
-        add = shinyInputFlex(
-          reactiveObject = samplesSolidsData,
-          FUN = actionButton,
-          len = nrow(samplesSolidsData),
-          id = 'sample_id',
-          label = "add",
-          onclick = sprintf('Shiny.setInputValue("%s",  this.id)', "button_add_solids_sample")
-          ),
-        delete = shinyInputFlex(
-          reactiveObject = samplesSolidsData,
-          FUN = actionButton,
-          len = nrow(samplesSolidsData),
-          id = 'solid_id',
-          label = "delete",
-          onclick = sprintf('Shiny.setInputValue("%s",  this.id)', "button_delete_solids_sample")
-        )
-      )
-
-    }
-
-    return(samplesSolidsData)
-
-  })
-
-  # render table of samples-solids data
-  output$samplesSolidsDataView <- DT::renderDT({
-
-    samplesSolidsDataReactive()
-
-  },
-  escape = FALSE,
-  selection = "none",
-  rownames = FALSE,
-  editable = list(
-    target = "cell",
-    disable = list(columns = c(0,1,2,3,4,5,12,13))
-    ),
-  options = list(
-    bFilter = FALSE,
-    bLengthChange = TRUE,
-    bPaginate = TRUE,
-    bSort = FALSE,
-    autoWidth = TRUE,
-    columnDefs = list(list(width = "100px", targets = c(1))
-    )
-  )
-  ) # close output$samplesSolidsDataView
-
-  output$sampleUnderEdit <- renderText({ input$button_add_solids_sample })
-
-
-  # solids: add new ---------------------------------------------------------
-
-  # generate UI for adding a new solid
-  observeEvent(input$button_add_solids_sample, {
-
-    output$addNewSolidUI <- renderUI({
-
-      tagList(
-        hr(),
-        p("new solids data",
-          style = "text-align: left; background-color: LightGray; color: black;"),
-        tags$head(
-          tags$style(
-            HTML(paste0("#", "sampleUnderEdit", "{ color: DarkGray; }"))
-          ) # close tags$style
-          ), # close tagss$head
-        fluidRow(id = "newSolidTopRow",
-          column(1,
-            tags$b("sample_id"),
-            p(""),
-            textOutput("sampleUnderEdit")
-            ),
-          column(2,
-            numericInput("newFilterInitial",
-              label = "initial",
-              value = NULL)
-            ),
-          column(2,
-            numericInput("newFilterDry",
-              label = "dry",
-              value = NULL)
-            ),
-          column(2,
-            numericInput("newVolumeFiltered",
-              label = "volume",
-              value = NULL)
-            ),
-          column(2,
-            numericInput("newFilterAshed",
-              label = "ashed",
-              value = NULL)
-            ),
-          column(1,
-            numericInput("newReplicate",
-              label = "replicate",
-              value = 1)
-          )
-          ), # close fluidRow top
-        fluidRow(id = "newSolidBottomRow",
-          column(5,
-            textInput("newComments",
-              label = "comments")
-            ),
-          column(1,
-            style = "margin-top: 25px",
-            actionButton("addNewSolid",
-              label = "add new",
-              style = "text-align:center; border-sytle:solid; border-color:#0000ff;")
-          ) # close last column
-        ) # close fluidRow bottom
-      ) # close tag list
-
-    }) # close output$addNewSolidUI
-
-  }) # close observeEvent(input$button_add_solids_sample...
-
-  # function: addSolid - write new solid to the database
-  addSolid <- function(sampleID, initial, dry, volume, ashed, replicate, comments) {
-
-    baseQuery <- "
-    INSERT INTO stormwater.solids
-    (
-      sample_id,
-      filter_initial,
-      filter_dry,
-      volume_filtered,
-      filter_ashed,
-      replicate,
-      comments
-    )
-    VALUES
-    (
-      ?sampleIdent,
-      ?filterInitial,
-      ?filterDry,
-      ?filterVolume,
-      ?filterAshed,
-      ?solidReplicate,
-      NULLIF(?solidComment, '')::text
-      );"
-
-    parameterizedQuery <- sqlInterpolate(
-      ANSI(),
-      baseQuery,
-      sampleIdent = as.numeric(sampleID),
-      filterInitial = initial,
-      filterDry = dry,
-      filterVolume = volume,
-      filterAshed = ashed,
-      solidReplicate = replicate,
-      solidComment = comments
-    )
-
-    run_interpolated_execution(parameterizedQuery)
-
-    # change listener state when adding a record
-    listenModifySamplesSolids$dbVersion <- isolate(listenModifySamplesSolids$dbVersion + 1)
-
-  }
-
-  # add a new reach extent measure
-  observeEvent(input$addNewSolid, {
-
-    addSolid(
-      sampleID = input$button_add_solids_sample,
-      initial = input$newFilterInitial,
-      dry = input$newFilterDry,
-      volume = input$newVolumeFiltered,
-      ashed = input$newFilterAshed,
-      replicate = input$newReplicate,
-      comments = input$newComments
-    )
-
-    })
-
-
-  # solids: delete existing -------------------------------------------------
-
-  # function: deleteSolid - delete selected solid from database
-  deleteSolid <- function(row_to_delete) {
-
-    baseQuery <- '
-    DELETE FROM stormwater.solids
-    WHERE solids.solid_id = ?RWE_ID;'
-
-    parameterizedQuery <- sqlInterpolate(ANSI(),
-      baseQuery,
-      RWE_ID = as.numeric(row_to_delete))
-
-    run_interpolated_execution(parameterizedQuery)
-
-    # change listener state when deleting a record
-    listenModifySamplesSolids$dbVersion <- isolate(listenModifySamplesSolids$dbVersion + 1)
-
-  }
-
-  # call function deleteSolid - delete prescribed solid from the database
-  observeEvent(input$button_delete_solids_sample, {
-
-    deleteSolid(row_to_delete = input$button_delete_solids_sample)
-
-      })
-
-
-  # solids: update existing -------------------------------------------------
-
-  # function: updateSolid - write edited cell change to the database
-  updateSolid <- function(reactiveData, cellEdited) {
-
-    reactiveDataColNames <- as.list(colnames(reactiveData))
-    editedColumn <- reactiveDataColNames[cellEdited$col + 1]
-    editedRow <- reactiveData[cellEdited$row, ][['solid_id']]
-    newValue <- cellEdited[['value']]
-
-    # change numerics to appropriate data type
-    if (grepl("filter|replicate", editedColumn, ignore.case = TRUE)) {
-      newValue <- as.numeric(newValue)
-    }
-
-    # inexplicable behaviour in this case where the edited column is quoted,
-    # which is not permissible in postgres; use SQL quoting to obtain proper
-    # formatting
-    editedColumn <- SQL(editedColumn)
-
-    baseQuery <- '
-    UPDATE stormwater.solids
-    SET ?editedCol = ?updatedValue
-    WHERE solid_id = ?tuple;'
-
-    parameterizedQuery <- sqlInterpolate(ANSI(),
-      baseQuery,
-      editedCol = editedColumn,
-      updatedValue = newValue,
-      tuple = editedRow)
-
-    run_interpolated_execution(parameterizedQuery)
-
-    # change listener state when deleting a record
-    listenModifySamplesSolids$dbVersion <- isolate(listenModifySamplesSolids$dbVersion + 1)
-
-  }
-
-  # call function updateSample - write edited cell change to the database
-  observeEvent(input$samplesSolidsDataView_cell_edit, {
-
-    updateSolid(reactiveData = samplesSolidsDataReactive(),
-      cellEdited = input$samplesSolidsDataView_cell_edit)
-
-      })
+#   # create listener for adding, deleting, and updating solids data
+#   listenModifySamplesSolids <- reactiveValues(dbVersion = 0)
+# 
+#   # queryType: default vs parameterized query for transects
+#   queryTypeSamplesSolids <- reactiveValues(default = "default")
+# 
+#   # actionButton filterSamples = parameterized query type
+#   observeEvent(input$filterSamplesSolids, {
+# 
+#     queryTypeSamplesSolids$default <- "param"
+# 
+#   })
+# 
+#   # query samples-solids data
+#   samplesSolidsDataReactive <- reactive({
+# 
+#     # add listener for adding, deleting, and editing records
+#     listenModifySamplesSolids$dbVersion
+# 
+#     if (queryTypeSamplesSolids$default == "default") {
+# 
+#       samplesSolidsData <- query_solids_default()
+# 
+#     } else {
+# 
+#       # parameters cannot be passed to function directly
+#       filterSamplesSolidsStart <- as.character(input$viewSamplesSolidsStartDate)
+#       filterSamplesSolidsEnd <- as.character(input$viewSamplesSolidsEndDate)
+#       filterSamplesSolidsSite <- input$viewSamplesSolidsSite
+# 
+#       # run query with params
+#       samplesSolidsData <- query_solids_site_date(start = filterSamplesSolidsStart,
+#         end = filterSamplesSolidsEnd,
+#         site = filterSamplesSolidsSite)
+# 
+#     }
+# 
+#     if (nrow(samplesSolidsData) == 0) {
+# 
+#       samplesSolidsData <- data.frame(
+#         solid_id = NA,
+#         sample_id = NA,
+#         site = NA,
+#         sample_datetime = NA,
+#         bottle = NA,
+#         afdm_bottle_id = NA,
+#         filter_initial = NA,
+#         filter_dry = NA,
+#         volume_filtered = NA,
+#         filter_ashed = NA,
+#         replicate = NA,
+#         comments = as.character("match not found")
+#       )
+# 
+#     } else {
+# 
+#       # add and delete buttons to samplesSolidsData data
+#       samplesSolidsData <- samplesSolidsData |>
+#       dplyr::mutate(
+#         add = shinyInputFlex(
+#           reactiveObject = samplesSolidsData,
+#           FUN = actionButton,
+#           len = nrow(samplesSolidsData),
+#           id = 'sample_id',
+#           label = "add",
+#           onclick = sprintf('Shiny.setInputValue("%s",  this.id)', "button_add_solids_sample")
+#           ),
+#         delete = shinyInputFlex(
+#           reactiveObject = samplesSolidsData,
+#           FUN = actionButton,
+#           len = nrow(samplesSolidsData),
+#           id = 'solid_id',
+#           label = "delete",
+#           onclick = sprintf('Shiny.setInputValue("%s",  this.id)', "button_delete_solids_sample")
+#         )
+#       )
+# 
+#     }
+# 
+#     return(samplesSolidsData)
+# 
+#   })
+# 
+#   # render table of samples-solids data
+#   output$samplesSolidsDataView <- DT::renderDT({
+# 
+#     samplesSolidsDataReactive()
+# 
+#   },
+#   escape = FALSE,
+#   selection = "none",
+#   rownames = FALSE,
+#   editable = list(
+#     target = "cell",
+#     disable = list(columns = c(0,1,2,3,4,5,12,13))
+#     ),
+#   options = list(
+#     bFilter = FALSE,
+#     bLengthChange = TRUE,
+#     bPaginate = TRUE,
+#     bSort = FALSE,
+#     autoWidth = TRUE,
+#     columnDefs = list(list(width = "100px", targets = c(1))
+#     )
+#   )
+#   ) # close output$samplesSolidsDataView
+# 
+#   output$sampleUnderEdit <- renderText({ input$button_add_solids_sample })
+# 
+# 
+#   # solids: add new ---------------------------------------------------------
+# 
+#   # generate UI for adding a new solid
+#   observeEvent(input$button_add_solids_sample, {
+# 
+#     output$addNewSolidUI <- renderUI({
+# 
+#       tagList(
+#         hr(),
+#         p("new solids data",
+#           style = "text-align: left; background-color: LightGray; color: black;"),
+#         tags$head(
+#           tags$style(
+#             HTML(paste0("#", "sampleUnderEdit", "{ color: DarkGray; }"))
+#           ) # close tags$style
+#           ), # close tagss$head
+#         fluidRow(id = "newSolidTopRow",
+#           column(1,
+#             tags$b("sample_id"),
+#             p(""),
+#             textOutput("sampleUnderEdit")
+#             ),
+#           column(2,
+#             numericInput("newFilterInitial",
+#               label = "initial",
+#               value = NULL)
+#             ),
+#           column(2,
+#             numericInput("newFilterDry",
+#               label = "dry",
+#               value = NULL)
+#             ),
+#           column(2,
+#             numericInput("newVolumeFiltered",
+#               label = "volume",
+#               value = NULL)
+#             ),
+#           column(2,
+#             numericInput("newFilterAshed",
+#               label = "ashed",
+#               value = NULL)
+#             ),
+#           column(1,
+#             numericInput("newReplicate",
+#               label = "replicate",
+#               value = 1)
+#           )
+#           ), # close fluidRow top
+#         fluidRow(id = "newSolidBottomRow",
+#           column(5,
+#             textInput("newComments",
+#               label = "comments")
+#             ),
+#           column(1,
+#             style = "margin-top: 25px",
+#             actionButton("addNewSolid",
+#               label = "add new",
+#               style = "text-align:center; border-sytle:solid; border-color:#0000ff;")
+#           ) # close last column
+#         ) # close fluidRow bottom
+#       ) # close tag list
+# 
+#     }) # close output$addNewSolidUI
+# 
+#   }) # close observeEvent(input$button_add_solids_sample...
+# 
+#   # function: addSolid - write new solid to the database
+#   addSolid <- function(sampleID, initial, dry, volume, ashed, replicate, comments) {
+# 
+#     baseQuery <- "
+#     INSERT INTO stormwater.solids
+#     (
+#       sample_id,
+#       filter_initial,
+#       filter_dry,
+#       volume_filtered,
+#       filter_ashed,
+#       replicate,
+#       comments
+#     )
+#     VALUES
+#     (
+#       ?sampleIdent,
+#       ?filterInitial,
+#       ?filterDry,
+#       ?filterVolume,
+#       ?filterAshed,
+#       ?solidReplicate,
+#       NULLIF(?solidComment, '')::text
+#       );"
+# 
+#     parameterizedQuery <- sqlInterpolate(
+#       ANSI(),
+#       baseQuery,
+#       sampleIdent = as.numeric(sampleID),
+#       filterInitial = initial,
+#       filterDry = dry,
+#       filterVolume = volume,
+#       filterAshed = ashed,
+#       solidReplicate = replicate,
+#       solidComment = comments
+#     )
+# 
+#     run_interpolated_execution(parameterizedQuery)
+# 
+#     # change listener state when adding a record
+#     listenModifySamplesSolids$dbVersion <- isolate(listenModifySamplesSolids$dbVersion + 1)
+# 
+#   }
+# 
+#   # add a new reach extent measure
+#   observeEvent(input$addNewSolid, {
+# 
+#     addSolid(
+#       sampleID = input$button_add_solids_sample,
+#       initial = input$newFilterInitial,
+#       dry = input$newFilterDry,
+#       volume = input$newVolumeFiltered,
+#       ashed = input$newFilterAshed,
+#       replicate = input$newReplicate,
+#       comments = input$newComments
+#     )
+# 
+#     })
+# 
+# 
+#   # solids: delete existing -------------------------------------------------
+# 
+#   # function: deleteSolid - delete selected solid from database
+#   deleteSolid <- function(row_to_delete) {
+# 
+#     baseQuery <- '
+#     DELETE FROM stormwater.solids
+#     WHERE solids.solid_id = ?RWE_ID;'
+# 
+#     parameterizedQuery <- sqlInterpolate(ANSI(),
+#       baseQuery,
+#       RWE_ID = as.numeric(row_to_delete))
+# 
+#     run_interpolated_execution(parameterizedQuery)
+# 
+#     # change listener state when deleting a record
+#     listenModifySamplesSolids$dbVersion <- isolate(listenModifySamplesSolids$dbVersion + 1)
+# 
+#   }
+# 
+#   # call function deleteSolid - delete prescribed solid from the database
+#   observeEvent(input$button_delete_solids_sample, {
+# 
+#     deleteSolid(row_to_delete = input$button_delete_solids_sample)
+# 
+#       })
+# 
+# 
+#   # solids: update existing -------------------------------------------------
+# 
+#   # function: updateSolid - write edited cell change to the database
+#   updateSolid <- function(reactiveData, cellEdited) {
+# 
+#     reactiveDataColNames <- as.list(colnames(reactiveData))
+#     editedColumn <- reactiveDataColNames[cellEdited$col + 1]
+#     editedRow <- reactiveData[cellEdited$row, ][['solid_id']]
+#     newValue <- cellEdited[['value']]
+# 
+#     # change numerics to appropriate data type
+#     if (grepl("filter|replicate", editedColumn, ignore.case = TRUE)) {
+#       newValue <- as.numeric(newValue)
+#     }
+# 
+#     # inexplicable behaviour in this case where the edited column is quoted,
+#     # which is not permissible in postgres; use SQL quoting to obtain proper
+#     # formatting
+#     editedColumn <- SQL(editedColumn)
+# 
+#     baseQuery <- '
+#     UPDATE stormwater.solids
+#     SET ?editedCol = ?updatedValue
+#     WHERE solid_id = ?tuple;'
+# 
+#     parameterizedQuery <- sqlInterpolate(ANSI(),
+#       baseQuery,
+#       editedCol = editedColumn,
+#       updatedValue = newValue,
+#       tuple = editedRow)
+# 
+#     run_interpolated_execution(parameterizedQuery)
+# 
+#     # change listener state when deleting a record
+#     listenModifySamplesSolids$dbVersion <- isolate(listenModifySamplesSolids$dbVersion + 1)
+# 
+#   }
+# 
+#   # call function updateSample - write edited cell change to the database
+#   observeEvent(input$samplesSolidsDataView_cell_edit, {
+# 
+#     updateSolid(reactiveData = samplesSolidsDataReactive(),
+#       cellEdited = input$samplesSolidsDataView_cell_edit)
+# 
+#       })
 
 
   # call to viewDischarge module --------------------------------------------

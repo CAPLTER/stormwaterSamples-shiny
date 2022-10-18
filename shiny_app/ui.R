@@ -47,6 +47,13 @@ shiny::navbarPage(
 #     modifySamplesUI("modifySamples")
 #     ), # close samples tab
 
+# solids-
+
+  shiny::tabPanel(
+    "solids",
+    solids_inventoryUI("solids_inventory")
+  ),
+
   # discharge upload tab ----------------------------------------------------
 
   tabPanel("discharge: upload",
@@ -82,39 +89,39 @@ shiny::navbarPage(
 
   # solids tab --------------------------------------------------------------
 
-  tabPanel("solids",
-    fluidPage(
-      fluidRow(
-        column(
-          id = "leftPanel", 2,
-          # filter existing
-          strong("filter samples",
-            style = "text-align: center; color: black"),
-          selectizeInput(inputId = "viewSamplesSolidsSite",
-            "site",
-            choices = siteAbbreviations,
-            selected = NULL,
-            multiple = FALSE),
-          dateInput(inputId = "viewSamplesSolidsStartDate",
-            "start:",
-            format = "yyyy-mm-dd"),
-          dateInput(inputId = "viewSamplesSolidsEndDate",
-            "end:",
-            format = "yyyy-mm-dd"),
-          actionButton(inputId = "filterSamplesSolids",
-            label = "view samples",
-            style = "text-align:center; border-sytle:solid; border-color:#0000ff;")
-          ), # close the left col
-        column(
-          id = "rightPanel", 10,
-          DT::DTOutput("samplesSolidsDataView"),
-          DT::DTOutput("solidsData"),
-          uiOutput("addNewSolidUI"),
-          div(id = "modifySolidsDiv")
-        ) # close the right col
-      ) # close the row
-    ) # close the page
-    ), # close AFDM tab panel
+#   tabPanel("solids",
+#     fluidPage(
+#       fluidRow(
+#         column(
+#           id = "leftPanel", 2,
+#           # filter existing
+#           strong("filter samples",
+#             style = "text-align: center; color: black"),
+#           selectizeInput(inputId = "viewSamplesSolidsSite",
+#             "site",
+#             choices = siteAbbreviations,
+#             selected = NULL,
+#             multiple = FALSE),
+#           dateInput(inputId = "viewSamplesSolidsStartDate",
+#             "start:",
+#             format = "yyyy-mm-dd"),
+#           dateInput(inputId = "viewSamplesSolidsEndDate",
+#             "end:",
+#             format = "yyyy-mm-dd"),
+#           actionButton(inputId = "filterSamplesSolids",
+#             label = "view samples",
+#             style = "text-align:center; border-sytle:solid; border-color:#0000ff;")
+#           ), # close the left col
+#         column(
+#           id = "rightPanel", 10,
+#           DT::DTOutput("samplesSolidsDataView"),
+#           DT::DTOutput("solidsData"),
+#           uiOutput("addNewSolidUI"),
+#           div(id = "modifySolidsDiv")
+#         ) # close the right col
+#       ) # close the row
+#     ) # close the page
+#     ), # close AFDM tab panel
 
   # cations tab -------------------------------------------------------------
 
