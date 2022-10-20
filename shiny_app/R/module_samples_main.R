@@ -209,7 +209,7 @@ samples_inventory <- function(id) {
     # debugging: module level -------------------------------------------------
 
     # observe(print({ samples_inventory_reactive() |> dplyr::select(-actions) |> head() }))
-    # observe(print({ samples_inventory_reactive() |> dplyr::select(-actions) |> str() }))
+    # observe(print({ input$sample_id_to_edit }))
 
 
   }) # close module server

@@ -1,5 +1,5 @@
 
-function samples_inventory_module_js(ns_prefix) {
+function solids_inventory_module_js(ns_prefix) {
 
   $("#" + ns_prefix + "solids_inventory_view").on("click", ".delete_btn", function() {
     Shiny.setInputValue(ns_prefix + "solid_id_to_delete", this.id, { priority: "event"});

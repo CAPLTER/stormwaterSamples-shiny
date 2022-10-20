@@ -17,22 +17,14 @@ solids_inventoryUI <- function(id) {
 
     shiny::fluidPage(
 
-#       shiny::fluidRow(
-#         shiny::column(
-#           width = 12
-#           ),
-#         shiny::column(
-#           width = 2,
-#           shiny::actionButton(
-#             inputId = ns("add_solid"),
-#             label   = "add solid",
-#             class   = "btn-success",
-#             style   = "color: #fff; margin-bottom: 2px;",
-#             icon    = shiny::icon("plus"),
-#             width   = "100%"
-#           )
-#         )
-#         ),
+      shiny::fluidRow(
+        shiny::column(
+          id = "readme_row", width = 12,
+          shiny::div(id = "readme_box",
+            shiny::strong("README"), "The table features stormwater sample data from present to three years prior. Navigate to storms and samples using the Search tool and/or column filters. From the table, solids data can be added, edited, or deleted. Note that a sample must exist in the database to attach solids data. Add solids data for a sample using the ", shiny::icon("plus"), "button. Edit or delete existing solid data records with the ", shiny::icon("pen-to-square"), "or", shiny::icon("trash-can"), "buttons, respectively. Solids data exist as records in the database. As such, new records must be added, and only existing records can be edited or deleted. Samples that have corresponding solids data will feature a number in the `id` column - these records can only be edited or deleted. The `id` column will be blank for samples that do not yet have solids data - only new solids data can be added to these records."
+          ) # close readme div
+        ) # close readme column
+        ), # close readme row
 
       shiny::fluidRow(
         id = "row_solids_data",
@@ -68,7 +60,7 @@ solids_inventory <- function(id) {
     solids_inventory_reactive <- reactive({
 
       # add listener for adding and editing records
-      # listener_watch("update_solid")
+      listener_watch("update_solid")
 
       solids_inventory_queried <- query_solids()
 
@@ -85,16 +77,16 @@ solids_inventory <- function(id) {
       new <- purrr::map_chr(solids_inventory_queried$sample_id, function(id_) {
         paste0(
           '<div class="btn-group" style="width: 50px;" role="group" aria-label="Basic example">
-            <button class="btn btn-info btn-sm info_btn" data-toggle="tooltip" data-placement="top" title="Add" id = ', id_, ' style="margin: 0"><i class="fa fa-terminal"></i></button>
+            <button class="btn btn-success btn-sm info_btn" data-toggle="tooltip" data-placement="top" title="Add" id = ', id_, ' style="margin: 0"><i class="fa fa-plus"></i></button>
           </div>'
         )
-        }
+      }
       )
 
       solids_inventory_queried <- cbind(
         solids_inventory_queried,
-        tibble::tibble("new" = new),
-        tibble::tibble("actions" = actions)
+        tibble::tibble("add_new" = new),
+        tibble::tibble("edit_delete" = actions)
       )
 
       return(solids_inventory_queried)
@@ -124,102 +116,118 @@ solids_inventory <- function(id) {
       bSort         = TRUE,
       autoWidth     = FALSE,
       pageLength    = 50,
-      fixedHeader   = FALSE #,
-#       columnDefs    = list(
-#         list(
-#           targets   = c(3),
-#           render    = JS("$.fn.dataTable.render.ellipsis( 50 )")
-#           ),
-#         list(
-#           visible   = FALSE,
-#           targets   = c(0, 1)
-#           ),
-#         list(
-#           targets   = c(2, 10),
-#           className = "dt-center"
-#           ),
-#         list(
-#           targets   = c(5),
-#           className = "dt-right"
-#           ),
-#         list(
-#           targets = c(1, 2, 4:7),
-#           width   = "100px"
-#           ),
-#         list(
-#           targets   = c(7),
-#           orderable = FALSE
-#         )
-#       )
+      fixedHeader   = FALSE,
+      columnDefs    = list(
+        list(
+          targets   = c(9),
+          render    = JS("$.fn.dataTable.render.ellipsis( 50 )")
+          ),
+        list(
+          visible   = FALSE,
+          targets   = c(1) # sample_id column
+          ),
+        list(
+          targets   = c(0, 2, 4, 10, 11),
+          className = "dt-center"
+          ),
+        list(
+          targets = c(5:8),
+          className = "dt-right"
+          ),
+        list(
+          targets = c(0, 2, 5:8, 10),
+          width   = "80px"
+          ),
+        list(
+          targets   = c(10, 11),
+          orderable = FALSE
+        )
+      )
     )
     ) # close table output
 
 
     # module: edit solid
 
-#     this_solid_to_edit <- shiny::eventReactive(input$solid_id_to_edit, {
-#     
-#       this_solid <- query_single_solid(solid_id = input$solid_id_to_edit)
-#     
-#       return(this_solid)
-#     
-#     })
-#     
-#     module_solid_new(
-#       id            = "edit_solid",
-#       modal_title   = "add or edit solid",
-#       solid_to_edit = this_solid_to_edit,
-#       modal_trigger = reactive({input$solid_id_to_edit})
-#     )
+    this_solid_to_edit <- shiny::eventReactive(input$solid_id_to_edit, {
+
+      this_solid <- query_solid_solid_id(solid_id = input$solid_id_to_edit)
+
+      return(this_solid)
+
+    })
+
+    module_solid_new(
+      id             = "edit_solid",
+      modal_title    = "edit solid",
+      solid_to_edit  = this_solid_to_edit,
+      sample_to_edit = function() NULL,
+      modal_trigger  = shiny::reactive({input$solid_id_to_edit})
+    )
 
 
     # module: add solid
 
-#     module_solid_new(
-#       id            = "add_solid",
-#       modal_title   = "add solid",
-#       solid_to_edit = function() NULL,
-#       modal_trigger = reactive({input$add_solid})
-#     )
+    module_solid_new(
+      id             = "add_solid",
+      modal_title    = "add solid",
+      solid_to_edit  = function() NULL,
+      sample_to_edit = shiny::reactive({input$sample_id_to_populate}),
+      modal_trigger  = shiny::reactive({input$sample_id_to_populate})
+    )
 
 
     # delete solid
 
-#     shiny::observeEvent(input$solid_id_to_delete, {
-#     
-#       tryCatch({
-#     
-#         delete_solid(solid_to_delete = input$solid_id_to_delete)
-#     
-#         # listener_trigger("update_solid")
-#     
-#       }, warning = function(warn) {
-#     
-#         shiny::showNotification(
-#           ui          = paste("warning: ", warn),
-#           duration    = NULL,
-#           closeButton = TRUE,
-#           type        = "warning"
-#         )
-#     
-#       }, error = function(err) {
-#     
-#         shiny::showNotification(
-#           ui          = paste("error: ", err),
-#           duration    = NULL,
-#           closeButton = TRUE,
-#           type        = "error"
-#         )
-#     
-#       }) # close tryCatch
-#     
-#     }) # close delete solid
+    shiny::observeEvent(input$solid_id_to_delete, {
+
+      if (grepl("na", input$solid_id_to_delete, ignore.case = TRUE)) {
+
+        shiny::showNotification(
+          ui          = "solid record does not exist",
+          duration    = 5,
+          closeButton = TRUE,
+          type        = "warning"
+        )
+
+      } else {
+
+        tryCatch({
+
+          delete_solid(solid_to_delete = input$solid_id_to_delete)
+
+          listener_trigger("update_solid")
+
+        }, warning = function(warn) {
+
+          shiny::showNotification(
+            ui          = paste("warning: ", warn),
+            duration    = NULL,
+            closeButton = TRUE,
+            type        = "warning"
+          )
+
+        }, error = function(err) {
+
+          shiny::showNotification(
+            ui          = paste("error: ", err),
+            duration    = NULL,
+            closeButton = TRUE,
+            type        = "error"
+          )
+
+        }) # close tryCatch
+
+      }
+
+    })
 
 
     # debugging: module level -------------------------------------------------
 
     # observe(print({ solids_inventory_reactive() |> dplyr::select(-actions) |> head() }))
-    # observe(print({ solids_inventory_reactive() |> dplyr::select(-actions) |> str() }))
+    # observe(print({ input$sample_id_to_populate }))
+    # observe(print({ input$solid_id_to_edit }))
 
 
   }) # close module server
