@@ -81,75 +81,75 @@ upload_report <- function(id) {
 
 
     # helper: get the max data from the report for adding a blank
-    get_max_date <- function(isco_file) {
-
-      maxDate <- readr::read_csv(
-        file      = isco_file$datapath,
-        skip      = 7,
-        col_names = c("sample_datetime", "eventNumber"),
-        locale    = readr::locale(tz = "America/Phoenix")
-        ) |>
-      dplyr::select(sample_datetime) |>
-      dplyr::filter(!is.na(sample_datetime)) |>
-      dplyr::mutate(
-        sample_datetime = lubridate::parse_date_time(sample_datetime, c("mdY HMS p", "mdY HMS", "mdY HM"))
-        ) |>
-      dplyr::summarise(maxDTTM = max(sample_datetime))
-
-      # because this function is to add a blank, set the time according to
-      # prescribed approach for blank times (e.g., blank #2 = 00:00:20)
-      # moved to observe event input$storm
-      lubridate::hour(maxDate$maxDTTM)   = 0
-      lubridate::minute(maxDate$maxDTTM) = 0
-      lubridate::second(maxDate$maxDTTM) = 10
-
-      return(maxDate$maxDTTM)
-
-    }
+#     get_max_date <- function(isco_file) {
+# 
+#       maxDate <- readr::read_csv(
+#         file      = isco_file$datapath,
+#         skip      = 7,
+#         col_names = c("sample_datetime", "eventNumber"),
+#         locale    = readr::locale(tz = "America/Phoenix")
+#         ) |>
+#       dplyr::select(sample_datetime) |>
+#       dplyr::filter(!is.na(sample_datetime)) |>
+#       dplyr::mutate(
+#         sample_datetime = lubridate::parse_date_time(sample_datetime, c("mdY HMS p", "mdY HMS", "mdY HM"))
+#         ) |>
+#       dplyr::summarise(maxDTTM = max(sample_datetime))
+# 
+#       # because this function is to add a blank, set the time according to
+#       # prescribed approach for blank times (e.g., blank #2 = 00:00:20)
+#       # moved to observe event input$storm
+#       lubridate::hour(maxDate$maxDTTM)   = 0
+#       lubridate::minute(maxDate$maxDTTM) = 0
+#       lubridate::second(maxDate$maxDTTM) = 10
+# 
+#       return(maxDate$maxDTTM)
+# 
+#     }
 
 
     # helper: get the site ID for the report
-    get_site_id <- function(isco_file) {
-
-      site_id <- readr::read_csv(
-        file      = isco_file$datapath,
-        n_max     = 1,
-        col_names = c("reportText", "siteID")
-        ) |>
-      dplyr::pull(siteID)
-
-      return(site_id)
-
-    }
+#     get_site_id <- function(isco_file) {
+# 
+#       site_id <- readr::read_csv(
+#         file      = isco_file$datapath,
+#         n_max     = 1,
+#         col_names = c("reportText", "siteID")
+#         ) |>
+#       dplyr::pull(siteID)
+# 
+#       return(site_id)
+# 
+#     }
 
 
     # helper: generate the report form the uploaded file
-    generate_report <- function(isco_file, carousel = "1") {
-
-      site_id  <- get_site_id(isco_file)
-      max_date <- get_max_date(isco_file)
-
-      isco_report <- readr::read_csv(
-        file      = isco_file$datapath,
-        skip      = 7,
-        col_names = c("sample_datetime", "eventNumber"),
-        locale    = readr::locale(tz = "America/Phoenix")
-        ) |>
-      dplyr::mutate(bottle = paste0(site_id, "_", carousel, "_", eventNumber)) |>
-      dplyr::select(bottle, sample_datetime) |>
-      dplyr::filter(!is.na(sample_datetime)) |>
-      dplyr::mutate(sample_datetime = lubridate::parse_date_time(sample_datetime, c("mdY HMS p", "mdY HMS", "mdY HM"))) |>
-      tibble::add_row(
-        bottle          = paste0(site_id, "_", carousel, "_BLK"),
-        sample_datetime = max_date
-        ) |>
-      dplyr::mutate(
-        notes           = NA_character_
-      )
-
-      return(isco_report)
-
-    }
+#     generate_report <- function(isco_file, carousel = "1") {
+# 
+#       site_id  <- get_site_id(isco_file)
+#       max_date <- get_max_date(isco_file)
+# 
+#       isco_report <- readr::read_csv(
+#         file      = isco_file$datapath,
+#         skip      = 7,
+#         col_names = c("sample_datetime", "eventNumber"),
+#         locale    = readr::locale(tz = "America/Phoenix")
+#         ) |>
+#       dplyr::mutate(bottle = paste0(site_id, "_", carousel, "_", eventNumber)) |>
+#       dplyr::select(bottle, sample_datetime) |>
+#       dplyr::filter(!is.na(sample_datetime)) |>
+#       dplyr::mutate(sample_datetime = lubridate::parse_date_time(sample_datetime, c("mdY HMS p", "mdY HMS", "mdY HM"))) |>
+#       tibble::add_row(
+#         bottle          = paste0(site_id, "_", carousel, "_BLK"),
+#         sample_datetime = max_date
+#         ) |>
+#       dplyr::mutate(
+#         notes = NA_character_
+#       )
+# 
+#       return(isco_report)
+# 
+#     }
 
 
     # import the report data
