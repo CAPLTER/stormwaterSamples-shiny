@@ -197,8 +197,10 @@ build_insert_raw_query <- function(currentTab) {
   }
 
   # parameterized query
-  parameterizedQuery <- sqlInterpolate(ANSI(),
-                                       baseQuery)
+  parameterizedQuery <- DBI::sqlInterpolate(
+    ANSI(),
+    baseQuery
+  )
 
   return(parameterizedQuery)
 

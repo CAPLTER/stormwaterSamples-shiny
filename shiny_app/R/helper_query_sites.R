@@ -13,7 +13,6 @@ query_sample_sites <- function() {
   WHERE abbreviation IN ('IBW', 'LM', 'SGC')
   ;
   "
-
   sample_sites <- run_interpolated_query(base_query)
 
   return(sample_sites)

@@ -19,7 +19,7 @@ options(shiny.reactlog = FALSE)
 this_configuration <- config::get(config = "default")
 
 # database connection
-this_pool <- dbPool(
+this_pool <- pool::dbPool(
   drv      = RPostgreSQL::PostgreSQL(),
   dbname   = this_configuration$dbname,
   host     = this_configuration$host,
@@ -27,8 +27,8 @@ this_pool <- dbPool(
   password = this_configuration$password
 )
 
-onStop(function() {
-  poolClose(this_pool)
+shiny::onStop(function() {
+  pool::poolClose(this_pool)
 })
 
 

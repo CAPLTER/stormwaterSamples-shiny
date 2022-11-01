@@ -19,168 +19,184 @@
 #' @note Cannot discern any difference in functionality when Shiny bind/unbind
 #'   statements are included, except that inclusion in resultsMetadata prevents
 #'   results from being displayed.
+
 # machine input UI --------------------------------------------------------
+
 machineInputUI <- function(id) {
 
-  ns <- NS(id)
+  ns <- shiny::NS(id)
 
-  tagList(
-    # tags$script(
-    #   HTML("Shiny.addCustomMessageHandler('unbind-DT', function(id) {
-    #            Shiny.unbindAll($('#'+id).find('table').DataTable().table().node());})")
-    # ), # notable stmt
+  shiny::tagList(
+
     tags$head(
       tags$style(
-        HTML(paste0("#", ns("samplesList"), "{
-                    font-size: 0.85em;
-                    color: #484848;
-                    overflow-y: scroll;
-                    max-height: 250px;
-                    background: ghostwhite;
-                    text-align: left;
-                    white-space: pre-wrap; }"))
-      ) # close tags$style
-    ), # close tagss$head
-    helpText("1. identify sample set",
-             style = "text-align: left; color: DarkBlue; font-weight: bold"),
-    selectizeInput(inputId = ns("narrowSamplesSite"),
-                   "site",
-                   choices = siteAbbreviations,
-                   selected = NULL,
-                   multiple = TRUE),
-    dateInput(inputId = ns("startDate"),
-              "start:",
-              format = "yyyy-mm-dd"),
-    dateInput(inputId = ns("endDate"),
-              "end:",
-              format = "yyyy-mm-dd"),
-    br(),
-    verbatimTextOutput(ns("samplesList")),
-    br(),
-    helpText("2. select file",
-             style = "text-align: left; color: DarkBlue; font-weight: bold"),
-    fileInput(inputId = ns("machineOutputFile"),
-              label = NULL,
-              multiple = FALSE),
-    helpText("3. submit data for upload",
-             style = "text-align: left; color: DarkBlue; font-weight: bold"),
-    actionButton(inputId = ns("submitData"),
-                 label = "upload"),
-    br(),
-    br(),
-    helpText("reference to sites",
-             style = "text-align: left; color: Gray; font-weight: bold"),
-    markdown("
-      | id      |          | site         |
-      |--------:|:--------:|:-------------|
-      | 9       | ....     | LM           |
-      | 10      | ....     | SGC          |
-      | 11      | ....     | IBW          |
-      | 12      | ....     | ENC          |
-      | 13      | ....     | Ave7th       |
-      | 14      | ....     | centralNorth |
-      | 15      | ....     | centralSouth |
-      | 16      | ....     | Price        |
-    "),
-    br()
-  ) # close tagList
+        HTML(
+          paste0("#", ns("samplesList"), "{
+            font-size: 0.85em;
+            color: #484848;
+            overflow-y: scroll;
+            overflow-x: scroll;
+            max-height: 250px;
+            background: ghostwhite;
+            text-align: left;
+            white-space: pre;
+            }"
+          )
+        )
+      )  # close tags$style
+      ), # close tags$head
+
+    shiny::wellPanel(
+
+      shiny::helpText(
+        "identify sample set",
+        style = "text-align: left; color: DarkBlue; font-weight: bold"
+        ),
+      shiny::selectizeInput(
+        inputId  = ns("narrowSamplesSite"),
+        label    = "site",
+        choices  = siteAbbreviations,
+        selected = NULL,
+        multiple = TRUE
+        ),
+      shiny::dateInput(
+        inputId = ns("startDate"),
+        label   = "start:",
+        value = Sys.Date() - lubridate::weeks(24),
+        format  = "yyyy-mm-dd"
+        ),
+      shiny::dateInput(
+        inputId = ns("endDate"),
+        label   = "end:",
+        format  = "yyyy-mm-dd"
+        ),
+      br(),
+      shiny::verbatimTextOutput(ns("samplesList")),
+      br(),
+      shiny::helpText(
+        "import chemistry data",
+        style = "text-align: left; color: DarkBlue; font-weight: bold"
+        ),
+      shiny::fileInput(
+        inputId  = ns("machineOutputFile"),
+        label    = NULL,
+        multiple = FALSE
+        ),
+      shiny::helpText(
+        "submit data for upload",
+        style = "text-align: left; color: DarkBlue; font-weight: bold"
+        ),
+      shiny::actionButton(
+        inputId = ns("submitData"),
+        label   = "submit data",
+        class   = "btn-success",
+        style   = "color: #fff;",
+        icon    = shiny::icon("plus"),
+        width   = "100%"
+        ),
+      br(),
+      shiny::helpText(
+        "reference to sites",
+        style = "text-align: left; color: Gray; font-weight: bold"
+        ),
+      markdown("
+        | id      |          | site         |
+          |--------:|:--------:|:-------------|
+          | 9       | ~        | LM           |
+          | 10      | ~        | SGC          |
+          | 11      | ~        | IBW          |
+          ")
+
+      ) # close wellPanel
+    ) # close tagList
 
 } # close machineInputUI
-# machine input main ------------------------------------------------------
-# main function
-machineInput <- function(input, output, session) {
 
-  # build list of sample IDs ------------------------------------------------
 
-  # build (reactive) list of bottle IDs for given site, year, and month
-  samplesSelection <- reactive({
+# machineInput -----------------------------------------------------------------
 
-    # session$sendCustomMessage('unbind-DT', 'resultView') # notable stmt
+machineInput <- function(id) {
 
-    req(
-      input$narrowSamplesSite,
-      input$startDate,
-      input$endDate
+  shiny::moduleServer(id, function(input, output, session) {
+
+    # build reactive list of bottle IDs for given site, year, month
+    samplesSelection <- shiny::reactive({
+
+      req(
+        input$narrowSamplesSite,
+        input$startDate,
+        input$endDate
+      )
+
+      # convert site abbreviations to site_id for query
+      integer_sites <- glue::glue_sql(
+        "{sample_sites[sample_sites$abbreviation %in% input$narrowSamplesSite,]$site_id*}"
+      )
+
+      this_start <- as.character(as.Date(input$startDate))
+      this_end   <- as.character(as.Date(input$endDate))
+
+      # base query
+      parameterized_query <- glue::glue_sql("
+        SELECT
+          sample_id,
+          samples.bottle,
+          CONCAT(samples.bottle, E'\t', samples.sample_datetime) AS samples
+        FROM stormwater.samples
+        WHERE
+          samples.site_id IN ({ integer_sites}) AND
+          samples.sample_datetime BETWEEN { this_start } AND { this_end }
+        ORDER BY
+          samples.site_id,
+          samples.sample_datetime
+        ;
+        ",
+        .con = DBI::ANSI()
+      )
+
+      bottle_options <- run_interpolated_query(parameterized_query)
+
+      return(bottle_options)
+
+    })
+
+
+    # preview list of sample IDs ----------------------------------------------
+
+    output$samplesList <- shiny::renderPrint(
+
+      if (nrow(samplesSelection()) == 0) {
+
+        return(NULL)
+
+      } else {
+
+        writeLines(samplesSelection()$samples)
+
+      }
+
     )
 
-    # convert month abbreviations to integers for query
-    # monthTibble <- tibble(number = seq(1:12), abbr = month.abb)
-    # integerMonths <- glue::glue_sql(
-    #   "{monthTibble[monthTibble$abbr %in% c(input$narrowSampleMonth),]$number*}"
-    # )
 
-    # convert site abbreviations to site_id for query
-    integerSites <- glue::glue_sql(
-      "{sampleSites[sampleSites$abbreviation %in% input$narrowSamplesSite,]$site_id*}"
+    # module returns ----------------------------------------------------------
+
+    return(
+      list(
+        samples     = shiny::reactive({ samplesSelection() }),
+        machineFile = shiny::reactive({ input$machineOutputFile }),
+        fileName    = shiny::reactive({ input$machineOutputFile$name }),
+        filePath    = shiny::reactive({ input$machineOutputFile$datapath }),
+        submit      = shiny::reactive({ input$submitData })
+      )
     )
 
-    start <- as.character(as.Date(input$startDate))
-    end <- as.character(as.Date(input$endDate))
 
-    # base query
-    baseQuery <- "
-    SELECT
-      sample_id,
-      samples.bottle,
-      CONCAT(samples.bottle, '_', samples.sample_datetime) AS samples
-    FROM stormwater.samples
-    WHERE
-      samples.site_id IN (?theseSites) AND
-      samples.sample_datetime BETWEEN ?thisStart AND ?thisEnd
-    ORDER BY
-      samples.site_id,
-      samples.sample_datetime;"
+    # debugging ---------------------------------------------------------------
 
-    # parameterized query
-    parameterizedQuery <- sqlInterpolate(ANSI(),
-                                         baseQuery,
-                                         theseSites = integerSites,
-                                         thisStart = start,
-                                         thisEnd = end)
-
-    # sample IDs subset from query
-    bottleOptions <- run_interpolated_query(parameterizedQuery)
-
-    # return list of sample IDs to populate dropdown
-    return(bottleOptions)
-    # return(parameterizedQuery)
-
-  })
+    # observe(print({ resultsMetadata() }))
+    # observe(print({ samplesSelection() }))
+    # observe(print({ input$startDate }))
 
 
-  # preview list of sample IDs ----------------------------------------------
-
-  output$samplesList <- renderPrint(
-
-    if (nrow(samplesSelection()) == 0) {
-      return(NULL)
-    } else {
-      # samplesSelection()$samples
-      writeLines(samplesSelection()$samples)
-    }
-
-  )
-
-
-  # module returns ----------------------------------------------------------
-
-  return(
-    list(
-      samples = reactive({ samplesSelection() }),
-      machineFile = reactive({ input$machineOutputFile }),
-      fileName = reactive({ input$machineOutputFile$name }),
-      filePath = reactive({ input$machineOutputFile$datapath }),
-      submit = reactive({ input$submitData })
-    )
-  )
-
-
-  # debugging ---------------------------------------------------------------
-
-  # observe(print({ resultsMetadata() }))
-  # observe(print({ samplesSelection() }))
-
-
-  # close module machineInput -----------------------------------------------
-
-} # close module::machineInput
+    }) # close module server
+} # close module function

@@ -50,8 +50,6 @@ solids_inventory <- function(id) {
 
   shiny::moduleServer(id, function(input, output, session) {
 
-    # setup
-
     # added to facilitate renderUIs
     ns <- session$ns
 

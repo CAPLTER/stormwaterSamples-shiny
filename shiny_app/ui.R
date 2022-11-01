@@ -58,14 +58,14 @@ ui <- tagList(
     # lachat tab --------------------------------------------------------------
 
     tabPanel("lachat",
-      lachatUI("lachat")
+      upload_lachatUI("upload_lachat")
       ), # close lachat tab
 
 
     # aq2 tab --------------------------------------------------------------
 
     tabPanel("aq2",
-      aq2UI("aq2")
+      upload_aq2UI("upload_aq2")
       ), # close aq2 tab
 
 
@@ -89,7 +89,13 @@ ui <- tagList(
       ChemInventory1$ui()
     ) # close 'chemistry: inventory viewer' tab panel
 
+
     # closing UI --------------------------------------------------------------
+
+    ,
+    tabPanel("machine_input",
+      machineInputUI("alpha")
+    ) # close 'chemistry: inventory viewer' tab panel
 
   ) # close navbar/page
 ) # close tagList

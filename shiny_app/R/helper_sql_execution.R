@@ -5,6 +5,8 @@
 #'  close database connections to facilitate either a SQL query to return an
 #'  objet or execute a statement.
 #'
+#' @export
+
 run_interpolated_query <- function(interpolatedQuery) {
 
   tryCatch({
@@ -43,6 +45,8 @@ run_interpolated_query <- function(interpolatedQuery) {
 
 } # close run_interpolated_query
 
+#' @note execute a database action (other than querying data)
+#' @export
 
 run_interpolated_execution <- function(
   interpolatedQuery,
@@ -99,3 +103,25 @@ run_interpolated_execution <- function(
   }) # close try catch
 
 } # close run_interpolated_execution
+
+
+#' @note remove table if exists
+#' @export
+
+remove_table <- function(schema_name, table_name) {
+
+  if (
+    DBI::dbExistsTable(
+      conn = this_pool,
+      c(schema_name, table_name)
+    )
+    ) {
+
+    DBI::dbRemoveTable(
+      conn = this_pool,
+      c(schema_name, table_name)
+    )
+
+  }
+
+}

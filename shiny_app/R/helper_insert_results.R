@@ -127,11 +127,13 @@ build_insert_results_query <- function(currentTab) {
   }
 
 
-# parameterized query
+  # parameterized query
 
-parameterizedQuery <- sqlInterpolate(ANSI(),
-  baseQuery)
+  parameterizedQuery <- DBI::sqlInterpolate(
+    ANSI(),
+    baseQuery
+  )
 
-return(parameterizedQuery)
+  return(parameterizedQuery)
 
 }

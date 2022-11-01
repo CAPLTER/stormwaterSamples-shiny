@@ -2,9 +2,9 @@
 #'
 #' @description The module lachat facilitates uploading lachat data. The user
 #' attaches the appropriate sample details to uploaded data. Upon execution,
-#' the munged data with sample and analysis details are written to
-#' stormwater.results and the raw, imported data are written to
-#' stormwater.lachat.
+#' the munged data with sample and analysis details is written to
+#' stormwater.results upon which, if successful, the imported data are written
+#' to stormwater.lachat.
 #'
 #' @export
 
@@ -53,13 +53,17 @@ upload_lachat <- function(id, tab = NULL) {
 
   shiny::moduleServer(id, function(input, output, session) {
 
+    # create listener for adding and deleting records
+    # listener <- reactiveValues(dbVersion = 0)
+
     # call module machineInput: builds sample list & machine file import
     machineInputs <- machineInput("samples_for_lachat")
 
 
-    # helper function for reading input functions; for reasons that are not
-    # clear, this function only works if included in the .R file from which  it
-    # is called.
+    # helper function for reading input functions; for reasons that are completely
+    # unclear, this function only works if included in app.R or function section
+    # if a module (i.e., it is loaded but does not seem to work if loaded from
+    # helper_shiny_input.R)
     shinyValue <- function(id, len) {
       unlist(lapply(seq_len(len), function(i) {
           value = input[[paste0(id, i)]]
@@ -200,7 +204,7 @@ upload_lachat <- function(id, tab = NULL) {
           FUN     = selectInput,
           len     = nrow(resultReactive()),
           id      = paste0(session$ns("rep_")),
-          choices = c(1, 2, 3),
+          choices = c(1,2,3),
           width   = "40px"
           ),
         comments = shinyInputOther(
@@ -308,7 +312,6 @@ upload_lachat <- function(id, tab = NULL) {
         # validate sample IDs
         sample_ids_message <- check_sample_ids(resultsMetadata())
 
-        # message and stop if invalid
         if (length(sample_ids_message) != 0) {
 
           notification_message <- paste(sample_ids_message, collapse = " & ")
@@ -322,8 +325,7 @@ upload_lachat <- function(id, tab = NULL) {
 
         } else {
 
-          # upload raw and results data
-          chem_upload <- upload_chemistry(
+          alpha <- upload_chemistry(
             this_raw_reactive     = rawReactive(),
             this_results_reactive = resultsMetadata(),
             this_samples_metadata = machineInputs$samples(),
@@ -331,32 +333,102 @@ upload_lachat <- function(id, tab = NULL) {
             this_is_nitrite       = input$nitriteFlag # passed for lachat only
           )
 
-          # reset nitrite flag if uploaded
-          if (shiny::isTruthy(chem_upload)) {
+          print(paste0("alpha: ", alpha))
 
-            shiny::updateCheckboxInput(
-              inputId = "nitriteFlag",
-              value   = FALSE
-            )
 
-          }
+# updateCheckboxInput(
+#   inputId,
+#   label = NULL,
+#   value = NULL
+# )
+
+#           insert_raw_query <- prepare_raw(
+#             raw_reactive = rawReactive(),
+#             analysis     = tab()
+#           )
+# 
+# 
+#           if (grepl("lachat", tab(), ignore.case = TRUE)) {
+# 
+#             check_nitrite <- input$nitriteFlag
+# 
+#           }
+# 
+# 
+#           insert_results_query <- prepare_results(
+#             results_reactive = resultsMetadata(),
+#             samples_metadata = machineInputs$samples(),
+#             analysis         = tab(),
+#             is_nitrite       = check_nitrite
+#           )
+# 
+# 
+#           # begin tryCatch - transaction
+#           tryCatch({
+# 
+#             poolWithTransaction(this_pool, function(conn) {
+# 
+#               DBI::dbExecute(
+#                 conn,
+#                 insert_raw_query
+#               )
+# 
+#               DBI::dbExecute(
+#                 conn,
+#                 insert_results_query
+#               )
+# 
+#           })
+# 
+#             shiny::showNotification(
+#               ui          = "successfully uploaded",
+#               duration    = NULL,
+#               closeButton = TRUE,
+#               type        = 'message',
+#               action      = a(href = "javascript:location.reload();", "reload the page")
+#             )
+# 
+#           }, warning = function(warn) {
+# 
+#             shiny::showNotification(
+#               ui          = paste("there is a warning:  ", warn),
+#               duration    = NULL,
+#               closeButton = TRUE,
+#               type        = "warning"
+#             )
+# 
+#             print(paste("WARNING: ", warn))
+# 
+#           }, error = function(err) {
+# 
+#             shiny::showNotification(
+#               ui          = paste("there was an error:  ", err),
+#               duration    = NULL,
+#               closeButton = TRUE,
+#               type        = "error"
+#             )
+# 
+#             print(paste("ERROR: ", err))
+#             print("ROLLING BACK TRANSACTION")
+# 
+#           }) # close try catch
 
         } # close database operations
 
 
         # remove temporary tables
 
-        remove_table(
-          schema_name = "stormwater",
-          table_name  = "temp_results"
-        )
+#         remove_table(
+#           schema_name = "stormwater",
+#           table_name  = "temp_results"
+#         )
 
         remove_table(
           schema_name = "stormwater",
           table_name  = "temp_raw"
         )
 
-      }) # close submit data
+      }) # close submitData
 
 
       # debugging: module level -------------------------------------------------

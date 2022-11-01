@@ -22,45 +22,43 @@ server <- function(input, output, session) {
   listener_init("update_solid")
 
 
-  # modules --------------------------------------------------------------------
-
-  upload_report("upload_report")          # upload 6700 sample report
-  samples_inventory("samples_inventory")  # manage samples data
-  solids_inventory("solids_inventory")    # manage solids data
-  upload_discharge("discharge")           # upload 6700 level data
-
-
   # establish tab position as input to modules ------------------------------
 
   tabID <- reactive({ input$tabs })
 
 
+  # modules --------------------------------------------------------------------
+
+  upload_report("upload_report")              # upload 6700 sample report
+  samples_inventory("samples_inventory")      # manage samples data
+  solids_inventory("solids_inventory")        # manage solids data
+  upload_discharge("discharge")               # upload 6700 level data
+  upload_lachat("upload_lachat", tab = tabID) # upload lachat data
+
+  machineInput("alpha")                       # temporary
+
+
   # call to cations module --------------------------------------------------
 
-  callModule(module = cations,
-    id = "icpCations",
-    tab = tabID)
-
-
-  # call to lachat module ---------------------------------------------------
-
-  callModule(module = lachat,
-    id = "lachat",
-    tab = tabID)
+#   callModule(
+#     module = cations,
+#     id = "icpCations",
+#     tab = tabID
+#   )
 
 
   # call to aq2 module ---------------------------------------------------
 
-  callModule(module = aq2,
-    id = "aq2",
-    tab = tabID)
+#   callModule(module = aq2,
+#     id = "aq2",
+#     tab = tabID)
 
 
   # call to shimadzu module ---------------------------------------------------
 
-  callModule(module = shimadzu,
-    id = "shimadzu",
-    tab = tabID)
+#   callModule(module = shimadzu,
+#     id = "shimadzu",
+#     tab = tabID)
 
 
   # call to chem viewer module ----------------------------------------------
