@@ -1,8 +1,8 @@
 #' @title Module to faciliate uploading lachat data
 #'
-#' @description The module lachat facilitates uploading lachat data. The user
-#' attaches the appropriate sample details to uploaded data. Upon execution,
-#' the munged data with sample and analysis details are written to
+#' @description The module upload_lachat facilitates uploading lachat data. The
+#' user attaches the appropriate sample details to uploaded data. Upon
+#' execution, the munged data with sample and analysis details are written to
 #' stormwater.results and the raw, imported data are written to
 #' stormwater.lachat.
 #'
@@ -123,33 +123,33 @@ upload_lachat <- function(id, tab = NULL) {
 
       ## BEGIN NEW FN
 
-#       # join lachat to sample list but only it if can be done without creating ambiguous samples
-#       if (nrow(machine_import |> dplyr::left_join(machineInputs$samples(), by = c("idToJoin" = "bottle"))) > nrow(machine_import)) {
-# 
-#         machine_import <- machine_import |>
-#         dplyr::mutate(samples = as.character(NA))
-# 
-#         shiny::showNotification(
-#           ui          = "cannot guess sample IDs, enter all IDs or try narrowing the range of sample choices",
-#           duration    = NULL,
-#           closeButton = TRUE,
-#           type        = "warning"
-#         )
-# 
-#       } else {
-# 
-#         machine_import <- machine_import |>
-#         dplyr::left_join(
-#           machineInputs$samples() |> dplyr::select(-sample_id),
-#           by = c("idToJoin" = "bottle")
-#         )
-# 
-#       }
-# 
-#       return(machine_import)
+      #       # join lachat to sample list but only it if can be done without creating ambiguous samples
+      #       if (nrow(machine_import |> dplyr::left_join(machineInputs$samples(), by = c("idToJoin" = "bottle"))) > nrow(machine_import)) {
+      # 
+      #         machine_import <- machine_import |>
+      #         dplyr::mutate(samples = as.character(NA))
+      # 
+      #         shiny::showNotification(
+      #           ui          = "cannot guess sample IDs, enter all IDs or try narrowing the range of sample choices",
+      #           duration    = NULL,
+      #           closeButton = TRUE,
+      #           type        = "warning"
+      #         )
+      # 
+      #       } else {
+      # 
+      #         machine_import <- machine_import |>
+      #         dplyr::left_join(
+      #           machineInputs$samples() |> dplyr::select(-sample_id),
+      #           by = c("idToJoin" = "bottle")
+      #         )
+      # 
+      #       }
+      # 
+      #       return(machine_import)
 
       machine_import <- join_sample_metadata(
-        this_machine_import = machine_import,
+        this_machine_import  = machine_import,
         this_sample_metadata = machineInputs$samples()
       )
 
@@ -227,160 +227,170 @@ upload_lachat <- function(id, tab = NULL) {
     selection = "none",
     escape    = FALSE,
     server    = TRUE, # use server-side to accomodate large tables
+    rownames  = FALSE,
     options   = list(
+      scrollX         = TRUE,
+      autoWidth       = TRUE,
       bFilter         = 0,
       bLengthChange   = FALSE,
       bPaginate       = FALSE,
       bSort           = FALSE,
       preDrawCallback = JS('function() {
-        Shiny.unbindAll(this.api().table().node()); }'),
-        drawCallback  = JS('function() {
-          Shiny.bindAll(this.api().table().node()); } ')
-          ),
-        rownames = FALSE
-      ) # close output$rawView
-
-
-      # capture file upload and provided data
-      resultsMetadata <- shiny::reactive({
-
-        resultReactive() |>
-        dplyr::mutate(
-          newSample = shinyValue(
-            id = "newSample_",
-            len = nrow(resultReactive())
-            ),
-          omit = shinyValue(
-            id = "omit_",
-            len = nrow(resultReactive())
-            ),
-          replicate = shinyValue(
-            id = "rep_",
-            len = nrow(resultReactive())
-            ),
-          comments = shinyValue(
-            id = "comments_",
-            len = nrow(resultReactive())
-          )
-          ) |>
-        dplyr::mutate(
-          newSample = as.character(newSample),
-          comments  = gsub(",", ";", comments),
-          comments  = gsub("[\r\n]", "; ", comments)
-          ) |> # cast newSample to char to avoid case_when logical errors
-        dplyr::filter(omit == FALSE)
-
-      })
-
-
-      # preview data table with provided metadata
-      output$resultsMetadataView <- DT::renderDataTable({
-
-        resultsMetadata() |>
-        dplyr::mutate(
-          comments = dplyr::case_when(
-            grepl("blk", sample_id, ignore.case = T) & comments == "" ~ "blank",
-            grepl("blk", sample_id, ignore.case = T) & comments != "" ~ paste(comments, "blank", sep = "; "),
-            TRUE ~ as.character(comments))
-          ) |>
-        dplyr::mutate(
-          newSample = replace(newSample, newSample == "NULL", NA),
-          samples   = dplyr::case_when(
-            !is.na(newSample) ~ newSample,
-            TRUE ~ samples
-          )
-          ) |>
-        dplyr::mutate(
-          detection_date = as.character(detection_date),
-          detection_time = as.character(detection_time, format = "%H:%M:%S")
-          ) |>
-        dplyr::select(-omit) |>
-        dplyr::select(samples, replicate, comments, sample_id, cup_number, detection_date, detection_time, analyte_name, conc_x_adf_x_mdf)
-
-      },
-      selection = "none",
-      escape    = FALSE,
-      server    = FALSE,
-      options   = list(
-        bFilter       = 0,
-        bLengthChange = FALSE,
-        bPaginate     = FALSE,
-        bSort         = FALSE
+        Shiny.unbindAll(this.api().table().node()); }'
         ),
-      rownames = FALSE
-      ) # close output$resultsMetadataView
+      drawCallback    = JS('function() {
+        Shiny.bindAll(this.api().table().node()); } '
+        ),
+      columnDefs      = list(
+        list(
+          targets = c(0),
+          width   = "180px"
+        )
+      )
+    )
+    ) # close output$resultView
 
 
-      # write data to database --------------------------------------------------
+    # capture file upload and provided data
+    resultsMetadata <- shiny::reactive({
 
-      shiny::observeEvent(machineInputs$submit(), {
+      resultReactive() |>
+      dplyr::mutate(
+        newSample = shinyValue(
+          id = "newSample_",
+          len = nrow(resultReactive())
+          ),
+        omit = shinyValue(
+          id = "omit_",
+          len = nrow(resultReactive())
+          ),
+        replicate = shinyValue(
+          id = "rep_",
+          len = nrow(resultReactive())
+          ),
+        comments = shinyValue(
+          id = "comments_",
+          len = nrow(resultReactive())
+        )
+        ) |>
+      dplyr::mutate(
+        newSample = as.character(newSample),
+        comments  = gsub(",", ";", comments),
+        comments  = gsub("[\r\n]", "; ", comments)
+        ) |> # cast newSample to char to avoid case_when logical errors
+      dplyr::filter(omit == FALSE)
 
-        # validate sample IDs
-        sample_ids_message <- check_sample_ids(resultsMetadata())
-
-        # message and stop if invalid
-        if (length(sample_ids_message) != 0) {
-
-          notification_message <- paste(sample_ids_message, collapse = " & ")
-
-          shiny::showNotification(
-            ui          = notification_message,
-            duration    = 8,
-            closeButton = TRUE,
-            type        = "error"
-          )
-
-        } else {
-
-          # upload raw and results data
-          chem_upload <- upload_chemistry(
-            this_raw_reactive     = rawReactive(),
-            this_results_reactive = resultsMetadata(),
-            this_samples_metadata = machineInputs$samples(),
-            this_analysis         = tab(),
-            this_is_nitrite       = input$nitriteFlag # passed for lachat only
-          )
-
-          # reset nitrite flag if uploaded
-          if (shiny::isTruthy(chem_upload)) {
-
-            shiny::updateCheckboxInput(
-              inputId = "nitriteFlag",
-              value   = FALSE
-            )
-
-          }
-
-        } # close database operations
+    })
 
 
-        # remove temporary tables
+    # preview data table with provided metadata
+    output$resultsMetadataView <- DT::renderDataTable({
 
-        remove_table(
-          schema_name = "stormwater",
-          table_name  = "temp_results"
+      resultsMetadata() |>
+      dplyr::mutate(
+        comments = dplyr::case_when(
+          grepl("blk", sample_id, ignore.case = T) & comments == "" ~ "blank",
+          grepl("blk", sample_id, ignore.case = T) & comments != "" ~ paste(comments, "blank", sep = "; "),
+          TRUE ~ as.character(comments))
+        ) |>
+      dplyr::mutate(
+        newSample = replace(newSample, newSample == "NULL", NA),
+        samples   = dplyr::case_when(
+          !is.na(newSample) ~ newSample,
+          TRUE ~ samples
+        )
+        ) |>
+      dplyr::mutate(
+        detection_date = as.character(detection_date),
+        detection_time = as.character(detection_time, format = "%H:%M:%S")
+        ) |>
+      dplyr::select(-omit) |>
+      dplyr::select(samples, replicate, comments, sample_id, cup_number, detection_date, detection_time, analyte_name, conc_x_adf_x_mdf)
+
+    },
+    selection = "none",
+    escape    = FALSE,
+    server    = FALSE,
+    rownames  = FALSE,
+    options   = list(
+      bFilter       = 0,
+      bLengthChange = FALSE,
+      bPaginate     = FALSE,
+      bSort         = FALSE
+      )
+    ) # close output$resultsMetadataView
+
+
+    # write data to database --------------------------------------------------
+
+    shiny::observeEvent(machineInputs$submit(), {
+
+      # validate sample IDs
+      sample_ids_message <- check_sample_ids(resultsMetadata())
+
+      # message and stop if invalid
+      if (length(sample_ids_message) != 0) {
+
+        notification_message <- paste(sample_ids_message, collapse = " & ")
+
+        shiny::showNotification(
+          ui          = notification_message,
+          duration    = 8,
+          closeButton = TRUE,
+          type        = "error"
         )
 
-        remove_table(
-          schema_name = "stormwater",
-          table_name  = "temp_raw"
+      } else {
+
+        # upload raw and results data
+        chem_upload <- upload_chemistry(
+          this_raw_reactive     = rawReactive(),
+          this_results_reactive = resultsMetadata(),
+          this_samples_metadata = machineInputs$samples(),
+          this_analysis         = tab(),
+          this_is_nitrite       = input$nitriteFlag # passed for lachat only
         )
 
-      }) # close submit data
+        # reset nitrite flag if uploaded
+        if (shiny::isTruthy(chem_upload)) {
+
+          shiny::updateCheckboxInput(
+            inputId = "nitriteFlag",
+            value   = FALSE
+          )
+
+        }
+
+      } # close database operations
 
 
-      # debugging: module level -------------------------------------------------
+      # remove temporary tables
 
-      # observe(print({ head(machineInputs$samples()) }))
-      observe(print({ head(rawReactive()) }))
-      # observe(print({ head(resultsMetadata()) }))
-      # observe(write_csv(machineInputs$samples(), '~/Desktop/machineinputs.csv'))
-      # observe(write_csv(rawReactive(), '~/Desktop/rawreactive.csv'))
-      # observe(print({ str(resultsMetadata()) }))
-      # observe(print({ head(resultReactive()) }))
+      remove_table(
+        schema_name = "stormwater",
+        table_name  = "temp_results"
+      )
+
+      remove_table(
+        schema_name = "stormwater",
+        table_name  = "temp_raw"
+      )
+
+    }) # close submit data
 
 
-      # close module lachat ----------------------------------------------------
+    # debugging: module level -------------------------------------------------
+
+    # observe(print({ head(machineInputs$samples()) }))
+    # observe(print({ head(rawReactive()) }))
+    # observe(print({ head(resultsMetadata()) }))
+    # observe(write_csv(machineInputs$samples(), '~/Desktop/machineinputs.csv'))
+    # observe(write_csv(rawReactive(), '~/Desktop/rawreactive.csv'))
+    # observe(print({ str(resultsMetadata()) }))
+    # observe(print({ head(resultReactive()) }))
+
+
+    # close module lachat ----------------------------------------------------
 
 }) # close module server
 } # close module function

@@ -29,11 +29,13 @@ server <- function(input, output, session) {
 
   # modules --------------------------------------------------------------------
 
-  upload_report("upload_report")              # upload 6700 sample report
-  samples_inventory("samples_inventory")      # manage samples data
-  solids_inventory("solids_inventory")        # manage solids data
-  upload_discharge("discharge")               # upload 6700 level data
-  upload_lachat("upload_lachat", tab = tabID) # upload lachat data
+  upload_report("upload_report")                  # upload 6700 sample report
+  samples_inventory("samples_inventory")          # manage samples data
+  solids_inventory("solids_inventory")            # manage solids data
+  upload_discharge("discharge")                   # upload 6700 level data
+  upload_lachat("upload_lachat", tab = tabID)     # upload lachat data
+  upload_aq2("upload_aq2", tab = tabID)           # upload aw2 data
+  upload_shimadzu("upload_shimadzu", tab = tabID) # upload aw2 data
 
   machineInput("alpha")                       # temporary
 

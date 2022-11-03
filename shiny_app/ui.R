@@ -72,7 +72,7 @@ ui <- tagList(
     # shimadzu tab --------------------------------------------------------------
 
     tabPanel("shimadzu",
-      shimadzuUI("shimadzu")
+      upload_shimadzuUI("upload_shimadzu")
       ), # close shimadzu tab
 
 

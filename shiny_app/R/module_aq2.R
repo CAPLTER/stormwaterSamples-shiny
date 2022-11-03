@@ -1,10 +1,10 @@
 #' @title Module to faciliate uploading AQ2 data
 #'
-#' @description The module aq2 facilitates uploading aq2 data. The user
-#'   attaches the appropriate sample details to uploaded data. Upon execution,
-#'   the munged data with sample and analysis details is written to
-#'   stormwater.results upon which, if successful, the imported data are written
-#'   to stormwater.lachat.
+#' @description The module upload_aq2 facilitates uploading aq2 data. The user
+#' attaches the appropriate sample details to uploaded data. Upon execution,
+#' the munged data with sample and analysis details is written to
+#' stormwater.results upon which, if successful, the imported data are written
+#' to stormwater.lachat.
 #'
 #' @export
 
@@ -16,8 +16,8 @@ upload_aq2UI <- function(id) {
 
   shiny::tagList(
 
-    fluidPage(
-      fluidRow(
+    shiny::fluidPage(
+      shiny::fluidRow(
 
         shiny::column(id = "leftPanel", 2,
           machineInputUI(ns("samples_for_aq2")) # ns(wrap call to inner mod)
@@ -70,10 +70,10 @@ upload_aq2 <- function(id, tab = NULL) {
       req(machineInputs$machineFile())
 
       # import file
-      aq2Upload <- read.csv(file = machineInputs$machineFile()$datapath)
+      machine_import <- read.csv(file = machineInputs$machineFile()$datapath)
 
       # check data structure - warning only, does not break workflow
-      if (ncol(aq2Upload) != 10) {
+      if (ncol(machine_import) != 10) {
 
         shiny::showNotification(
           ui          = "unexpected data structure: check number and names of columns",
@@ -85,47 +85,52 @@ upload_aq2 <- function(id, tab = NULL) {
       }
 
       # add filename as a variable
-      aq2Upload$filename <- machineInputs$machineFile()$name
+      machine_import$filename <- machineInputs$machineFile()$name
 
       # format column names
-      colnames(aq2Upload) <- tolower(colnames(aq2Upload))             # colnames to lowercase
-      colnames(aq2Upload) <- gsub("\\.", "\\_", colnames(aq2Upload))  # replace dots with underscores
-      colnames(aq2Upload) <- gsub(" ", "\\_", colnames(aq2Upload))    # replace spaces with underscores
+      colnames(machine_import) <- tolower(colnames(machine_import))             # colnames to lowercase
+      colnames(machine_import) <- gsub("\\.", "\\_", colnames(machine_import))  # replace dots with underscores
+      colnames(machine_import) <- gsub(" ", "\\_", colnames(machine_import))    # replace spaces with underscores
 
       # add run identifier as maxrun
-      maxrun           <- as.numeric(run_interpolated_query(interpolatedQuery = "SELECT MAX(run_id) FROM stormwater.results;"))
-      aq2Upload$run_id <- maxrun + 1
+      maxrun                <- as.numeric(run_interpolated_query(interpolatedQuery = "SELECT MAX(run_id) FROM stormwater.results;"))
+      machine_import$run_id <- maxrun + 1
 
       # add a join field
-      aq2Upload <- aq2Upload |>
-        dplyr::mutate(
-          idToJoin = toupper(trimws(sample_id)),
-          idToJoin = gsub("(\\w+\\.\\w+)(\\s[0-9].+)", "\\1", idToJoin),
-          idToJoin = gsub("\\.", "\\_", idToJoin)
-        )
+      machine_import <- machine_import |>
+      dplyr::mutate(
+        idToJoin = toupper(trimws(sample_id)),
+        idToJoin = gsub("(\\w+\\.\\w+)(\\s[0-9].+)", "\\1", idToJoin),
+        idToJoin = gsub("\\.", "\\_", idToJoin)
+      )
 
-      # join aq2 to sample list (if possible sans creating ambiguous samples)
-      if (nrow(aq2Upload |> left_join(machineInputs$samples(), by = c("idToJoin" = "bottle"))) > nrow(aq2Upload)) {
+      #       # join aq2 to sample list (if possible sans creating ambiguous samples)
+      #       if (nrow(machine_import |> left_join(machineInputs$samples(), by = c("idToJoin" = "bottle"))) > nrow(machine_import)) {
+      # 
+      #         machine_import <- machine_import |>
+      #         dplyr::mutate(samples = as.character(NA))
+      # 
+      #         shiny::showNotification(
+      #           ui          = "cannot guess sample IDs, enter all IDs or try narrowing the range of sample choices",
+      #           duration    = NULL,
+      #           closeButton = TRUE,
+      #           type        = "warning"
+      #         )
+      # 
+      #       } else {
+      # 
+      #         machine_import <- machine_import |>
+      #           left_join(machineInputs$samples() |> dplyr::select(-sample_id), by = c("idToJoin" = "bottle"))
+      # 
+      #       }
+      # 
+      #       # return modified object
+      #       return(machine_import)
 
-        aq2Upload <- aq2Upload |>
-        dplyr::mutate(samples = as.character(NA))
-
-        shiny::showNotification(
-          ui          = "cannot guess sample IDs, enter all IDs or try narrowing the range of sample choices",
-          duration    = NULL,
-          closeButton = TRUE,
-          type        = "warning"
-        )
-
-      } else {
-
-        aq2Upload <- aq2Upload |>
-          left_join(machineInputs$samples() |> dplyr::select(-sample_id), by = c("idToJoin" = "bottle"))
-
-      }
-
-      # return modified object
-      return(aq2Upload)
+      machine_import <- join_sample_metadata(
+        this_machine_import  = machine_import,
+        this_sample_metadata = machineInputs$samples()
+      )
 
     })
 
@@ -135,7 +140,7 @@ upload_aq2 <- function(id, tab = NULL) {
     resultReactive <- reactive({
 
       aq2_results <- rawReactive() |>
-        dplyr::filter(!(grepl("c c|cc|standard|tres|digested|control|om|can|apa|roos", sample_id, ignore.case = T)))
+      dplyr::filter(!(grepl("c c|cc|standard|tres|digested|control|om|can|apa|roos", sample_id, ignore.case = T)))
 
       return(aq2_results)
 
@@ -161,280 +166,202 @@ upload_aq2 <- function(id, tab = NULL) {
     output$resultView <- DT::renderDataTable({
 
       resultReactive() |>
-      mutate(
-        newSample = shinyInputOther(FUN = selectInput,
-          len = nrow(resultReactive()),
-          id = paste0(session$ns("newSample_")),
+      dplyr::mutate(
+        newSample = shinyInputOther(
+          FUN     = selectInput,
+          len     = nrow(resultReactive()),
+          id      = paste0(session$ns("newSample_")),
           choices = c("NULL", machineInputs$samples()$samples),
-          width = "220px"),
-        omit = shinyInputOther(checkboxInput,
-          nrow(resultReactive()),
-          id = paste0(session$ns("omit_")),
+          width   = "220px"
+          ),
+        omit = shinyInputOther(
+          FUN   = checkboxInput,
+          len   = nrow(resultReactive()),
+          id    = paste0(session$ns("omit_")),
           value = FALSE,
-          width = "20px"),
-        replicate = shinyInputOther(FUN = selectInput,
-          len = nrow(resultReactive()),
-          id = paste0(session$ns("rep_")),
+          width = "20px"
+          ),
+        replicate = shinyInputOther(
+          FUN     = selectInput,
+          len     = nrow(resultReactive()),
+          id      = paste0(session$ns("rep_")),
           choices = c(1, 2, 3),
-          width = "40px"),
-        comments = shinyInputOther(FUN = textInput,
-          len = nrow(resultReactive()),
-          id = paste0(session$ns("comments_")),
-          width = "120px")
+          width   = "40px"
+          ),
+        comments = shinyInputOther(
+          FUN    = textInput,
+          len    = nrow(resultReactive()),
+          id     = paste0(session$ns("comments_")),
+          width  = "120px"
+        )
         ) |>
-      select(samples, newSample, omit, replicate, comments, everything()) |>
-      select(-idToJoin, -run_id)
+      dplyr::select(samples, newSample, omit, replicate, comments, everything()) |>
+      dplyr::select(-idToJoin, -run_id)
+
     },
     selection = "none",
-    escape = FALSE,
-    server = TRUE, # use server-side to accomodate large tables
-    options = list(bFilter = 0,
-      bLengthChange = F,
-      bPaginate = F,
-      bSort = F,
-      preDrawCallback = JS("function() {
-        Shiny.unbindAll(this.api().table().node()); }"),
-        drawCallback = JS("function() {
-          Shiny.bindAll(this.api().table().node()); } ")
-          ),
-        rownames = F
-      ) # close output$rawView
-
-
-      # capture file upload and provided data
-      resultsMetadata <- reactive({
-
-        resultReactive() |>
-          mutate(
-            newSample = shinyValue(id = "newSample_",
-              len = nrow(resultReactive())),
-            omit = shinyValue(id = "omit_",
-              len = nrow(resultReactive())),
-            replicate = shinyValue(id = "rep_",
-              len = nrow(resultReactive())),
-            comments = shinyValue(id = "comments_",
-              len = nrow(resultReactive()))
-            ) |>
-        mutate(newSample = as.character(newSample)) |> # cast newSample to char to avoid case_when logical errors
-        filter(omit == FALSE)
-
-      })
-
-
-      # preview data table with provided metadata
-      output$resultsMetadataView <- DT::renderDataTable({
-
-        resultsMetadata() |>
-          mutate(
-            comments = case_when(
-              grepl("blk", sample_id, ignore.case = T) & comments == "" ~ "blank",
-              grepl("blk", sample_id, ignore.case = T) & comments != "" ~ paste(comments, "blank", sep = "; "),
-              TRUE ~ as.character(comments))
-            ) |>
-        mutate(
-          newSample = replace(newSample, newSample == "NULL", NA),
-          samples = case_when(
-            !is.na(newSample) ~ newSample,
-            TRUE ~ samples
-          )
-          ) |>
-        select(-omit) |>
-        select(samples, replicate, comments, sample_id, test, absorbance, date_and_time)
-
-      },
-      selection = "none",
-      escape = FALSE,
-      server = FALSE,
-      options = list(bFilter = 0,
-        bLengthChange = F,
-        bPaginate = F,
-        bSort = F
+    escape    = FALSE,
+    server    = TRUE, # use server-side to accomodate large tables
+    rownames  = FALSE,
+    options   = list(
+      scrollX         = TRUE,
+      autoWidth       = TRUE,
+      bFilter         = 0,
+      bLengthChange   = FALSE,
+      bPaginate       = FALSE,
+      bSort           = FALSE,
+      preDrawCallback = JS('function() {
+        Shiny.unbindAll(this.api().table().node()); }'
         ),
-      rownames = F) # close output$resultsMetadataView
+      drawCallback    = JS('function() {
+        Shiny.bindAll(this.api().table().node()); } '
+        ),
+      columnDefs      = list(
+        list(
+          targets = c(0),
+          width   = "180px"
+        )
+      )
+    )
+    ) # close output$rawView
 
 
-      # write data to database --------------------------------------------------
+    # capture file upload and provided data
+    resultsMetadata <- shiny::reactive({
 
-      observeEvent(machineInputs$submit(), {
+      resultReactive() |>
+      dplyr::mutate(
+        newSample = shinyValue(
+          id = "newSample_",
+          len = nrow(resultReactive())
+          ),
+        omit = shinyValue(
+          id = "omit_",
+          len = nrow(resultReactive())
+          ),
+        replicate = shinyValue(
+          id = "rep_",
+          len = nrow(resultReactive())
+          ),
+        comments = shinyValue(
+          id = "comments_",
+          len = nrow(resultReactive())
+        )
+        ) |>
+      dplyr::mutate(
+        newSample = as.character(newSample),
+        comments  = gsub(",", ";", comments),
+        comments  = gsub("[\r\n]", "; ", comments)
+        ) |> # cast newSample to char to avoid case_when logical errors
+      dplyr::filter(omit == FALSE)
 
-        # run a series of data validations
+    })
 
-        # 1. check if any samples not flagged to omit are missing a sample ID
-        if (
 
-          any(
-            is.na(
-              resultsMetadata() |>
-                mutate(
-                  newSample = replace(newSample, newSample == "NULL", NA),
-                  samples = case_when(
-                    !is.na(newSample) ~ newSample,
-                    TRUE ~ samples
-                  )
-                  ) |>
-              filter(omit == FALSE) |>
-              pull(samples)
-            ) # close is.na
-          ) # close any
+    # preview data table with provided metadata
+    output$resultsMetadataView <- DT::renderDataTable({
 
-          ) {
+      resultsMetadata() |>
+      dplyr::mutate(
+        comments = dplyr::case_when(
+          grepl("blk", sample_id, ignore.case = T) & comments == "" ~ "blank",
+          grepl("blk", sample_id, ignore.case = T) & comments != "" ~ paste(comments, "blank", sep = "; "),
+          TRUE ~ as.character(comments))
+        ) |>
+      dplyr::mutate(
+        newSample = replace(newSample, newSample == "NULL", NA),
+        samples   = dplyr::case_when(
+          !is.na(newSample) ~ newSample,
+          TRUE ~ samples
+        )
+        ) |>
+      dplyr::select(-omit) |>
+      dplyr::select(samples, replicate, comments, sample_id, test, absorbance, date_and_time)
 
-          showNotification(ui = "at least one sample missing sample ID or flag to omit",
-            duration = NULL,
-            closeButton = TRUE,
-            type = "error")
+    },
+    selection = "none",
+    escape    = FALSE,
+    server    = FALSE,
+    rownames  = FALSE,
+    options   = list(
+      bFilter       = 0,
+      bLengthChange = FALSE,
+      bPaginate     = FALSE,
+      bSort         = FALSE
+    )
+    ) # close output$resultsMetadataView
 
-          # 2. check for duplicate combinations of: sample ID x replicate x test
-          # discounting samples flagged for omit
-        } else if (
 
-          anyDuplicated(
-            resultsMetadata() |>
-              mutate(
-                newSample = replace(newSample, newSample == "NULL", NA),
-                samples = case_when(
-                  !is.na(newSample) ~ newSample,
-                  TRUE ~ samples
-                )
-                ) |>
-            filter(omit == FALSE) |>
-            select(samples, replicate, test)
-          ) # close anyDuplicated
+    # write data to database --------------------------------------------------
 
-          ) {
+    shiny::observeEvent(machineInputs$submit(), {
 
-          showNotification(ui = "at least one duplicate: sample ID*replicate*omit*test",
-            duration = NULL,
-            closeButton = TRUE,
-            type = "error")
+      # validate sample IDs
+      sample_ids_message <- check_sample_ids(resultsMetadata())
 
-          # else proceed through workflow
-        } else {
+      # message and stop if invalid
+      if (length(sample_ids_message) != 0) {
 
-          # workflow: RAW
+        notification_message <- paste(sample_ids_message, collapse = " & ")
 
-          # rename raw and results data for easier reference
-          temp_raw <- rawReactive()
+        shiny::showNotification(
+          ui          = notification_message,
+          duration    = 8,
+          closeButton = TRUE,
+          type        = "error"
+        )
 
-          # write temporary table: raw data
+      } else {
 
-          if (dbExistsTable(stormPool, c("stormwater", "temp_raw"))) {
+        # upload raw and results data
+        chem_upload <- upload_chemistry(
+          this_raw_reactive     = rawReactive(),
+          this_results_reactive = resultsMetadata(),
+          this_samples_metadata = machineInputs$samples(),
+          this_analysis         = tab()
+        )
 
-            dbRemoveTable(stormPool, c("stormwater", "temp_raw"))
+        # reset nitrite flag if uploaded
+        if (shiny::isTruthy(chem_upload)) {
 
-          }
-
-          dbWriteTable(conn = stormPool,
-            name = c("stormwater", "temp_raw"),
-            value = temp_raw,
-            row.names = F)
-
-          # build raw insert query
-          insert_raw_query <- build_insert_raw_query(currentTab = tab())
-
-          # workflow: RESULTS
-
-          # format resultsMetadata() for insert
-          temp_results <- format_raw(
-            annotatedData = resultsMetadata(),
-            sampleMetadata = machineInputs$samples(),
-            currentTab = tab()
+          shiny::updateCheckboxInput(
+            inputId = "nitriteFlag",
+            value   = FALSE
           )
 
-          # debuggging ----
-          # print(temp_results)
-          # print(str(temp_results))
-          # end
-
-          # write temporary table: results data
-
-          if (dbExistsTable(stormPool, c("stormwater", "temp_results"))) {
-
-            dbRemoveTable(stormPool, c("stormwater", "temp_results"))
-
-          }
-
-          dbWriteTable(conn = stormPool,
-            name = c("stormwater", "temp_results"),
-            value = temp_results,
-            row.names = F)
-
-          # build results insert query
-          insert_results_query <- build_insert_results_query(currentTab = tab())
-
-
-          # begin tryCatch - transaction
-          tryCatch({
-
-            poolWithTransaction(stormPool, function(conn) {
-
-              dbExecute(conn,
-                insert_raw_query)
-
-              dbExecute(conn,
-                insert_results_query)
-
-          })
-
-            showNotification(ui = "successfully uploaded",
-              duration = NULL,
-              closeButton = TRUE,
-              type = "message",
-              action = a(href = "javascript:location.reload();", "reload the page"))
-
-          }, warning = function(warn) {
-
-            showNotification(ui = paste("there is a warning:  ", warn),
-              duration = NULL,
-              closeButton = TRUE,
-              type = "warning")
-
-            print(paste("WARNING: ", warn))
-
-          }, error = function(err) {
-
-            showNotification(ui = paste("there was an error:  ", err),
-              duration = NULL,
-              closeButton = TRUE,
-              type = "error")
-
-            print(paste("ERROR: ", err))
-            print("ROLLING BACK TRANSACTION")
-
-          }) # close try catch
-
-        } # close if-validations
-
-        # remove temporary tables
-
-        if (dbExistsTable(stormPool, c("stormwater", "temp_raw"))) {
-
-          dbRemoveTable(stormPool, c("stormwater", "temp_raw"))
-
         }
 
-        if (dbExistsTable(stormPool, c("stormwater", "temp_results"))) {
-
-          dbRemoveTable(stormPool, c("stormwater", "temp_results"))
-
-        }
-
-      }) # close submitData
+      } # close database operations
 
 
-      # debugging: module level -------------------------------------------------
+      # remove temporary tables
 
-      # observe(print({ machineInputs$samples() }))
-      # observe(write_csv(machineInputs$samples(), "~/Desktop/machineinputs.csv"))
-      # observe(write_csv(rawReactive(), "~/Desktop/rawreactive.csv"))
-      # observe(print({ rawReactive() }))
-      # observe(print({ resultsMetadata() }))
-      # observe(print({ str(resultsMetadata()) }))
-      # observe(print({ head(resultReactive()) }))
-      # observe(print({ samplesSelection() }))
+      remove_table(
+        schema_name = "stormwater",
+        table_name  = "temp_results"
+      )
+
+      remove_table(
+        schema_name = "stormwater",
+        table_name  = "temp_raw"
+      )
+
+    }) # close submit data
 
 
-      # close module aq2 ----------------------------------------------------
+    # debugging: module level -------------------------------------------------
+
+    # observe(print({ machineInputs$samples() }))
+    # observe(write_csv(machineInputs$samples(), "~/Desktop/machineinputs.csv"))
+    # observe(write_csv(rawReactive(), "~/Desktop/rawreactive.csv"))
+    # observe(print({ rawReactive() }))
+    # observe(print({ names(resultsMetadata()) }))
+    # observe(print({ str(resultsMetadata()) }))
+    # observe(print({ head(resultReactive()) }))
+    # observe(print({ samplesSelection() }))
+
+
+    # close module aq2 ----------------------------------------------------
 
 }) # close module server
 } # close module function

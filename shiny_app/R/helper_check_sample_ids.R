@@ -4,7 +4,7 @@
 #' @description The function \code{check_sample_ids} tests whether all of the
 #' samples in a mahcine output file have been associated with a sample ID, and
 #' that there are not any duplicates among those IDs. Returns FALSE if all
-#' tests have passed, or a message indicating which test failed.
+#' tests have passed, or a message indicating which test(s) failed.
 #'
 #' @export
 
@@ -32,10 +32,16 @@ check_sample_ids <- function(data_to_validate) {
 
   }
 
-
   # check for duplicate combinations of: sample ID x replicate x analyte
   # discounting samples flagged for omit
-  if (anyDuplicated(data_subset[, c("samples", "replicate", "analyte_name")])) {
+
+  if (
+    anyDuplicated(
+      data_subset |>
+      dplyr::select(tidyselect::any_of(c("samples", "replicate", "analyte_name", "test")))
+    )
+    ) {
+
 
     validation_message <- append(
       x      = validation_message,
