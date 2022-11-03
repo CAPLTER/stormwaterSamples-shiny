@@ -50,10 +50,9 @@ upload_aq2 <- function(id, tab = NULL) {
     machineInputs <- machineInput("samples_for_aq2")
 
 
-    # helper function for reading input functions; for reasons that are completely
-    # unclear, this function only works if included in app.R or function section
-    # if a module (i.e., it is loaded but does not seem to work if loaded from
-    # helper_shiny_input.R)
+    # helper function for reading input functions; for reasons that are not
+    # clear, this function only works if included in the .R file from which  it
+    # is called.
     shinyValue <- function(id, len) {
       unlist(lapply(seq_len(len), function(i) {
           value = input[[paste0(id, i)]]

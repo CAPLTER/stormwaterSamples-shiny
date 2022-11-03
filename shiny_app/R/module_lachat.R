@@ -14,21 +14,22 @@ upload_lachatUI <- function(id) {
 
   ns <- shiny::NS(id)
 
-  tagList(
+  shiny::tagList(
 
     shiny::fluidPage(
       shiny::fluidRow(
 
         shiny::column(
           id = "leftPanel", 2,
-          shiny::helpText(
+
+          shiny::div(
+            id = "nitrite_box",
             "IMPORTANT: check this box first if data to upload are nitrite (NO2)",
-            style = "font-weight: bold; color: DarkBlue;"
-            ),
-          shiny::checkboxInput(
-            inputId = ns("nitriteFlag"),
-            label   = HTML('<p style="color: #800080; font-weight: bold;">nitrite?</p>')
-            ),
+            shiny::checkboxInput(
+              inputId = ns("nitriteFlag"),
+              label   = "data are nitrite"
+            )
+            ), # close nitrite box div
           machineInputUI(ns("samples_for_lachat")) # ns(wrap call to inner mod)
           ), # close the left col
 
@@ -77,13 +78,13 @@ upload_lachat <- function(id, tab = NULL) {
       req(machineInputs$machineFile())
 
       # import file and remove rows without concentration data
-      lachatUpload <- readxl::read_excel(
+      machine_import <- readxl::read_excel(
         path = machineInputs$machineFile()$datapath
         ) |>
       dplyr::filter(!is.na(`Peak Concentration`))
 
       # check data structure - warning only, does not break workflow
-      if (ncol(lachatUpload) != 28) {
+      if (ncol(machine_import) != 28) {
 
         shiny::showNotification(
           ui          = "unexpected data structure: check number and names of columns",
@@ -95,22 +96,22 @@ upload_lachat <- function(id, tab = NULL) {
       }
 
       # add filename as a variable
-      lachatUpload$filename <- machineInputs$machineFile()$name
+      machine_import$filename <- machineInputs$machineFile()$name
 
       # format column names
-      colnames(lachatUpload) <- tolower(colnames(lachatUpload))             # colnames to lowercase
-      colnames(lachatUpload) <- gsub("\\.", "\\_", colnames(lachatUpload))  # replace dots with underscores
-      colnames(lachatUpload) <- gsub(" ", "\\_", colnames(lachatUpload))    # replace spaces with underscores
+      colnames(machine_import) <- tolower(colnames(machine_import))             # colnames to lowercase
+      colnames(machine_import) <- gsub("\\.", "\\_", colnames(machine_import))  # replace dots with underscores
+      colnames(machine_import) <- gsub(" ", "\\_", colnames(machine_import))    # replace spaces with underscores
 
-      lachatUpload <- lachatUpload |>
+      machine_import <- machine_import |>
       dplyr::rename(weight_units = `weight_(units)`)
 
       # add run identifier as maxrun
-      maxrun              <- as.numeric(run_interpolated_query(interpolatedQuery = "SELECT MAX(run_id) FROM stormwater.results;"))
-      lachatUpload$run_id <- maxrun + 1
+      maxrun                <- as.numeric(run_interpolated_query(interpolatedQuery = "SELECT MAX(run_id) FROM stormwater.results;"))
+      machine_import$run_id <- maxrun + 1
 
       # add a join field
-      lachatUpload <- lachatUpload |>
+      machine_import <- machine_import |>
       dplyr::mutate(
         idToJoin = toupper(trimws(sample_id)),
         idToJoin = gsub("(\\w+\\.\\w+)(\\s[0-9].+)", "\\1", idToJoin),
@@ -120,30 +121,39 @@ upload_lachat <- function(id, tab = NULL) {
         )
       )
 
-      # join lachat to sample list but only it if can be done without creating ambiguous samples
-      if (nrow(lachatUpload |> dplyr::left_join(machineInputs$samples(), by = c("idToJoin" = "bottle"))) > nrow(lachatUpload)) {
+      ## BEGIN NEW FN
 
-        lachatUpload <- lachatUpload |>
-        dplyr::mutate(samples = as.character(NA))
+#       # join lachat to sample list but only it if can be done without creating ambiguous samples
+#       if (nrow(machine_import |> dplyr::left_join(machineInputs$samples(), by = c("idToJoin" = "bottle"))) > nrow(machine_import)) {
+# 
+#         machine_import <- machine_import |>
+#         dplyr::mutate(samples = as.character(NA))
+# 
+#         shiny::showNotification(
+#           ui          = "cannot guess sample IDs, enter all IDs or try narrowing the range of sample choices",
+#           duration    = NULL,
+#           closeButton = TRUE,
+#           type        = "warning"
+#         )
+# 
+#       } else {
+# 
+#         machine_import <- machine_import |>
+#         dplyr::left_join(
+#           machineInputs$samples() |> dplyr::select(-sample_id),
+#           by = c("idToJoin" = "bottle")
+#         )
+# 
+#       }
+# 
+#       return(machine_import)
 
-        shiny::showNotification(
-          ui          = "cannot guess sample IDs, enter all IDs or try narrowing the range of sample choices",
-          duration    = NULL,
-          closeButton = TRUE,
-          type        = "warning"
-        )
+      machine_import <- join_sample_metadata(
+        this_machine_import = machine_import,
+        this_sample_metadata = machineInputs$samples()
+      )
 
-      } else {
-
-        lachatUpload <- lachatUpload |>
-        dplyr::left_join(
-          machineInputs$samples() |> dplyr::select(-sample_id),
-          by = c("idToJoin" = "bottle")
-        )
-
-      }
-
-      return(lachatUpload)
+      ## END NEW FN
 
     })
 
@@ -361,11 +371,11 @@ upload_lachat <- function(id, tab = NULL) {
 
       # debugging: module level -------------------------------------------------
 
-      # observe(print({ machineInputs$samples() }))
+      # observe(print({ head(machineInputs$samples()) }))
+      observe(print({ head(rawReactive()) }))
+      # observe(print({ head(resultsMetadata()) }))
       # observe(write_csv(machineInputs$samples(), '~/Desktop/machineinputs.csv'))
       # observe(write_csv(rawReactive(), '~/Desktop/rawreactive.csv'))
-      # observe(print({ rawReactive() }))
-      # observe(print({ resultsMetadata() }))
       # observe(print({ str(resultsMetadata()) }))
       # observe(print({ head(resultReactive()) }))
 

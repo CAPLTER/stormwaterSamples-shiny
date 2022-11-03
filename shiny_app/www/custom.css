@@ -47,3 +47,11 @@ left: calc(1%);
   border: 1px solid #e3e3e3;
   border-radius: 4px;
 }
+
+#nitrite_box {
+  padding: 4px;
+  margin-bottom: 2px;
+  background-color: #ffe5b4;
+  border: 1px solid #e3e3e3;
+  border-radius: 4px;
+}
