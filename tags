@@ -24,6 +24,7 @@
 .con	shiny_app/R/helper_delete_sample.R	/^    .con = DBI::ANSI()$/;"	v	function:delete_sample
 .con	shiny_app/R/helper_delete_solid.R	/^    .con = DBI::ANSI()$/;"	v	function:delete_solid
 .con	shiny_app/R/helper_insert_solid.R	/^      .con = DBI::ANSI()$/;"	v	function:insert_new_or_update_solid
+.con	shiny_app/R/helper_query_chemistry.R	/^    .con = DBI::ANSI()$/;"	v	function:query_chemistry
 .con	shiny_app/R/helper_query_solids.R	/^      .con = DBI::ANSI()$/;"	v	function:query_solid_solid_id
 .con	shiny_app/R/helper_query_solids.R	/^    .con = DBI::ANSI()$/;"	v	function:query_solid_sample_id
 .con	shiny_app/R/helper_query_solids.R	/^  .con = DBI::ANSI()$/;"	v	function:query_solids
@@ -38,7 +39,10 @@
 .shiny-notification	shiny_app/www/custom.css	/^.shiny-notification {$/;"	c
 ChemInventory	shiny_app/R/module_chemistry_inventory.R	/^ChemInventory <- R6::R6Class("ChemInventory", list($/;"	c
 ChemInventory1	archive/global.R	/^ChemInventory1 <- ChemInventory$new(id = "chem_inventory")$/;"	g
+ChemInventory1	shiny_app/R/module_chemistry_viewer.R	/^ChemInventory1 <- ChemInventory$new(id = "chem_inventory")$/;"	g
+ChemViewer	shiny_app/R/module_chemistry_viewer.R	/^ChemViewer <- R6::R6Class("ChemViewer", list($/;"	c
 ChemViewer1	archive/global.R	/^ChemViewer1 <- ChemViewer$new(id = "chem_display")$/;"	g
+ChemViewer1	shiny_app/R/module_chemistry_viewer.R	/^ChemViewer1    <- ChemViewer$new(id = "chem_display")$/;"	g
 accept	shiny_app/R/module_discharge.R	/^            accept   = c($/;"	c	function:upload_dischargeUI
 accept	shiny_app/R/module_upload_discharge.R	/^            accept   = c($/;"	c	function:upload_dischargeUI
 accept	shiny_app/R/module_upload_report.R	/^            accept   = c($/;"	c	function:upload_reportUI
@@ -527,6 +531,8 @@ icon	shiny_app/R/module_upload_report.R	/^            icon    = shiny::icon("plu
 id	archive/global.R	/^ChemInventory1 <- ChemInventory$new(id = "chem_inventory")$/;"	g
 id	archive/global.R	/^ChemViewer1 <- ChemViewer$new(id = "chem_display")$/;"	g
 id	shiny_app/R/helper_query_solids.R	/^      id              = NA_integer_,$/;"	v	function:query_solid_solid_id
+id	shiny_app/R/module_chemistry_viewer.R	/^ChemInventory1 <- ChemInventory$new(id = "chem_inventory")$/;"	g
+id	shiny_app/R/module_chemistry_viewer.R	/^ChemViewer1    <- ChemViewer$new(id = "chem_display")$/;"	g
 id	shiny_app/R/module_modify_samples.R	/^        id = NA,$/;"	g
 id	shiny_app/R/module_sample_new.R	/^              id = "col_add_sample",$/;"	v	function:module_sample_new.anonFunced9332b00100
 id	shiny_app/R/module_solid_new.R	/^              id = "col_add_solid",$/;"	v	function:module_solid_new.anonFuncb22bf4e90100
@@ -720,6 +726,7 @@ parameterizedQuery	shiny_app/app.R	/^    parameterizedQuery <- sqlInterpolate(AN
 parameterized_query	shiny_app/R/helper_delete_sample.R	/^  parameterized_query <- glue::glue_sql("$/;"	v	function:delete_sample
 parameterized_query	shiny_app/R/helper_delete_solid.R	/^  parameterized_query <- glue::glue_sql("$/;"	v	function:delete_solid
 parameterized_query	shiny_app/R/helper_insert_solid.R	/^    parameterized_query <- glue::glue_sql("$/;"	v	function:insert_new_or_update_solid
+parameterized_query	shiny_app/R/helper_query_chemistry.R	/^  parameterized_query <- glue::glue_sql("$/;"	v	function:query_chemistry
 parameterized_query	shiny_app/R/helper_query_solids.R	/^    parameterized_query <- glue::glue_sql("$/;"	v	function:query_solid_solid_id
 parameterized_query	shiny_app/R/helper_query_solids.R	/^  parameterized_query <- glue::glue_sql("$/;"	v	function:query_solid_sample_id
 parameterized_query	shiny_app/R/helper_query_solids.R	/^  parameterized_query <- glue::glue_sql("$/;"	v	function:query_solids
@@ -756,6 +763,7 @@ queryType	shiny_app/R/module_modify_samples.R	/^  queryType <- reactiveValues(de
 queryType	shiny_app/R/module_view_discharge.R	/^  queryType <- reactiveValues(default = "default")$/;"	v	function:viewDischarge
 queryTypeSamplesSolids	shiny_app/R/app.R	/^  queryTypeSamplesSolids <- reactiveValues(default = "default")$/;"	v	function:server
 queryTypeSamplesSolids	shiny_app/app.R	/^  queryTypeSamplesSolids <- reactiveValues(default = "default")$/;"	v	function:server
+query_chemistry	shiny_app/R/helper_query_chemistry.R	/^query_chemistry <- function() {$/;"	f
 query_discharge_default	shiny_app/R/helper_query_discharge.R	/^query_discharge_default <- function() {$/;"	f
 query_discharge_site_date	shiny_app/R/helper_query_discharge.R	/^query_discharge_site_date <- function(start, end, site) {$/;"	f
 query_sample_sites	shiny_app/R/helper_query_sites.R	/^query_sample_sites <- function() {$/;"	f
@@ -859,7 +867,7 @@ samples_inventory	shiny_app/R/module_samples_main.R	/^samples_inventory <- funct
 samples_inventoryUI	shiny_app/R/module_samples_main.R	/^samples_inventoryUI <- function(id) {$/;"	f
 samples_inventory_module_js	shiny_app/www/samples_inventory_module.js	/^function samples_inventory_module_js(ns_prefix) {$/;"	f
 samples_inventory_queried	shiny_app/R/module_samples_main.R	/^      samples_inventory_queried <- query_samples()$/;"	v	function:samples_inventory.anonFunca2e1b29e0100
-samples_inventory_reactive	shiny_app/R/module_samples_main.R	/^    samples_inventory_reactive <- reactive({$/;"	v	function:samples_inventory.anonFunca2e1b29e0100
+samples_inventory_reactive	shiny_app/R/module_samples_main.R	/^    samples_inventory_reactive <- shiny::reactive({$/;"	v	function:samples_inventory.anonFunca2e1b29e0100
 samples_upload	shiny_app/R/module_upload_report.R	/^      samples_upload <- isco_data[["samples"]] |>$/;"	v	function:upload_report.anonFunca9d6de850100
 scrollX	shiny_app/R/module_aq2.R	/^      scrollX         = TRUE,$/;"	n	list:upload_aq2.anonFunc5edf18490100.options
 scrollX	shiny_app/R/module_lachat.R	/^      scrollX         = TRUE,$/;"	n	list:upload_lachat.anonFuncc170fab20100.options

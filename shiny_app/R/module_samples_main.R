@@ -65,7 +65,7 @@ samples_inventory <- function(id) {
 
 
     # query samples data
-    samples_inventory_reactive <- reactive({
+    samples_inventory_reactive <- shiny::reactive({
 
       # add listener for adding and editing records
       listener_watch("update_sample")
