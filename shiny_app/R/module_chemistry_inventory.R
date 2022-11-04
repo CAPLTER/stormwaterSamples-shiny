@@ -1,9 +1,11 @@
 #' @title Module: ChemInventory
 #'
 #' @description ChemInventory is an R6 class that facilitates a module for
-#'  generating a graphical view of the analysis status of samples at a given
-#'  site and date range. An instance of this class is generated in global then
-#'  accessed from app.
+#' generating a graphical view of the analysis status of samples at a given
+#' site and date range. An instance of this class is generated in global then
+#' accessed from app.
+#'
+#' @export
 
 ChemInventory <- R6::R6Class("ChemInventory", list(
 
@@ -22,72 +24,81 @@ ChemInventory <- R6::R6Class("ChemInventory", list(
 
       ns <- shiny::NS(self$id)
 
-      shiny::fluidPage(
-        shiny::fluidRow(
-          shiny::column(
-            id = "leftPanel", 1,
-            align = "left",
-            p(
-              "select parameters then plot/replot to view results",
-              style = "text-align: left; background-color: LightGray; color: black;"
-              ),
-            p(
-              "brush and double-click to zoom",
-              style = "text-align: left; background-color: LightGray; color: black;"
-              ),
-            p(
-              "double click empty space in the plot to exit zoom",
-              style = "text-align: left; background-color: LightGray; color: black;"
-              ),
-            br(),
-            shiny::selectizeInput(
-              inputId  = ns("sample_site"),
-              label    = "site",
-              choices  = siteAbbreviations,
-              selected = NULL,
-              multiple = FALSE
-              ),
-            shiny::dateInput(
-              inputId = ns("start_date"),
-              label   = "start:",
-              value   = as.character(Sys.Date() - lubridate::years(3)),
-              format  = "yyyy-mm-dd"
-              ),
-            shiny::dateInput(
-              inputId = ns("end_date"),
-              label   = "end:",
-              format  = "yyyy-mm-dd"
-              ),
-            shiny::actionButton(
-              inputId = ns("filterObservations"),
-              label   = "plot/replot",
-              style   = "text-align:center; border-sytle:solid; border-color:#0000ff;"
-              ),
-            br()
-            ), # close the left col
+      shiny::tagList(
 
-          shiny::column(
-            id = "rightPanel", 11,
+        shiny::fluidPage(
+          shiny::fluidRow(
 
-            shiny::plotOutput(
-              outputId = ns("sample_chem_plot"),
-              dblclick = ns("plot1_dblclick"),
-              brush    = brushOpts(
-                id         = ns("plot1_brush"),
-                resetOnNew = TRUE
-              )
-            ) # close plot output
-          ) # close the right col
+            shiny::column(
+              id = "readme_row", width = 12,
+              shiny::div(id = "readme_box",
+                shiny::strong("README"),
+                "This is a graphical tool to help identify stormwater chemistry data that have/not been uploaded to the database. Tailor the inventory to the site and date range of interest then queue the desired data with the plot/replot button. Use the mouse to select then zoom (double-click) into a portion of the plot. Double-click on empty space anywhere in the plot to exit the zoomed view."
+              ) # close readme div
+            )   # close readme column
+            ),  # close readme row
 
-        ) # close the row
-      ) # close the page
+          shiny::fluidRow(
+
+            shiny::column(
+              id = "leftPanel", 2,
+
+              shiny::wellPanel(
+                shiny::selectizeInput(
+                  inputId  = ns("sample_site"),
+                  label    = "site",
+                  choices  = siteAbbreviations,
+                  selected = NULL,
+                  multiple = FALSE
+                  ),
+                shiny::dateInput(
+                  inputId = ns("start_date"),
+                  label   = "start",
+                  value   = as.character(Sys.Date() - lubridate::years(1)),
+                  format  = "yyyy-mm-dd"
+                  ),
+                shiny::dateInput(
+                  inputId = ns("end_date"),
+                  label   = "end",
+                  value   = as.character(Sys.Date()),
+                  format  = "yyyy-mm-dd"
+                  ),
+                shiny::actionButton(
+                  inputId = ns("filter_obs"),
+                  label   = "plot/replot",
+                  style   = "color: #6495ed; margin-bottom: 2px;",
+                  icon    = shiny::icon("circle-play"),
+                  width   = "100%"
+                )
+              )   # close the wellPanel
+              ),  # close the left column
+
+            shiny::column(
+              id = "rightPanel", 10,
+
+              shiny::plotOutput(
+                outputId = ns("sample_chem_plot"),
+                dblclick = ns("plot1_dblclick"),
+                brush = brushOpts(
+                  id         = ns("plot1_brush"),
+                  direction  = c("x"),
+                  resetOnNew = TRUE
+                )
+              ) # close plot output
+
+            ) # close the right col
+
+          ) # close the row
+        ) # close the page
+
+      ) # close the tagList
 
     }, # close ui
 
     # server
     server = function(input, output, session) {
 
-      sample_chem_date <- shiny::eventReactive(input$filterObservations, {
+      sample_chem_date <- shiny::eventReactive(input$filter_obs, {
 
         req(
           input$sample_site,
@@ -95,11 +106,11 @@ ChemInventory <- R6::R6Class("ChemInventory", list(
           input$end_date
         )
 
-        validate(
-          need(!is.null(input$sample_site), "select a sample site"),
-          need(lubridate::is.Date(input$start_date), "start date must be a valid date"),
-          need(lubridate::is.Date(input$end_date), "end date must be a valid date")
-        )
+        #         validate(
+        #           need(!is.null(input$sample_site), "select a sample site"),
+        #           need(lubridate::is.Date(input$start_date), "start date must be a valid date"),
+        #           need(lubridate::is.Date(input$end_date), "end date must be a valid date")
+        #         )
 
         # user-provided site (converted to site_id (integer))
         integer_site <- glue::glue_sql(
@@ -110,78 +121,78 @@ ChemInventory <- R6::R6Class("ChemInventory", list(
         start <- as.character(input$start_date)
         end   <- as.character(input$end_date)
 
-        baseQuery <- "
-        SELECT
+        parameterized_query <- glue::glue_sql("
+          SELECT
           samples.sample_datetime,
           samples.bottle,
           sites.abbreviation,
           results.concentration,
           analysis.analysis_name
-        FROM stormwater.samples
-        JOIN stormwater.sites ON (sites.site_id = samples.site_id)
-        LEFT JOIN stormwater.results ON (results.sample_id = samples.sample_id)
-        JOIN stormwater.analysis ON (analysis.analysis_id = results.analysis_id)
-        WHERE
-          sites.site_id = ?this_site AND
-          (samples.sample_datetime BETWEEN ?this_start AND ?this_end)
-        ;"
-
-        # parameterized query
-        parameterizedQuery <- sqlInterpolate(
-          ANSI(),
-          baseQuery,
-          this_site = integer_site,
-          this_start = start,
-          this_end = end
+          FROM stormwater.samples
+          JOIN stormwater.sites ON (sites.site_id = samples.site_id)
+          LEFT JOIN stormwater.results ON (results.sample_id = samples.sample_id)
+          JOIN stormwater.analysis ON (analysis.analysis_id = results.analysis_id)
+          WHERE
+          sites.site_id = { integer_site } AND
+          (samples.sample_datetime BETWEEN { start } AND { end })
+          ;
+          ",
+          .con = DBI::ANSI()
         )
 
-        # sample IDs subset from query
-        queryResult <- run_interpolated_query(parameterizedQuery)
+        chemistry_data <- run_interpolated_query(parameterized_query)
 
-        # address empty sample set
-        if (nrow(queryResult) == 0) {
+        if (nrow(chemistry_data) == 0) {
 
-          queryResult <- NULL
+          chemistry_data <- NULL
 
         } else {
 
-        # add dummy variable to indicate sample is identified
-        queryResult <- queryResult |>
-          dplyr::mutate(has_sample = "_sample_")
+          # add dummy variable to indicate sample is identified
+          chemistry_data <- chemistry_data |>
+          dplyr::mutate(has_sample = "BOTTLE")
+
+          # change datetime (x-axis) to factor to remove gaps between dates
+          chemistry_data$dt_as_factor <- factor(chemistry_data$sample_datetime)
+          chemistry_data$dt_as_factor <- forcats::fct_reorder(chemistry_data$dt_as_factor, chemistry_data$sample_datetime)
 
         }
 
-        # return result
-        return(queryResult)
+        return(chemistry_data)
 
-      })
+      },
+      ignoreNULL = FALSE
+      ) # close reactive sample_chem_date
 
 
-      # single zoomable plot (on left)
-      ranges <- reactiveValues(x = NULL)
+      # reactive for brush zoom
+      ranges <- shiny::reactiveValues(x = NULL)
 
+
+      # render sample_chem_plot
       output$sample_chem_plot <- shiny::renderPlot({
 
-        validate(
-          need(!is.null(sample_chem_date()), "those criteria do not match any data")
+        shiny::validate(
+          shiny::need(!is.null(sample_chem_date()), "those criteria do not match any data")
         )
-
-        if (!is.null(ranges$x)) {
-          ranges$x <- as.POSIXct(ranges$x, , origin = "1970-01-01")
-        }
 
         ggplot2::ggplot(
           data    = sample_chem_date(),
           mapping = ggplot2::aes(
-            x      = sample_datetime,
+            x      = dt_as_factor,
             y      = analysis_name,
-            colour = analysis_name
+            colour = factor(analysis_name)
           )
           ) +
-        ggplot2::geom_point() +
+        ggplot2::xlab("date_time") +
+        ggplot2::geom_tile(
+          color = "white",
+          lwd   = 0.5,
+          fill  = "#ADD8E6"
+          ) +
         ggplot2::geom_text(
           ggplot2::aes(
-            x     = sample_datetime,
+            x     = dt_as_factor,
             y     = has_sample,
             label = bottle
             ),
@@ -190,8 +201,9 @@ ChemInventory <- R6::R6Class("ChemInventory", list(
           hjust  = 0
           ) +
         ggplot2::theme(
-          legend.position = "none",
-          axis.text.x     = ggplot2::element_text(
+          legend.position  = "none",
+          panel.grid.major = ggplot2::element_blank(),
+          axis.text.x      = ggplot2::element_text(
             angle = 285,
             vjust = 0,
             hjust = 0
@@ -199,7 +211,7 @@ ChemInventory <- R6::R6Class("ChemInventory", list(
           ) +
         ggplot2::scale_y_discrete(
           limits = c(
-            "_sample_",
+            "BOTTLE",
             "CaD_ICP",
             "NaD_ICP",
             "ZnD_ICP",
@@ -213,38 +225,36 @@ ChemInventory <- R6::R6Class("ChemInventory", list(
             "DOC_TOC",
             "NO3T_TOC_TN"
             ),
-          expand = ggplot2::expansion(mult = c(0.2, 0.1))
+          expand = ggplot2::expansion(mult = c(0.3, 0.1))
           ) +
-        # scale_x_datetime(breaks = "1 day", date_minor_breaks = "1 hour") +
         ggplot2::coord_cartesian(xlim = ranges$x)
 
       })
 
 
-      # check if there iss a brush on the plot when a double-click happens; if
-      # so, zoom to the brush bounds; if not, reset the zoom; only brushing the
-      # x-axis in this instance
+      # brush zoom
       shiny::observeEvent(input$plot1_dblclick, {
 
         brush <- input$plot1_brush
 
         if (!is.null(brush)) {
+
           ranges$x <- c(brush$xmin, brush$xmax)
-          # ranges$y <- c(brush$ymin, brush$ymax)
 
         } else {
-          ranges$x <- NULL
-          # ranges$y <- NULL
-        }
-      })
 
+          ranges$x <- NULL
+
+        }
+
+      })
 
     }, # close server
 
     # call
     call = function(input, ouput, session) {
 
-      callModule(self$server, self$id)
+      shiny::callModule(self$server, self$id)
 
     }
 

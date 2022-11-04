@@ -1,12 +1,6 @@
-
-# call global R -----------------------------------------------------------
-
-# source("global.R")
-
-
 # UI ----------------------------------------------------------------------
 
-ui <- tagList(
+ui <- shiny::tagList(
 
   tags$head(
     tags$link(rel = "stylesheet", type = "text/css", href = "custom.css")
@@ -50,52 +44,44 @@ ui <- tagList(
 
     # cations tab -------------------------------------------------------------
 
-    tabPanel("cations",
+    shiny::tabPanel("cations",
       cationsUI("icpCations")
-      ), # close cations tab
+      ),
 
 
     # lachat tab --------------------------------------------------------------
 
-    tabPanel("lachat",
+    shiny::tabPanel("lachat",
       upload_lachatUI("upload_lachat")
-      ), # close lachat tab
+      ),
 
 
     # aq2 tab --------------------------------------------------------------
 
-    tabPanel("aq2",
+    shiny::tabPanel("aq2",
       upload_aq2UI("upload_aq2")
-      ), # close aq2 tab
+      ),
 
 
     # shimadzu tab --------------------------------------------------------------
 
-    tabPanel("shimadzu",
+    shiny::tabPanel("shimadzu",
       upload_shimadzuUI("upload_shimadzu")
-      ), # close shimadzu tab
+      ),
 
 
     # chem data view ----------------------------------------------------------
 
-    tabPanel("chemistry: data viewer",
+    shiny::tabPanel("chemistry: data viewer",
       ChemViewer1$ui()
-      ), # close 'chemistry: data viewer' tab panel
+      ),
 
 
     # chem inventory ----------------------------------------------------------
 
-    tabPanel("chemistry: data inventory",
+    shiny::tabPanel("chemistry: data inventory",
       ChemInventory1$ui()
-    ) # close 'chemistry: inventory viewer' tab panel
-
-
-    # closing UI --------------------------------------------------------------
-
-    ,
-    tabPanel("machine_input",
-      machineInputUI("alpha")
-    ) # close 'chemistry: inventory viewer' tab panel
+    )
 
   ) # close navbar/page
-) # close tagList
+)   # close tagList

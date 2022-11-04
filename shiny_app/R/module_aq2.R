@@ -104,29 +104,6 @@ upload_aq2 <- function(id, tab = NULL) {
         idToJoin = gsub("\\.", "\\_", idToJoin)
       )
 
-      #       # join aq2 to sample list (if possible sans creating ambiguous samples)
-      #       if (nrow(machine_import |> left_join(machineInputs$samples(), by = c("idToJoin" = "bottle"))) > nrow(machine_import)) {
-      # 
-      #         machine_import <- machine_import |>
-      #         dplyr::mutate(samples = as.character(NA))
-      # 
-      #         shiny::showNotification(
-      #           ui          = "cannot guess sample IDs, enter all IDs or try narrowing the range of sample choices",
-      #           duration    = NULL,
-      #           closeButton = TRUE,
-      #           type        = "warning"
-      #         )
-      # 
-      #       } else {
-      # 
-      #         machine_import <- machine_import |>
-      #           left_join(machineInputs$samples() |> dplyr::select(-sample_id), by = c("idToJoin" = "bottle"))
-      # 
-      #       }
-      # 
-      #       # return modified object
-      #       return(machine_import)
-
       machine_import <- join_sample_metadata(
         this_machine_import  = machine_import,
         this_sample_metadata = machineInputs$samples()

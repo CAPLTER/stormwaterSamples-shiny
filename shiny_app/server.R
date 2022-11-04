@@ -24,7 +24,7 @@ server <- function(input, output, session) {
 
   # establish tab position as input to modules ------------------------------
 
-  tabID <- reactive({ input$tabs })
+  tabID <- shiny::reactive({ input$tabs })
 
 
   # modules --------------------------------------------------------------------
@@ -34,42 +34,10 @@ server <- function(input, output, session) {
   solids_inventory("solids_inventory")            # manage solids data
   upload_discharge("discharge")                   # upload 6700 level data
   upload_lachat("upload_lachat", tab = tabID)     # upload lachat data
-  upload_aq2("upload_aq2", tab = tabID)           # upload aw2 data
-  upload_shimadzu("upload_shimadzu", tab = tabID) # upload aw2 data
-
-  machineInput("alpha")                       # temporary
-
-
-  # call to cations module --------------------------------------------------
-
-#   callModule(
-#     module = cations,
-#     id = "icpCations",
-#     tab = tabID
-#   )
-
-
-  # call to aq2 module ---------------------------------------------------
-
-#   callModule(module = aq2,
-#     id = "aq2",
-#     tab = tabID)
-
-
-  # call to shimadzu module ---------------------------------------------------
-
-#   callModule(module = shimadzu,
-#     id = "shimadzu",
-#     tab = tabID)
-
-
-  # call to chem viewer module ----------------------------------------------
-
-  ChemViewer1$call()
-
-  # call to chem inventory module ----------------------------------------------
-
-  ChemInventory1$call()
+  upload_aq2("upload_aq2", tab = tabID)           # upload aq2 data
+  upload_shimadzu("upload_shimadzu", tab = tabID) # upload shimadzu data
+  ChemViewer1$call()                              # chem viewer module
+  ChemInventory1$call()                           # chem inventory module
 
 
   # debugging ---------------------------------------------------------------

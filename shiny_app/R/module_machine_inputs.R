@@ -54,7 +54,7 @@ machineInputUI <- function(id) {
         ),
       shiny::selectizeInput(
         inputId  = ns("narrowSamplesSite"),
-        label    = "site",
+        label    = "site (LM ~ 9, SGC ~ 10, IBW ~ 11)",
         choices  = siteAbbreviations,
         selected = NULL,
         multiple = TRUE
@@ -70,9 +70,9 @@ machineInputUI <- function(id) {
         label   = "end:",
         format  = "yyyy-mm-dd"
         ),
-      br(),
+      shiny::br(),
       shiny::verbatimTextOutput(ns("samplesList")),
-      br(),
+      shiny::br(),
       shiny::helpText(
         "import chemistry data",
         style = "text-align: left; color: DarkBlue; font-weight: bold"
@@ -94,18 +94,7 @@ machineInputUI <- function(id) {
         icon    = shiny::icon("plus"),
         width   = "100%"
         ),
-      br(),
-      shiny::helpText(
-        "reference to sites",
-        style = "text-align: left; color: Gray; font-weight: bold"
-        ),
-      markdown("
-        | id      |          | site         |
-          |--------:|:--------:|:-------------|
-          | 9       | ~        | LM           |
-          | 10      | ~        | SGC          |
-          | 11      | ~        | IBW          |
-          ")
+      shiny::br()
 
       ) # close wellPanel
     ) # close tagList

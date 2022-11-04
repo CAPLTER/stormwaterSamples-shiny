@@ -19,8 +19,8 @@ upload_reportUI <- function(id) {
           shiny::strong("README"),
           "Navigate to the 6700 report file and import using the Browse button. Identify the appropriate carousel using the slider. Use the notes text box to add a note or notes that apply to all samples. You can add or edit the note of any given sample by clicking the notes field corresponding to the sample. Note, however, that editing the text dialogue box that applies notes to all samples will overwrite any notes applied to individual samples, so make sure that you get any notes that you want to apply to all samples exactly as you would like them before editing notes for an individual sample. Highlight samples (click any where in a row or <shift> and drag) in the report that should be excluded from the upload. When all notes have been applied and any samples not intended for upload have been highlighted, use the submit data button to upload data to the database."
         ) # close readme div
-      ) # close readme column
-      ), # close readme row
+      )   # close readme column
+      ),  # close readme row
 
     shiny::fluidRow(
 
@@ -59,8 +59,8 @@ upload_reportUI <- function(id) {
             width   = "100%"
             ),
           shiny::br()
-        ) # close the left col
-        ), # close the well panel
+        )   # close the wellPanel
+        ),  # close the left column
 
       shiny::column(
         id = "fileUploadMiddlePanel", 10,
@@ -68,8 +68,8 @@ upload_reportUI <- function(id) {
       ) # close the right col
 
     ) # close the row
-  ) # close the taglist
-} # close upload_reportUI
+  )   # close the taglist
+}     # close upload_reportUI
 
 
 upload_report <- function(id) {
@@ -78,78 +78,6 @@ upload_report <- function(id) {
 
     # establish reactive placeholder to store report data
     isco_data <- shiny::reactiveValues()
-
-
-    # helper: get the max data from the report for adding a blank
-#     get_max_date <- function(isco_file) {
-# 
-#       maxDate <- readr::read_csv(
-#         file      = isco_file$datapath,
-#         skip      = 7,
-#         col_names = c("sample_datetime", "eventNumber"),
-#         locale    = readr::locale(tz = "America/Phoenix")
-#         ) |>
-#       dplyr::select(sample_datetime) |>
-#       dplyr::filter(!is.na(sample_datetime)) |>
-#       dplyr::mutate(
-#         sample_datetime = lubridate::parse_date_time(sample_datetime, c("mdY HMS p", "mdY HMS", "mdY HM"))
-#         ) |>
-#       dplyr::summarise(maxDTTM = max(sample_datetime))
-# 
-#       # because this function is to add a blank, set the time according to
-#       # prescribed approach for blank times (e.g., blank #2 = 00:00:20)
-#       # moved to observe event input$storm
-#       lubridate::hour(maxDate$maxDTTM)   = 0
-#       lubridate::minute(maxDate$maxDTTM) = 0
-#       lubridate::second(maxDate$maxDTTM) = 10
-# 
-#       return(maxDate$maxDTTM)
-# 
-#     }
-
-
-    # helper: get the site ID for the report
-#     get_site_id <- function(isco_file) {
-# 
-#       site_id <- readr::read_csv(
-#         file      = isco_file$datapath,
-#         n_max     = 1,
-#         col_names = c("reportText", "siteID")
-#         ) |>
-#       dplyr::pull(siteID)
-# 
-#       return(site_id)
-# 
-#     }
-
-
-    # helper: generate the report form the uploaded file
-#     generate_report <- function(isco_file, carousel = "1") {
-# 
-#       site_id  <- get_site_id(isco_file)
-#       max_date <- get_max_date(isco_file)
-# 
-#       isco_report <- readr::read_csv(
-#         file      = isco_file$datapath,
-#         skip      = 7,
-#         col_names = c("sample_datetime", "eventNumber"),
-#         locale    = readr::locale(tz = "America/Phoenix")
-#         ) |>
-#       dplyr::mutate(bottle = paste0(site_id, "_", carousel, "_", eventNumber)) |>
-#       dplyr::select(bottle, sample_datetime) |>
-#       dplyr::filter(!is.na(sample_datetime)) |>
-#       dplyr::mutate(sample_datetime = lubridate::parse_date_time(sample_datetime, c("mdY HMS p", "mdY HMS", "mdY HM"))) |>
-#       tibble::add_row(
-#         bottle          = paste0(site_id, "_", carousel, "_BLK"),
-#         sample_datetime = max_date
-#         ) |>
-#       dplyr::mutate(
-#         notes = NA_character_
-#       )
-# 
-#       return(isco_report)
-# 
-#     }
 
 
     # import the report data
@@ -338,5 +266,5 @@ upload_report <- function(id) {
     # observe(print({ head(sampleReportData()) }))
     # observe(print({ head(sampleReportData()[["bottle"]]) }))
 
-  }) # close moduleServer
-} # close module function
+  })  # close moduleServer
+}     # close module function
