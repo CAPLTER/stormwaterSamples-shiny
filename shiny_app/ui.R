@@ -45,7 +45,7 @@ ui <- shiny::tagList(
     # cations tab -------------------------------------------------------------
 
     shiny::tabPanel("cations",
-      cationsUI("icpCations")
+      upload_cationsUI("upload_cations")
       ),
 
 

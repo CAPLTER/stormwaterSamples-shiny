@@ -1,11 +1,11 @@
 #' @title Tool(s) for restructuring RAW analysis (ICP, AQ2, Lachat, Shimadzu)
-#'   output to a format amenable for inserting into the stormwater.results
-#'   table.
+#' output to a format amenable for inserting into the stormwater.results table.
 #'
-#' @description The function \code{build_insert_raw_query} constructs a query to
-#'   insert raw machine (ICP, AQ2, Lachat, Shimadzu) output into the respective
-#'   stormwater.x table.
-
+#' @description The function \code{format_raw} formats raw machine data
+#' (coupled with sample metadata) into a format such that it is amenable to be
+#' inserted into the stormwater.results table.
+#'
+#' @export
 
 format_raw <- function(annotatedData, sampleMetadata, currentTab, nitrite = FALSE) {
 
@@ -14,11 +14,11 @@ format_raw <- function(annotatedData, sampleMetadata, currentTab, nitrite = FALS
   formattedData <- annotatedData |>
     dplyr::mutate(
       newSample = replace(newSample, newSample == "NULL", NA),
-      samples = dplyr::case_when(
+      samples   = dplyr::case_when(
         !is.na(newSample) ~ newSample,
         TRUE ~ samples
         ),
-      comments = dplyr::case_when(
+      comments  = dplyr::case_when(
         grepl("blk", sample_id, ignore.case = T) & comments == "" ~ "blank",
         grepl("blk", sample_id, ignore.case = T) & comments != "" ~ paste(comments, "blank", sep = "; "),
         TRUE ~ as.character(comments)

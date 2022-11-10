@@ -1,9 +1,11 @@
 #' @title Build queries for inserting RAW analysis (ICP, AQ2, Lachat, Shimadzu)
-#'   output
+#' output
 #'
-#' @description The function \code{build_insert_raw_query} constructs a query to
-#'   insert raw machine (ICP, AQ2, Lachat, Shimadzu) output into the respective
-#'   stormwater.x table.
+#' @description The function \code{build_insert_raw_query} constructs a query
+#' to insert raw machine (ICP, AQ2, Lachat, Shimadzu) output into the
+#' respective stormwater.x table.
+#'
+#' @export
 
 build_insert_raw_query <- function(currentTab) {
 
@@ -16,34 +18,41 @@ build_insert_raw_query <- function(currentTab) {
       run_id,
       date_analyzed,
       icp_out_id,
-      operator,
-      x_3,
-      ca3158,
-      ca3179,
-      ca3933,
-      na5889,
-      na5895,
-      zn2025,
-      zn2138,
+      rack_tube,
+      type,
+      ca_183_944_nm_ppm,
+      ca_315_887_nm_ppm,
+      ca_317_933_nm_ppm,
+      na_588_995_nm_ppm,
+      na_589_592_nm_ppm,
+      y_371_029_nm_ratio,
+      zn_202_548_nm_ppm,
+      zn_206_200_nm_ppm,
+      zn_213_857_nm_ppm,
+      instrument,
       source_file
     )
     (
       SELECT
         run_id,
-        date_analyzed,
-        sample_id,
-        operator,
-        icp_id,
-        ca3158,
-        ca3179,
-        ca3933,
-        na5889,
-        na5895,
-        zn2025,
-        zn2138,
+        date_time,
+        solution_label,
+        rack_tube,
+        type,
+        ca_183_944_nm_ppm,
+        ca_315_887_nm_ppm,
+        ca_317_933_nm_ppm,
+        na_588_995_nm_ppm,
+        na_589_592_nm_ppm,
+        y_371_029_nm_ratio,
+        zn_202_548_nm_ppm,
+        zn_206_200_nm_ppm,
+        zn_213_857_nm_ppm,
+        'Agilent ICP-OES'
         filename
       FROM stormwater.temp_raw
-    );"
+      );
+    "
 
   # raw: lachat ------------------------------------------------------------
 

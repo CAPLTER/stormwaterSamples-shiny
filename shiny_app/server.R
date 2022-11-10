@@ -36,6 +36,7 @@ server <- function(input, output, session) {
   upload_lachat("upload_lachat", tab = tabID)     # upload lachat data
   upload_aq2("upload_aq2", tab = tabID)           # upload aq2 data
   upload_shimadzu("upload_shimadzu", tab = tabID) # upload shimadzu data
+  upload_cations("upload_cations", tab = tabID)   # upload ICP data
   ChemViewer1$call()                              # chem viewer module
   ChemInventory1$call()                           # chem inventory module
 

@@ -19,11 +19,13 @@ upload_aq2UI <- function(id) {
     shiny::fluidPage(
       shiny::fluidRow(
 
-        shiny::column(id = "leftPanel", 2,
+        shiny::column(
+          id = "leftPanel", 2,
           machineInputUI(ns("samples_for_aq2")) # ns(wrap call to inner mod)
           ), # close the left col
 
-        shiny::column(id = "rightPanel", 10,
+        shiny::column(
+          id = "rightPanel", 10,
           DT::dataTableOutput(ns("resultView")),
           shiny::uiOutput(ns("mergedPreviewDivider")),
           DT::dataTableOutput(ns("resultsMetadataView"))
@@ -42,9 +44,6 @@ upload_aq2UI <- function(id) {
 upload_aq2 <- function(id, tab = NULL) {
 
   shiny::moduleServer(id, function(input, output, session) {
-
-    # create listener for adding and deleting records
-    # listener <- reactiveValues(dbVersion = 0)
 
     # call module machineInput: builds sample list & machine file import
     machineInputs <- machineInput("samples_for_aq2")
@@ -297,16 +296,6 @@ upload_aq2 <- function(id, tab = NULL) {
           this_samples_metadata = machineInputs$samples(),
           this_analysis         = tab()
         )
-
-        # reset nitrite flag if uploaded
-        if (shiny::isTruthy(chem_upload)) {
-
-          shiny::updateCheckboxInput(
-            inputId = "nitriteFlag",
-            value   = FALSE
-          )
-
-        }
 
       } # close database operations
 
