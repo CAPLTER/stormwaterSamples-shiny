@@ -48,10 +48,11 @@ build_insert_raw_query <- function(currentTab) {
         zn_202_548_nm_ppm,
         zn_206_200_nm_ppm,
         zn_213_857_nm_ppm,
-        'Agilent ICP-OES'
+        'Agilent 5900',
         filename
       FROM stormwater.temp_raw
-      );
+      )
+    ;
     "
 
   # raw: lachat ------------------------------------------------------------

@@ -31,6 +31,8 @@ upload_chemistry <- function(
     is_nitrite       = this_is_nitrite
   )
 
+#   print(insert_raw_query)
+#   print(insert_results_query)
 
   # begin tryCatch - transaction
   tryCatch({
@@ -47,7 +49,7 @@ upload_chemistry <- function(
         insert_results_query
       )
 
-})
+  })
 
     shiny::showNotification(
       ui          = "successfully uploaded",

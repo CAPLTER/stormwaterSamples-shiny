@@ -114,7 +114,7 @@ upload_lachat <- function(id, tab = NULL) {
       machine_import <- machine_import |>
       dplyr::mutate(
         idToJoin = toupper(trimws(sample_id)),
-        idToJoin = gsub("(\\w+\\.\\w+)(\\s[0-9].+)", "\\1", idToJoin),
+        idToJoin = stringr::str_extract(idToJoin, "([0-9]+\\.[0-9]+\\.\\w+)"),
         idToJoin = dplyr::case_when(
           grepl("unknown", sample_type, ignore.case = T) ~ gsub("\\.", "\\_", idToJoin),
           TRUE ~ idToJoin
@@ -353,6 +353,9 @@ upload_lachat <- function(id, tab = NULL) {
 
     # debugging: module level -------------------------------------------------
 
+    observe(readr::write_csv({ rawReactive() }, "/tmp/lachat_raw.csv"))
+    # observe(readr::write_csv({ resultReactive() }, "/tmp/lachat_results_reactive.csv"))
+    # observe(readr::write_csv({ machineInputs$samples() }, "/tmp/lachat_metadata.csv"))
     # observe(print({ head(machineInputs$samples()) }))
     # observe(print({ head(rawReactive()) }))
     # observe(print({ head(resultsMetadata()) }))

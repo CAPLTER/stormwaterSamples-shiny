@@ -17,6 +17,17 @@ upload_cationsUI <- function(id) {
   shiny::tagList(
 
     shiny::fluidPage(
+
+      shiny::fluidRow(
+        shiny::column(
+          id = "readme_row", width = 12,
+          shiny::div(id = "readme_box",
+            shiny::strong("CAUTION"),
+            "Agilent data must be exported and uploaded as a comma-separated-values (.csv) file"
+          ) # close readme div
+        )   # close readme column
+        ),  # close readme row
+
       shiny::fluidRow(
 
         shiny::column(
@@ -36,7 +47,7 @@ upload_cationsUI <- function(id) {
 
   ) # close tagList
 
-} # close upload_cationsUI 
+} # close upload_cationsUI
 
 
 # upload main -------------------------------------------------------------
@@ -68,15 +79,50 @@ upload_cations <- function(id, tab = NULL) {
       # require file input
       req(machineInputs$machineFile())
 
-      machine_import <- readxl::read_excel(
-        path = machineInputs$machineFile()$datapath,
-        skip = 3
+      # import file
+      if (tools::file_ext(machineInputs$machineFile()$datapath) != "csv") {
+
+        shiny::showNotification(
+          ui          = "file must be of type csv",
+          duration    = NULL,
+          closeButton = TRUE,
+          type        = "warning",
+          action      = a(href = "javascript:location.reload();", "reload the page")
+        )
+
+      } else {
+
+        suppressMessages(
+
+          machine_import <- readr::read_csv(
+            file = machineInputs$machineFile()$datapath,
+            skip = 3
+            ) |>
+          janitor::clean_names()
+
+        )
+
+      }
+
+
+      # check data structure (warning only, does not break workflow)
+      expected_names <- c(
+        "solution_label",
+        "rack_tube",
+        "type",
+        "date_time",
+        "ca_183_944_nm_ppm",
+        "ca_315_887_nm_ppm",
+        "ca_317_933_nm_ppm",
+        "na_588_995_nm_ppm",
+        "na_589_592_nm_ppm",
+        "y_371_029_nm_ratio",
+        "zn_202_548_nm_ppm",
+        "zn_206_200_nm_ppm",
+        "zn_213_857_nm_ppm"
       )
 
-      machine_import <- janitor::clean_names(machine_import)
-
-      # check data structure - warning only, does not break workflow
-      if (ncol(machine_import) != 13) {
+      if (!all(colnames(machine_import) %in% c(expected_names))) {
 
         shiny::showNotification(
           ui          = "unexpected data structure: check number and names of columns",
@@ -87,13 +133,9 @@ upload_cations <- function(id, tab = NULL) {
 
       }
 
+
       # add filename as a variable
       machine_import$filename <- machineInputs$machineFile()$name
-
-      # format column names
-      # colnames(machine_import) <- tolower(colnames(machine_import))             # colnames to lowercase
-      # colnames(machine_import) <- gsub("\\.", "\\_", colnames(machine_import))  # replace dots with underscores
-      # colnames(machine_import) <- gsub(" ", "\\_", colnames(machine_import))    # replace spaces with underscores
 
       # add run identifier as maxrun
       maxrun                <- as.numeric(run_interpolated_query(interpolatedQuery = "SELECT MAX(run_id) FROM stormwater.results;"))
@@ -123,11 +165,22 @@ upload_cations <- function(id, tab = NULL) {
     resultReactive <- reactive({
 
       cationsResults <- rawReactive() |>
-      dplyr::filter(grepl("sample", type, ignore.case = TRUE))
+      dplyr::filter(grepl("sample", type, ignore.case = TRUE)) |>
+      dplyr::mutate(
+        dplyr::across(tidyselect::starts_with("ca_"), ~ stringr::str_remove_all(.x, "[A-z]+|\\s")),
+        dplyr::across(tidyselect::starts_with("na_"), ~ stringr::str_remove_all(.x, "[A-z]+|\\s")),
+        dplyr::across(tidyselect::starts_with("zn_"), ~ stringr::str_remove_all(.x, "[A-z]+|\\s")),
+        dplyr::across(tidyselect::starts_with("y_"),  ~ stringr::str_remove_all(.x, "[A-z]+|\\s")),
+        dplyr::across(tidyselect::starts_with("ca_"), as.numeric),
+        dplyr::across(tidyselect::starts_with("na_"), as.numeric),
+        dplyr::across(tidyselect::starts_with("zn_"), as.numeric),
+        dplyr::across(tidyselect::starts_with("y_"),  as.numeric)
+      )
 
       return(cationsResults)
 
     })
+
 
     # add visual separator between dynamic data and preview of data to upload
     output$mergedPreviewDivider <- shiny::renderUI({
@@ -308,7 +361,7 @@ upload_cations <- function(id, tab = NULL) {
         # upload raw and results data
         chem_upload <- upload_chemistry(
           this_raw_reactive     = rawReactive(),
-          this_results_reactive = resultsMetadata(),
+          this_results_reactive = resultsMetadata() |> dplyr::rename(sample_id = solution_label),
           this_samples_metadata = machineInputs$samples(),
           this_analysis         = tab()
         )
@@ -334,9 +387,12 @@ upload_cations <- function(id, tab = NULL) {
     # debugging: module level -------------------------------------------------
 
     # observe(print({ head(machineInputs$samples()) }))
-    observe(print({ head(rawReactive()) }))
-    observe(print({ colnames(rawReactive()) }))
+    # observe(print({ head(rawReactive()) }))
     # observe(print({ head(resultReactive()) }))
+    # observe(print({ colnames(rawReactive()) }))
+    # observe(readr::write_csv({ resultsMetadata() }, "/tmp/cations_results_metadta.csv"))
+    # observe(readr::write_csv({ machineInputs$samples() }, "/tmp/cations_metadata.csv"))
+    # observe(readr::write_csv({ resultsMetadata() }, "/tmp/cations_results_metadata.csv"))
     # observe(print({ head(resultsMetadata()) }))
     # observe(print({ head(resultReactive()) }))
     # observe(print({ samplesSelection() }))

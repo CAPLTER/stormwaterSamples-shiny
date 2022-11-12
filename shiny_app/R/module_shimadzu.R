@@ -152,7 +152,7 @@ upload_shimadzu <- function(id, tab = NULL) {
       machine_import <- machine_import |>
       dplyr::mutate(
         idToJoin = toupper(trimws(sample_id)),
-        idToJoin = gsub("(\\w+\\.\\w+)(\\s[0-9].+)", "\\1", idToJoin),
+        idToJoin = stringr::str_extract(idToJoin, "([0-9]+\\.[0-9]+\\.\\w+)"),
         idToJoin = gsub("\\.", "\\_", idToJoin)
       )
 

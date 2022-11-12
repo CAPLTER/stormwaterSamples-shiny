@@ -23,19 +23,19 @@ build_insert_results_query <- function(currentTab) {
       analysis_id,
       date_analyzed,
       concentration,
-      data_qualifier,
+      -- data_qualifier,
       comments
     )
     (
       SELECT
-      sample_id,
-      run_id,
-      replicate,
-      analysis_id,
-      date_analyzed,
-      results,
-      data_qualifier,
-      NULLIF(comments, '')::text
+        sample_id,
+        run_id,
+        replicate,
+        analysis_id,
+        date_analyzed,
+        concentration,
+        -- data_qualifier,
+        NULLIF(comments, '')::text
       FROM stormwater.temp_results
       );"
 
