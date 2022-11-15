@@ -353,7 +353,7 @@ upload_lachat <- function(id, tab = NULL) {
 
     # debugging: module level -------------------------------------------------
 
-    observe(readr::write_csv({ rawReactive() }, "/tmp/lachat_raw.csv"))
+    # observe(readr::write_csv({ rawReactive() }, "/tmp/lachat_raw.csv"))
     # observe(readr::write_csv({ resultReactive() }, "/tmp/lachat_results_reactive.csv"))
     # observe(readr::write_csv({ machineInputs$samples() }, "/tmp/lachat_metadata.csv"))
     # observe(print({ head(machineInputs$samples()) }))

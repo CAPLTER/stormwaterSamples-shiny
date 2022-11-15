@@ -43,9 +43,9 @@ format_raw <- function(annotatedData, sampleMetadata, currentTab, nitrite = FALS
     dplyr::filter(grepl("ca_183|na_588|zn_202", analysis, ignore.case = TRUE)) |>
     dplyr::mutate(
       analysis_id = dplyr::case_when(
-        grepl("ca_", analysis, ignore.case = T) ~ as.integer(70),
-        grepl("na_", analysis, ignore.case = T) ~ as.integer(71),
-        grepl("zn_", analysis, ignore.case = T) ~ as.integer(72),
+        grepl("ca_", analysis, ignore.case = T) ~ as.integer(69),
+        grepl("na_", analysis, ignore.case = T) ~ as.integer(70),
+        grepl("zn_", analysis, ignore.case = T) ~ as.integer(71),
         TRUE ~ NA_integer_
         ),
       date_analyzed  = as.POSIXct(date_time, format = "%m/%d/%Y %H:%M"),

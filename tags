@@ -13,7 +13,6 @@
 "add_new"	shiny_app/R/module_solids_main.R	/^        tibble::tibble("add_new" = new),$/;"	v	function:solids_inventory.anonFuncf0b3e7170100
 "edit_delete"	shiny_app/R/module_solids_main.R	/^        tibble::tibble("edit_delete" = actions)$/;"	v	function:solids_inventory.anonFuncf0b3e7170100
 "idToJoin"	shiny_app/R/helper_sample_metadata.R	/^      by = c("idToJoin" = "bottle")$/;"	n	vector:join_sample_metadata.by
-"samples"	shiny_app/R/helper_format_raw.R	/^  dplyr::inner_join(sampleMetadata, by = c("samples" = "samples"))$/;"	n	vector:format_raw.by
 #col_action_clear	shiny_app/www/custom.css	/^#col_action_clear   { padding-top: 25px; }$/;"	i
 #col_action_filter	shiny_app/www/custom.css	/^#col_action_filter  { padding-top: 25px; }$/;"	i
 #nitrite_box	shiny_app/www/custom.css	/^#nitrite_box {$/;"	i
@@ -41,6 +40,7 @@ ChemInventory1	shiny_app/R/module_chemistry_viewer.R	/^ChemInventory1 <- ChemInv
 ChemViewer	shiny_app/R/module_chemistry_viewer.R	/^ChemViewer <- R6::R6Class("ChemViewer", list($/;"	c
 ChemViewer1	archive/global.R	/^ChemViewer1    <- ChemViewer$new(id = "chem_display")$/;"	g
 ChemViewer1	shiny_app/R/module_chemistry_viewer.R	/^ChemViewer1    <- ChemViewer$new(id = "chem_display")$/;"	g
+R shiny application to facilitate entry, upload, and quality control for CAP LTER stormwater sample, discharge, chemistry, and particulate data	README.md	/^## R shiny application to facilitate entry, upload, and quality control for CAP LTER stormwater /;"	s	chapter:stormwaterSamples-shiny
 accept	shiny_app/R/module_discharge.R	/^            accept   = c($/;"	c	function:upload_dischargeUI
 accept	shiny_app/R/module_upload_discharge.R	/^            accept   = c($/;"	c	function:upload_dischargeUI
 accept	shiny_app/R/module_upload_report.R	/^            accept   = c($/;"	c	function:upload_reportUI
@@ -59,7 +59,6 @@ afdm_bottle_id	shiny_app/R/module_modify_samples.R	/^        afdm_bottle_id = NA
 afdm_bottle_id	shiny_app/app.R	/^        afdm_bottle_id = NA,$/;"	g
 alterTableQuery	shiny_app/R/app.R	/^      ALTER COLUMN sample_datetime TYPE TIMESTAMP WITHOUT TIME ZONE;'$/;"	v	function:server
 alterTableQuery	shiny_app/app.R	/^      ALTER COLUMN sample_datetime TYPE TIMESTAMP WITHOUT TIME ZONE;'$/;"	v	function:server
-analysis_id	shiny_app/R/helper_format_raw.R	/^      analysis_id = dplyr::case_when($/;"	v	function:format_raw
 anonFunc28bd9ca20100	shiny_app/R/helper_sql_execution.R	/^  }, warning = function(warn) {$/;"	f	function:run_interpolated_query
 anonFunc28bd9ca20200	shiny_app/R/helper_sql_execution.R	/^  }, warning = function(warn) {$/;"	f	function:run_interpolated_execution
 anonFunc36c26b0a0100	shiny_app/R/module_shimadzu.R	/^  shiny::moduleServer(id, function(input, output, session) {$/;"	f	function:upload_shimadzu
@@ -271,7 +270,6 @@ bottle_options	shiny_app/R/module_machine_inputs.R	/^      bottle_options <- run
 bottles_subset	shiny_app/R/module_sample_new.R	/^      bottles_subset <- bottleList[$/;"	v	function:module_sample_new.anonFunced9332b00100
 build_insert_raw_query	shiny_app/R/helper_insert_raw.R	/^build_insert_raw_query <- function(currentTab) {$/;"	f
 build_insert_results_query	shiny_app/R/helper_insert_results.R	/^build_insert_results_query <- function(currentTab) {$/;"	f
-by	shiny_app/R/helper_format_raw.R	/^  dplyr::inner_join(sampleMetadata, by = c("samples" = "samples"))$/;"	c	function:format_raw
 by	shiny_app/R/helper_sample_metadata.R	/^      by = c("idToJoin" = "bottle")$/;"	c	function:join_sample_metadata
 carousel_string	shiny_app/R/module_upload_report.R	/^      carousel_string    <- paste0("_", as.character(input$storm), "_")$/;"	v	function:upload_report.anonFunca9d6de850100
 cationsResults	shiny_app/R/module_cations.R	/^      cationsResults <- rawReactive() |>$/;"	v	function:upload_cations.anonFuncf71eb7560100
@@ -327,7 +325,6 @@ col_names	shiny_app/R/helper_isco_operations.R	/^    col_names = c("sample_datet
 col_names	shiny_app/R/helper_isco_operations.R	/^    col_names = c("sample_datetime", "eventNumber"),$/;"	c	function:get_max_date
 col_names	shiny_app/app.R	/^      col_names = c("reportText", "siteID")) %>%$/;"	c	function:server
 col_names	shiny_app/global.R	/^  col_names = TRUE$/;"	g
-cols	shiny_app/R/helper_format_raw.R	/^      cols      = starts_with(c("ca_", "na_", "zn_")),$/;"	v	function:format_raw
 columnDefs	shiny_app/R/app.R	/^                 columnDefs = list(list(width = "100px", targets = c(1)))$/;"	L
 columnDefs	shiny_app/R/module_aq2.R	/^      columnDefs      = list($/;"	n	list:upload_aq2.anonFunc5edf18490100.options	constructor:list
 columnDefs	shiny_app/R/module_cations.R	/^      columnDefs      = list($/;"	n	list:upload_cations.anonFuncf71eb7560100.options	constructor:list
@@ -345,7 +342,6 @@ columns	shiny_app/app.R	/^                  disable = list(columns = c(0,1,2,3,4
 combinedData	shiny_app/R/app.R	/^  combinedData <- reactive({$/;"	v	function:server
 combinedData	shiny_app/app.R	/^  combinedData <- reactive({$/;"	v	function:server
 comments	shiny_app/R/app.R	/^        comments = as.character("match not found")$/;"	g
-comments	shiny_app/R/helper_format_raw.R	/^    comments  = dplyr::case_when($/;"	v	function:format_raw
 comments	shiny_app/R/helper_query_solids.R	/^      comments        = "error: must create record before editing"$/;"	v	function:query_solid_solid_id
 comments	shiny_app/R/module_aq2.R	/^        comments = shinyInputOther($/;"	v	function:upload_aq2.anonFunc5edf18490100
 comments	shiny_app/R/module_cations.R	/^        comments = shinyInputOther($/;"	v	function:upload_cations.anonFuncf71eb7560100
@@ -354,7 +350,6 @@ comments	shiny_app/R/module_modify_samples.R	/^        comments = as.character("
 comments	shiny_app/R/module_shimadzu.R	/^        comments = shinyInputOther($/;"	v	function:upload_shimadzu.anonFunc36c26b0a0100
 comments	shiny_app/R/module_upload_report.R	/^      dplyr::rename(comments = notes)$/;"	v	function:upload_report.anonFunca9d6de850100
 comments	shiny_app/app.R	/^        comments = as.character("match not found")$/;"	g
-concentration	shiny_app/R/helper_format_raw.R	/^      concentration = as.numeric(concentration)$/;"	v	function:format_raw
 cond	shiny_app/R/module_modify_samples.R	/^        cond = NA,$/;"	g
 config	archive/config.R	/^this_configuration <- config::get(config = "default")$/;"	g
 config	shiny_app/global.R	/^this_configuration <- config::get(config = "default")$/;"	g
@@ -366,7 +361,6 @@ data	shiny_app/R/module_upload_report.R	/^        data        = isco_data[["samp
 data_subset	shiny_app/R/helper_check_sample_ids.R	/^  data_subset <- data_to_validate |>$/;"	v	function:check_sample_ids
 data_to_plot	shiny_app/R/module_upload_discharge.R	/^        data_to_plot <- discharge_data |>$/;"	v	function:upload_discharge.anonFuncc25616730100.plot_discharge
 dateTime	shiny_app/R/module_modify_samples.R	/^    dateTime <- paste(sampleDate, sampleTime)$/;"	v	function:modifySamples.addNewSample
-date_analyzed	shiny_app/R/helper_format_raw.R	/^      date_analyzed  = as.POSIXct(date_time, format = "%m\/%d\/%Y %H:%M"),$/;"	v	function:format_raw
 dbname	shiny_app/global.R	/^  dbname   = this_configuration$dbname,$/;"	g
 deleteSample	shiny_app/R/module_modify_samples.R	/^  deleteSample <- function(row_to_delete) {$/;"	f	function:modifySamples
 deleteSolid	shiny_app/R/app.R	/^  deleteSolid <- function(row_to_delete) {$/;"	f	function:server
@@ -374,7 +368,6 @@ deleteSolid	shiny_app/app.R	/^  deleteSolid <- function(row_to_delete) {$/;"	f	f
 delete_sample	shiny_app/R/helper_delete_sample.R	/^delete_sample <- function(sample_to_delete) {$/;"	f
 delete_solid	shiny_app/R/helper_delete_solid.R	/^delete_solid <- function(solid_to_delete) {$/;"	f
 detection_date	shiny_app/R/module_lachat.R	/^        detection_date = as.character(detection_date),$/;"	v	function:upload_lachat.anonFuncc170fab20100
-detection_time	shiny_app/R/helper_format_raw.R	/^      detection_time = as.character(detection_time, format = "%H:%M:%S"),$/;"	v	function:format_raw
 detection_time	shiny_app/R/module_lachat.R	/^        detection_time = as.character(detection_time, format = "%H:%M:%S")$/;"	v	function:upload_lachat.anonFuncc170fab20100
 disable	shiny_app/R/app.R	/^                  disable = list(columns = c(0,1,2,3,4,5,12,13))),$/;"	n	list:server.editable	constructor:list
 disable	shiny_app/R/module_modify_samples.R	/^                  disable = list(columns = c(0,1,2,7,8,9,10))),$/;"	n	list:modifySamples.editable	constructor:list
@@ -506,8 +499,6 @@ footer	shiny_app/R/module_sample_new.R	/^          footer = list($/;"	L	function
 footer	shiny_app/R/module_solid_new.R	/^          footer = list($/;"	L	function:module_solid_new.anonFuncb22bf4e90100
 format	shiny_app/R/module_machine_inputs.R	/^        format  = "yyyy-mm-dd"$/;"	v	function:machineInputUI
 format	shiny_app/R/module_sample_new.R	/^                format  = "yyyy-mm-dd",$/;"	v	function:module_sample_new.anonFunced9332b00100
-format_raw	shiny_app/R/helper_format_raw.R	/^format_raw <- function(annotatedData, sampleMetadata, currentTab, nitrite = FALSE) {$/;"	f
-formattedData	shiny_app/R/helper_format_raw.R	/^  formattedData <- annotatedData |>$/;"	v	function:format_raw
 func	shiny_app/R/helper_sql_execution.R	/^      func = function(conn) {$/;"	f	function:run_interpolated_execution
 func	shiny_app/R/module_upload_discharge.R	/^          func = function(conn) {$/;"	f	function:upload_discharge.anonFuncc25616730100
 func	shiny_app/R/module_upload_report.R	/^          func = function(conn) {$/;"	f	function:upload_report.anonFunca9d6de850100
@@ -650,10 +641,8 @@ name	shiny_app/R/helper_prepare_raw.R	/^    name      = c("stormwater", "temp_ra
 name	shiny_app/R/helper_prepare_results.R	/^    name      = c("stormwater", "temp_results"),$/;"	c	function:prepare_results
 name	shiny_app/R/module_upload_discharge.R	/^              name      = c("stormwater", "discharge"),$/;"	c	function:upload_discharge.anonFuncc25616730100.func
 name	shiny_app/R/module_upload_report.R	/^              name      = c("stormwater", "samples"),$/;"	c	function:upload_report.anonFunca9d6de850100.func
-names_to	shiny_app/R/helper_format_raw.R	/^      names_to  = "analysis",$/;"	v	function:format_raw
 new	shiny_app/R/module_solids_main.R	/^      new <- purrr::map_chr(solids_inventory_queried$sample_id, function(id_) {$/;"	v	function:solids_inventory.anonFuncf0b3e7170100
 newSample	shiny_app/R/helper_check_sample_ids.R	/^    newSample = replace(newSample, newSample == "NULL", NA),$/;"	v	function:check_sample_ids
-newSample	shiny_app/R/helper_format_raw.R	/^    newSample = replace(newSample, newSample == "NULL", NA),$/;"	v	function:format_raw
 newSample	shiny_app/R/module_aq2.R	/^        newSample = shinyInputOther($/;"	v	function:upload_aq2.anonFunc5edf18490100
 newSample	shiny_app/R/module_cations.R	/^        newSample = shinyInputOther($/;"	v	function:upload_cations.anonFuncf71eb7560100
 newSample	shiny_app/R/module_lachat.R	/^        newSample = shinyInputOther($/;"	v	function:upload_lachat.anonFuncc170fab20100
@@ -706,6 +695,7 @@ options	shiny_app/app.R	/^  options = list(bFilter = 0,$/;"	L	function:server
 orderable	shiny_app/R/module_samples_main.R	/^          orderable = FALSE$/;"	n	list:samples_inventory.anonFunca2e1b29e0100.options.columnDefs.anonLista2e1b29e0807
 orderable	shiny_app/R/module_solids_main.R	/^          orderable = FALSE$/;"	n	list:solids_inventory.anonFuncf0b3e7170100.options.columnDefs.anonListf0b3e7170907
 outputId	shiny_app/R/module_upload_report.R	/^    sample_report_proxy <- DT::dataTableProxy(outputId = "sample_report_table")$/;"	v	function:upload_report.anonFunca9d6de850100
+overview	README.md	/^#### overview$/;"	t	section:stormwaterSamples-shiny""R shiny application to facilitate entry, upload, and quality control for CAP LTER stormwater sample, discharge, chemistry, and particulate data
 overwrite	shiny_app/R/module_upload_discharge.R	/^              overwrite = FALSE,$/;"	v	function:upload_discharge.anonFuncc25616730100.func
 overwrite	shiny_app/R/module_upload_report.R	/^              overwrite = FALSE,$/;"	v	function:upload_report.anonFunca9d6de850100.func
 pH	shiny_app/R/module_modify_samples.R	/^        pH = NA,$/;"	g
@@ -737,7 +727,6 @@ parameterized_query	shiny_app/R/module_machine_inputs.R	/^      parameterized_qu
 password	shiny_app/global.R	/^  password = this_configuration$password$/;"	g
 path	shiny_app/R/module_lachat.R	/^        path = machineInputs$machineFile()$datapath$/;"	v	function:upload_lachat.anonFuncc170fab20100
 path	shiny_app/R/module_shimadzu.R	/^            path = machineInputs$machineFile()$datapath$/;"	v	function:upload_shimadzu.anonFunc36c26b0a0100
-peak_concentration	shiny_app/R/helper_format_raw.R	/^    dplyr::mutate(peak_concentration = dplyr::case_when($/;"	v	function:format_raw
 placeholder	shiny_app/R/module_sample_new.R	/^                placeholder = "bottles only partially filled",$/;"	v	function:module_sample_new.anonFunced9332b00100
 placeholder	shiny_app/R/module_solid_new.R	/^                placeholder = "some settling had occurrred",$/;"	v	function:module_solid_new.anonFuncb22bf4e90100
 plot_discharge	shiny_app/R/module_upload_discharge.R	/^      plot_discharge <- function(discharge_data) {$/;"	f	function:upload_discharge.anonFuncc25616730100
@@ -754,6 +743,7 @@ preDrawCallback	shiny_app/R/module_shimadzu.R	/^      preDrawCallback = JS('func
 preDrawCallback	shiny_app/app.R	/^                 preDrawCallback = JS('function() {$/;"	n	list:server.options
 prepare_raw	shiny_app/R/helper_prepare_raw.R	/^prepare_raw <- function(raw_reactive, analysis) {$/;"	f
 prepare_results	shiny_app/R/helper_prepare_results.R	/^prepare_results <- function($/;"	f
+previous versions history	README.md	/^#### previous versions history$/;"	t	section:stormwaterSamples-shiny""R shiny application to facilitate entry, upload, and quality control for CAP LTER stormwater sample, discharge, chemistry, and particulate data
 priority	shiny_app/www/samples_inventory_module.js	/^    Shiny.setInputValue(ns_prefix + "sample_id_to_delete", this.id, { priority: "event"});$/;"	p	variable:anonymousObject15294be50205
 priority	shiny_app/www/samples_inventory_module.js	/^    Shiny.setInputValue(ns_prefix + "sample_id_to_edit", this.id, { priority: "event"});$/;"	p	variable:anonymousObject15294be50405
 priority	shiny_app/www/samples_inventory_module.js	/^    Shiny.setInputValue(ns_prefix + "sample_id_to_populate", this.id, { priority: "event"});$/;"	p	variable:anonymousObject15294be50605
@@ -787,7 +777,6 @@ remove_timezone_query	shiny_app/app.R	/^    ALTER COLUMN event_datetime TYPE TIM
 render	shiny_app/R/module_samples_main.R	/^          render    = JS("$.fn.dataTable.render.ellipsis( 50 )")$/;"	n	list:samples_inventory.anonFunca2e1b29e0100.options.columnDefs.anonLista2e1b29e0307
 render	shiny_app/R/module_solids_main.R	/^          render    = JS("$.fn.dataTable.render.ellipsis( 50 )")$/;"	n	list:solids_inventory.anonFuncf0b3e7170100.options.columnDefs.anonListf0b3e7170407
 replicate	shiny_app/R/app.R	/^        replicate = NA,$/;"	g
-replicate	shiny_app/R/helper_format_raw.R	/^    replicate = as.integer(replicate)$/;"	v	function:format_raw
 replicate	shiny_app/R/module_aq2.R	/^        replicate = shinyInputOther($/;"	v	function:upload_aq2.anonFunc5edf18490100
 replicate	shiny_app/R/module_cations.R	/^        replicate = shinyInputOther($/;"	v	function:upload_cations.anonFuncf71eb7560100
 replicate	shiny_app/R/module_lachat.R	/^        replicate = shinyInputOther($/;"	v	function:upload_lachat.anonFuncc170fab20100
@@ -802,7 +791,6 @@ resultReactive	shiny_app/R/module_aq2.R	/^    resultReactive <- reactive({$/;"	v
 resultReactive	shiny_app/R/module_cations.R	/^    resultReactive <- reactive({$/;"	v	function:upload_cations.anonFuncf71eb7560100
 resultReactive	shiny_app/R/module_lachat.R	/^    resultReactive <- shiny::reactive({$/;"	v	function:upload_lachat.anonFuncc170fab20100
 resultReactive	shiny_app/R/module_shimadzu.R	/^    resultReactive <- reactive({$/;"	v	function:upload_shimadzu.anonFunc36c26b0a0100
-results	shiny_app/R/helper_format_raw.R	/^      results        = as.double(concentration)$/;"	v	function:format_raw
 resultsMetadata	shiny_app/R/module_aq2.R	/^    resultsMetadata <- shiny::reactive({$/;"	v	function:upload_aq2.anonFunc5edf18490100
 resultsMetadata	shiny_app/R/module_cations.R	/^    resultsMetadata <- shiny::reactive({$/;"	v	function:upload_cations.anonFuncf71eb7560100
 resultsMetadata	shiny_app/R/module_lachat.R	/^    resultsMetadata <- shiny::reactive({$/;"	v	function:upload_lachat.anonFuncc170fab20100
@@ -854,7 +842,6 @@ sample_report_proxy	shiny_app/R/module_upload_report.R	/^    sample_report_proxy
 sample_sites	shiny_app/R/helper_query_sites.R	/^  sample_sites <- run_interpolated_query(base_query)$/;"	v	function:query_sample_sites
 sample_sites	shiny_app/R/helper_query_sites.R	/^sample_sites <- query_sample_sites()$/;"	g
 samples	shiny_app/R/helper_check_sample_ids.R	/^    samples   = dplyr::case_when($/;"	v	function:check_sample_ids
-samples	shiny_app/R/helper_format_raw.R	/^    samples   = dplyr::case_when($/;"	v	function:format_raw
 samples	shiny_app/R/helper_sample_metadata.R	/^      dplyr::mutate(samples = as.character(NA))$/;"	v	function:join_sample_metadata
 samples	shiny_app/R/module_aq2.R	/^        samples   = dplyr::case_when($/;"	v	function:upload_aq2.anonFunc5edf18490100
 samples	shiny_app/R/module_cations.R	/^        samples   = dplyr::case_when($/;"	v	function:upload_cations.anonFuncf71eb7560100
@@ -1114,7 +1101,6 @@ value	shiny_app/R/module_upload_report.R	/^          value   = ""$/;"	v	function
 value	shiny_app/app.R	/^      dbWriteTable(stormPool, c('stormwater', 'samples_temp'), value = sampleUploadToWrite, row./;"	n	vector:server.anonVecc5c909e00b06
 value	shiny_app/app.R	/^      value = input[[paste0(id, i)]]$/;"	v	function:server.shinyValue.anonFuncc5c909e00300
 value	shiny_app/server.R	/^        value = input[[paste0(id, i)]]$/;"	v	function:server.shinyValue.anonFunc3a4125560100
-values_to	shiny_app/R/helper_format_raw.R	/^      values_to = "concentration"$/;"	v	function:format_raw
 vial	shiny_app/R/module_shimadzu.R	/^        dplyr::rename(vial = vials)$/;"	v	function:upload_shimadzu.anonFunc36c26b0a0100
 viewDischarge	shiny_app/R/module_view_discharge.R	/^viewDischarge <- function(input, output, session) {$/;"	f
 viewDischargeUI	shiny_app/R/module_view_discharge.R	/^viewDischargeUI <- function(id) {$/;"	f

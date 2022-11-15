@@ -3,10 +3,8 @@
 #' @description The samples_main module facilitates viewing, searching, and
 #' calling a dialogue box to edit stormwater sample records.
 #'
-#' @note 
-#'
 #' @export
-#'
+
 # samples_inventoryUI ----------------------------------------------------------
 
 samples_inventoryUI <- function(id) {
