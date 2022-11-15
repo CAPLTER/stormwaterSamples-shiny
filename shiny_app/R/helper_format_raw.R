@@ -79,13 +79,6 @@ format_raw <- function(annotatedData, sampleMetadata, currentTab, nitrite = FALS
       date_analyzed  = as.POSIXct(paste(detection_date, detection_time))
     )
 
-    # if phosphate: microgram -> milligram
-    formattedData <- formattedData |>
-    dplyr::mutate(peak_concentration = dplyr::case_when(
-        analysis_id == 48 ~ peak_concentration / 1000,
-        TRUE ~ peak_concentration
-    )
-    )
 
     # address nitrite
     if (nitrite == TRUE) {
