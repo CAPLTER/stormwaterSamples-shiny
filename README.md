@@ -6,12 +6,18 @@
 
 This is the codebase for the Shiny application that facilitates data entry and quality control for the CAP LTER's long-term monitoring of urban stormwater. This project has a long history focusing on different sites and lotic systems throughout the greater Phoenix metropolitan area, but focuses currently on a small number of locations along the Indian Bend Wash almost entirely within the city of Scottsdale, Arizona.
 
+#### workflow
+
+![](assets/stormwaterSamples-shiny.drawio.png)
+
+#### current version
+
 The application expands on several new approaches to Shiny development first introduced in the [herpetofauna application](https://gitlab.com/caplter/herpetofauna-shiny) then later adopted and expanded upon in the [bird application](https://gitlab.com/caplter/core-birds-shiny). A notable addition in this version of the Stormwater application is the use of a proxy coupled to an editable dataTables object to facilitate editing sample data uploaded from the ISCO 6700. In hindsight, use of a proxy might be overkill in this context as the primary purpose of using a proxy is to not requite that the dataTables object be (re)rendered with each edit, but the sample data from any given report is really a quite small table so processing overhead is not (at least, should not) be a concern. Anyway, it is done and now serves as a model for applying the approach in other contexts. Excellent resources that aided the implementation of the proxy included:
 
 - [R Shiny and DataTable (DT) Proxy Demonstration For Reactive Data Tables](https://thatdatatho.com/r-shiny-data-table-proxy-replace-data/?utm_source=pocket_mylist)
 - [DataTables from the DT package as a Shiny CRUD app interface](https://www.travishinkelman.com/dt-datatable-crud/)
 
-
+The code base for this version has also been modularized considerably relative to earlier implementations, not so much in the use of modules, which was already the case, but rather packaging redundant code into separate functions and files. Nuances among the output from the different machines make it difficult to completely modularize the code but it is greatly improved.
 
 #### previous versions history
 

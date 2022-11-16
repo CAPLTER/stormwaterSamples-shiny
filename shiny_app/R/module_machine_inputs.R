@@ -62,7 +62,7 @@ machineInputUI <- function(id) {
       shiny::dateInput(
         inputId = ns("startDate"),
         label   = "start:",
-        value = Sys.Date() - lubridate::weeks(24),
+        value   = Sys.Date() - lubridate::weeks(24),
         format  = "yyyy-mm-dd"
         ),
       shiny::dateInput(
