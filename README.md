@@ -6,7 +6,7 @@
 
 This is the codebase for the Shiny application that facilitates data entry and quality control for the CAP LTER's long-term monitoring of urban stormwater. This project has a long history focusing on different sites and lotic systems throughout the greater Phoenix metropolitan area, but focuses currently on a small number of locations along the Indian Bend Wash almost entirely within the city of Scottsdale, Arizona.
 
-#### workflow
+#### application structure and workflow
 
 ![](assets/stormwaterSamples-shiny.drawio.png)
 
@@ -18,6 +18,8 @@ The application expands on several new approaches to Shiny development first int
 - [DataTables from the DT package as a Shiny CRUD app interface](https://www.travishinkelman.com/dt-datatable-crud/)
 
 The code base for this version has also been modularized considerably relative to earlier implementations, not so much in the use of modules, which was already the case, but rather packaging redundant code into separate functions and files. Nuances among the output from the different machines make it difficult to completely modularize the code but it is greatly improved.
+
+This version also reflects a transition of our analyses of stormwater cation data from being run on the Thermo Fisher iCAP6300 to Agilent 5900.
 
 #### previous versions history
 
