@@ -11,6 +11,7 @@ library(DT)
 
 options(shiny.maxRequestSize = 30*1024^2) # increase max file upload size
 options(shiny.reactlog = FALSE)
+Sys.setenv(TZ = "America/Phoenix")
 
 
 # configuration ----------------------------------------------------------------
@@ -31,6 +32,8 @@ shiny::onStop(function() {
   pool::poolClose(this_pool)
 })
 
+
+Sys.timezone()                # Get new system time zone
 
 # modules and functions --------------------------------------------------------
 
