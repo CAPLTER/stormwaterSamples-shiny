@@ -96,7 +96,7 @@ upload_cations <- function(id, tab = NULL) {
 
           machine_import <- readr::read_csv(
             file = machineInputs$machineFile()$datapath,
-            skip = 3
+            skip = 2
             ) |>
           janitor::clean_names()
 
