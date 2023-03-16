@@ -41,7 +41,7 @@ upload_reportUI <- function(id) {
             inputId = ns("storm"),
             label   = "storm/carousel",
             min     = 1,
-            max     = 5,
+            max     = 7,
             value   = 1
             ),
           shiny::textAreaInput(
