@@ -79,13 +79,27 @@ upload_report <- function(id) {
     # establish reactive placeholder to store report data
     isco_data <- shiny::reactiveValues()
 
-
     # import the report data
     shiny::observeEvent(input$isco_6700_report_file, {
 
-      isco_data[["samples"]] <- generate_report(input$isco_6700_report_file)
+      file_data_type <- get_data_type(input$isco_6700_report_file)
 
-      })
+      if(!grepl("sample", file_data_type, ignore.case = TRUE)) {
+
+        shiny::showNotification(
+          ui          = "file must be of type sample event data",
+          duration    = 5,
+          closeButton = TRUE,
+          type        = "warning"
+        )
+
+      } else {
+
+        isco_data[["samples"]] <- generate_report(input$isco_6700_report_file)
+
+      }
+
+    })
 
 
     # adjust the sample data to reflect the appropriate carousel

@@ -3,6 +3,24 @@
 #' @description Helper functions to process and extract data from files
 #' downloaded from ISCOs.
 
+#' @note determine from the downloaded file the type of data represented in the
+#' file
+#' @export
+get_data_type <- function(isco_file) {
+
+  data_type_frame <- readr::read_csv(
+    file      = isco_file$datapath,
+    n_max     = 2,
+    col_names = c("report_text", "isco_data_type")
+    )
+
+  data_type <- data_type_frame[2, ][["isco_data_type"]]
+
+  return(data_type)
+
+}
+
+
 #' @note determine from the downloaded file the site ID at which the ISCO was
 #' located
 #' @export
