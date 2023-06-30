@@ -5,6 +5,8 @@
 #' (coupled with sample metadata) into a format such that it is amenable to be
 #' inserted into the stormwater.results table.
 #'
+#' @note TN (analysis id ~ 42) removed from workflow 2023-06-30.
+#'
 #' @export
 
 format_raw <- function(annotatedData, sampleMetadata, currentTab, nitrite = FALSE) {
@@ -109,7 +111,6 @@ format_raw <- function(annotatedData, sampleMetadata, currentTab, nitrite = FALS
   } else if (grepl("shimadzu", currentTab, ignore.case = TRUE)) {
 
     formattedData$doc <- unlist(lapply(strsplit(formattedData$result, "\\:|\\s|m"), "[", 2)) # doc_toc (19)
-    formattedData$tn  <- unlist(lapply(strsplit(formattedData$result, "\\:|\\s|m"), "[", 5))  # no3t_toc_tn (42)
 
     formattedData <- formattedData |>
     dplyr::select(
@@ -118,18 +119,16 @@ format_raw <- function(annotatedData, sampleMetadata, currentTab, nitrite = FALS
       replicate,
       date_time,
       comments,
-      doc,
-      tn
+      doc
       ) |>
     tidyr::pivot_longer(
-      cols      = doc:tn,
+      cols      = doc,
       names_to  = "analysis",
       values_to = "concentration"
       ) |>
     dplyr::mutate(
       analysis_id = dplyr::case_when(
         grepl("doc", analysis, ignore.case = TRUE)  ~ as.integer(19),
-        grepl("tn", analysis, ignore.case = TRUE)   ~ as.integer(42),
         TRUE ~ NA_integer_
         ),
       date_analyzed = as.POSIXct(date_time, format = "%Y-%m-%d %H:%M:%S"),
