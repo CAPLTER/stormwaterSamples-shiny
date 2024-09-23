@@ -33,6 +33,11 @@ get_site_id <- function(isco_file) {
     ) |>
   dplyr::pull(siteID)
 
+  site_id <- stringr::str_extract(
+    string  = site_id,
+    pattern = "[0-9]+"
+  )
+
   return(site_id)
 
 }
@@ -105,23 +110,29 @@ harvest_level_data <- function(isco_file) {
 
   level_data <- readr::read_csv(
     file      = isco_file$datapath,
+    # file      = isco_file, # debugging outside shiny
     skip      = 7,
     col_names = c("event_datetime", "level"),
     locale    = readr::locale(tz = "America/Phoenix")
+  ) |>
+    dplyr::filter(!is.na(event_datetime)) |>
+    dplyr::mutate(
+      event_datetime = lubridate::parse_date_time(
+        x      = event_datetime,
+        orders = c("mdY HMS p", "mdY HMS", "mdY HM"),
+        tz     = "America/Phoenix"
+      ),
+      event_datetime = format(event_datetime, "%Y-%m-%d %H:%M:%S"),
+      site_id        = as.integer(site_id),
+      source_file    = isco_file$name
+      # source_file    = isco_file # debugging outside shiny
     ) |>
-  dplyr::filter(!is.na(event_datetime)) |>
-  dplyr::mutate(
-    event_datetime = lubridate::parse_date_time(event_datetime, c("mdY HMS p", "mdY HMS")),
-    event_datetime = format(event_datetime, "%Y-%m-%d %H:%M:%S"),
-    site_id        = as.integer(site_id),
-    source_file    = isco_file$name
-    ) |>
-  dplyr::select(
-    site_id,
-    event_datetime,
-    water_height = level,
-    source_file
-  )
+    dplyr::select(
+      site_id,
+      event_datetime,
+      water_height = level,
+      source_file
+    )
 
   return(level_data)
 
