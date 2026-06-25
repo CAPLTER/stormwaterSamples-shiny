@@ -1,5 +1,7 @@
 # stormwaterSamples-shiny
 
+## archive notice: this repository moved to the ASU-KE GitHub organization (2026)
+
 ## R shiny application to facilitate entry, upload, and quality control for CAP LTER stormwater sample, discharge, chemistry, and particulate data
 
 #### overview
